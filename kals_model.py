@@ -12,7 +12,7 @@ import os
 import sys
 import string
 #import matplotlib.pyplot as plt
-#test
+#testje
 
 runInBatch = True
 
