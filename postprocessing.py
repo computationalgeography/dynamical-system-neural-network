@@ -7,9 +7,10 @@ from itertools import product
 
 dpi_figures = 600
 
-#outputDirectory = '/Users/karss101/tmp/250106/'
-#outputDirectory = '/Users/karss101/tmp/'
-outputDirectory = './runs_from_sonic_velocity/kals_model_fit_on_arti_data_with_error/'
+#scenarioDirectory = '../data/scenarios/runs_from_sonic_velocity/kals_model_fit_on_observations/results/'
+#scenarioDirectory = '../data/scenarios/runs_from_sonic_velocity/kals_model_fit_on_arti_data/results/'
+scenarioDirectory = '../data/scenarios/runs_from_sonic_velocity/kals_model_fit_on_arti_data_with_error/results/'   # note that the streamflow for validation is with error
+figureDirectory = '../figures/'
 
 scenarios = ['fit_eva', 'fit_sno', 'fit_sub', 'fit_sne', 'fit_sue', 'fit_sus', 'fit_thr', 'fit_exp']
 #scenarios = ['fit_sno', 'fit_sub', 'fit_sne']
@@ -23,7 +24,7 @@ reRunScenarios = []
 for s in aRange:
     reRunScenarios.append(str(s))
 
-folderWithArrays = outputDirectory + '/' + scenarios[0] + '/' + trainingScenarios[0] + '/' + reRunScenarios[0] + '/arrays'
+folderWithArrays = scenarioDirectory + '/' + scenarios[0] + '/' + trainingScenarios[0] + '/' + reRunScenarios[0] + '/arrays'
 arrayFiles = os.listdir(folderWithArrays)
 
 
@@ -52,7 +53,7 @@ df['rs'] = rsList
 for array in arrays:
     arrayContents = []
     for sc, ts, rs in product(scenarios, trainingScenarios, reRunScenarios):
-        folder = outputDirectory + sc + '/' + ts + '/' + rs + '/arrays/' 
+        folder = scenarioDirectory + sc + '/' + ts + '/' + rs + '/arrays/' 
         arrayName = folder + array + '.npy'
         arrayContent = numpy.load(arrayName, allow_pickle = True)
         arrayContents.append(arrayContent)
@@ -71,10 +72,14 @@ valid_ss_q_mean = ((valid_q-valid_mean_q)**2.0).mean()
 df['NSEVal'] = 1.0 - (df['lossValidationValue'] / valid_ss_q_mean)
 
 # colors
-df['color'] = numpy.where(df['ts'] == 1, '#4daf4a', '1')
-df['color'] = numpy.where(df['ts'] == 2, '#377eb8', df.color)
-df['color'] = numpy.where(df['ts'] == 3, '#e41a1c', df.color)
-df['color'] = numpy.where(df['ts'] == 4, '#984ea3', df.color)
+green = '#4daf4a'
+blue = '#377eb8'
+red = '#e41a1c'
+purple = '#984ea3'
+df['color'] = numpy.where(df['ts'] == 1, green, '1')
+df['color'] = numpy.where(df['ts'] == 2, blue, df.color)
+df['color'] = numpy.where(df['ts'] == 3, red, df.color)
+df['color'] = numpy.where(df['ts'] == 4, purple, df.color)
 print(df)
 
 #a = df[ (df['sc'] == 'fit_sub') & (df['ts'] == 1) & df['rs'] == 1] 
@@ -112,8 +117,83 @@ axs[0,0].set_title('evapotranspiration',fontsize = '10')
 axs[0,1].set_title('snow melt',fontsize = '10')
 axs[0,2].set_title('outflow subsurface storage', fontsize='10')
 plt.subplots_adjust(wspace=0, hspace=0)
-fig.savefig("response.pdf")
+fig.savefig(figureDirectory + "response.pdf")
 plt.close(fig)
+
+##########################
+# modelled vs artificial #
+##########################
+
+modelledTssList = ['valid_ts_eva_f', 'valid_ts_sno_f', 'valid_ts_sno_s', 'valid_ts_sub_f', 'valid_ts_sub_s', 'valid_ts_sub_f']
+observedTssList = ['val_art_ts_eva_f', 'val_art_ts_sno_f', 'val_art_ts_sno_s', 'val_art_ts_sub_f', 'val_art_ts_sub_s', 'valid_ts_OBS']
+tssVariables = len(observedTssList)
+
+# timeseries
+
+def timeseriesPlot(modelledTss, observedTss, start, end):
+    fig = plt.figure(dpi = dpi_figures)
+    gs = fig.add_gridspec(8, 3, hspace=0, wspace=0)
+    fig, axs = plt.subplots(8, 1, sharex='col', sharey = True)
+    fig.set_size_inches(8.27,11.69)
+    rij = 0
+    for sc in scenarios:
+        a = (df[df['sc'] == sc].sort_values(by='lossTrainingValue')).iloc[0]
+        axs[rij].plot(a['valid_date'][start:end], a[observedTss][start:end], linewidth=1.5, color=green)
+        axs[rij].plot(a['valid_date'][start:end], a[modelledTss][start:end], linewidth=1.0, color='black')
+        rij += 1
+    for i in range(0,8):
+        if observedTss[-1] == 'f':
+            axs[i].set_ylabel('flux (m/day)')
+        else:
+            axs[i].set_ylabel('storage (m)')
+    plt.subplots_adjust(wspace=0, hspace=0)
+    fig.savefig(figureDirectory + "tss_modartcomp_" + observedTss + ".pdf")
+    plt.close(fig)
+
+startTimeTss = 2 * 365
+endTimeTss = 5 * 365
+
+i = 0
+while i < tssVariables:
+    modelledTss = modelledTssList[i]
+    observedTss = observedTssList[i]
+    timeseriesPlot(modelledTss, observedTss, startTimeTss, endTimeTss)
+    i = i + 1
+
+
+# scatterplots
+
+def scatterPlot(modelledTss, observedTss, start, end):
+    fig = plt.figure(dpi = dpi_figures)
+    #gs = fig.add_gridspec(8, 3, hspace=0, wspace=0)
+    #fig, axs = plt.subplots(8, 1, sharex='col', sharey = True)
+    fig, axs = plt.subplots(8, 1)
+    fig.set_size_inches(8.27,11.69)
+    #fig.set_size_inches(8.27/3.0,11.69)
+    rij = 0
+    for sc in scenarios:
+        a = (df[df['sc'] == sc].sort_values(by='lossTrainingValue')).iloc[0]
+        #axs[rij].hexbin(a[observedTss][start:end], a[modelledTss][start:end])
+        #axs[rij].plot(a[observedTss][start:end], a[modelledTss][start:end], markersize = 0.5, marker = '.', linestyle = 'none')
+        axs[rij].scatter(a[observedTss][start:end], a[modelledTss][start:end], s = 0.5)
+        axs[rij].set_ylim(0,max(a[observedTss][start:end]))
+        axs[rij].set_xlim(0,max(a[observedTss][start:end]))
+        axs[rij].set_aspect('equal')
+        rij += 1
+    plt.subplots_adjust(wspace=0, hspace=0)
+    fig.savefig(figureDirectory + "sca_modartcomp_" + observedTss + ".pdf")
+    plt.close(fig)
+
+startTimeTss = 2 * 365
+endTimeTss = 6 * 365 # len(df['valid_ts_OBS']) - 1
+
+i = 0
+while i < tssVariables:
+    modelledTss = modelledTssList[i]
+    observedTss = observedTssList[i]
+    scatterPlot(modelledTss, observedTss, startTimeTss, endTimeTss)
+    i = i + 1
+
 
 #def scatterplot_rich(sfd, filename, variableOne, variableTwo, xlabel, ylabel, symbol, ylim):
 #    fig = plt.figure(dpi=600, figsize=(4,3))
