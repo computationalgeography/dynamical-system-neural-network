@@ -12,9 +12,8 @@ import os
 import sys
 import string
 #import matplotlib.pyplot as plt
-#testjes
 
-runInBatch = True
+runInBatch = False
 
 # inputs for running in batch mode
 if runInBatch:
@@ -39,8 +38,8 @@ oneArea = True
 printParameters = True
 L1Regularization = False     # https://github.com/christianversloot/machine-learning-articles/blob/main/how-to-use-l1-l2-and-elastic-net-regularization-with-pytorch.md
 
-inputDataDirectory = "inputData/"
-outputDataDirectory = "outputData/"
+inputDataDirectory = "../data/inputData/"
+outputDataDirectory = "../data/outputData/"
 
 conversionFluxes = 549.3
 
@@ -1030,7 +1029,7 @@ addErrorToArtificialStreamFlow = False
 trainingData = 'trainingSub'
 
 # folder to store output data, note the / at the end
-outputDirectory = './results/'
+outputDirectory = '../data/results/'
 
 
 # if fitting on real data, linear models for components not represented as NN are assumed
