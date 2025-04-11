@@ -1062,8 +1062,9 @@ startVal = datetime.date(1995, 10 , 1)
 endVal = datetime.date(2012, 9, 26)
 temperatureTimeSeriesVal, precipitationTimeSeriesVal = createMeteoData(inputDataDirectory, outputDataDirectory, startVal, endVal)
 streamFlowTimeSeriesVal, dateTimeSeriesVal = createStreamFlowData(inputDataDirectory, outputDataDirectory, startVal, endVal)
+# note that no error is added to artificial streamflow in any case as it is used for validation only
 sno_s_tsVal, sub_s_tsVal, sno_f_tsVal, sub_f_tsVal, eva_f_tsVal = createArtificialObservations( \
-                                                           temperatureTimeSeriesVal, precipitationTimeSeriesVal, addErrorToArtificialStreamFlow, linearArt)
+                                                           temperatureTimeSeriesVal, precipitationTimeSeriesVal, False, linearArt)
 
 
 sno_s_initial = 0.0

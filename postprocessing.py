@@ -9,27 +9,28 @@ plt.rcParams["font.size"] = 8
 
 dpi_figures = 600
 
-scenarioDirectory = '../data/scenarios/runs_from_sonic_velocity/kals_model_fit_on_observations/results/'
+#scenarioDirectory = '../data/scenarios/runs_from_sonic_velocity/kals_model_fit_on_observations/results/'
 # scenarioDirectory = '../data/scenarios/runs_from_sonic_velocity/kals_model_fit_on_arti_data/results/'
+scenarioDirectory = "../data/scenarios/runs_from_sonic_velocity/kals_model_fit_on_arti_data_with_error_subf_val_noerror/results/"
 #scenarioDirectory = "../data/scenarios/runs_from_sonic_velocity/kals_model_fit_on_arti_data_with_error/results/"  # note that the streamflow for validation is with error
 
 figureDirectory = "../figures/"
 
 # only nn scenarios
-#scenarios = [
-#    "fit_eva",
-#    "fit_sno",
-#    "fit_sub",
-#    "fit_sne",
-#    "fit_sue",
-#    "fit_sus",
-#    "fit_thr",
-#    "fit_exp",
-#]
+scenarios = [
+    "fit_eva",
+    "fit_sno",
+    "fit_sub",
+    "fit_sne",
+    "fit_sue",
+    "fit_sus",
+    "fit_thr",
+    "fit_exp",
+]
 
-# all scenarios
-scenarios = ['fit_eva', 'fit_sno', 'fit_sub', 'fit_sne', 'fit_sue', 'fit_sus', 'fit_thr', \
-             'fit_xva', 'fit_xno', 'fit_xub', 'fit_xne', 'fit_xue', 'fit_xus', 'fit_xhr']
+## all scenarios
+#scenarios = ['fit_eva', 'fit_sno', 'fit_sub', 'fit_sne', 'fit_sue', 'fit_sus', 'fit_thr', \
+#             'fit_xva', 'fit_xno', 'fit_xub', 'fit_xne', 'fit_xue', 'fit_xus', 'fit_xhr']
 
 ## only nn scenarios
 scenariosToPlot = [
@@ -40,7 +41,7 @@ scenariosToPlot = [
     "fit_sue",
     "fit_sus",
     "fit_thr",
-    "fit_xhr",
+    "fit_exp"     # or xhr for observational data
 ]
 
 # only exp scenarios
@@ -259,7 +260,6 @@ def scatterPlot(scenarios, modelledTss, observedTss, start, end):
         a = (df[df["sc"] == sc].sort_values(by="lossTrainingValue")).iloc[0]
         x = a[observedTss][start:end]
         y = a[modelledTss][start:end]
-        # hb = axs[rij].hexbin(x, y, gridsize=30, cmap='Greens', vmax=50, linewidths = 0.0)
         hb = axs[rij].hexbin(
             x, y, gridsize=30, cmap="Greens", bins="log", linewidths=0.0
         )
@@ -315,6 +315,62 @@ variables = [
 for scen in scenarios:
     print(df[df["sc"] == scen].sort_values(by="lossTrainingValue").loc[:, variables])
 
-#print('best')
-#for scen in scenarios:
-#    print((df[df["sc"] == sc].sort_values(by="lossTrainingValue")).iloc[0, variables])
+def nsePlot():
+    fig = plt.figure(dpi=dpi_figures, figsize = [2.5,2], tight_layout = {'pad': 1})
+    #fig.set_size_inches(8.27/4, 11.69/4)
+
+    scenariosToPlot = [
+        "fit_eva",
+        "fit_sno",
+        "fit_sub",
+        "fit_sne",
+        "fit_sue",
+        "fit_sus",
+        "fit_thr"
+        ]
+
+    scenariosToPlotExp = [
+        'fit_xva',
+        'fit_xno',
+        'fit_xub',
+        'fit_xne',
+        'fit_xue',
+        'fit_xus',
+        'fit_xhr'
+        ]
+
+    names = [
+           "E",
+           "S",
+           "G" ,
+           "ES",
+           "EG",
+           "SG",
+           "ESG"
+        ]
+
+
+    i = 0
+    for scen in scenariosToPlot:
+        nse = (df[df["sc"] == scen].sort_values(by="lossTrainingValue")).iloc[0]["NSEVal"]
+        if i == 0:
+            plt.plot(names[i], nse, '.', color="black", label = "neural network")
+        else:
+            plt.plot(names[i], nse, '.', color="black")
+        i += 1
+
+    i = 0
+    for scen in scenariosToPlotExp:
+        nse = (df[df["sc"] == scen].sort_values(by="lossTrainingValue")).iloc[0]["NSEVal"]
+        if i == 0:
+            plt.plot(names[i], nse, '+', color="black", label = "expert model")
+        else:
+            plt.plot(names[i], nse, '+', color="black")
+        i += 1
+    plt.legend()
+    plt.ylabel("NSE")
+    fig.savefig(figureDirectory + "nse.pdf")
+    plt.close(fig)
+
+
+#nsePlot()
