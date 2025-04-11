@@ -13,8 +13,16 @@ scenarioDirectory = '../data/scenarios/runs_from_sonic_velocity/kals_model_fit_o
 #scenarioDirectory = '../data/scenarios/runs_from_sonic_velocity/kals_model_fit_on_arti_data_with_error/results/'   # note that the streamflow for validation is with error
 figureDirectory = '../figures/'
 
-scenarios = ['fit_eva', 'fit_sno', 'fit_sub', 'fit_sne', 'fit_sue', 'fit_sus', 'fit_thr', 'fit_exp']
-#scenarios = ['fit_sno', 'fit_sub', 'fit_sne']
+# only nn scenarios
+#scenarios = ['fit_eva', 'fit_sno', 'fit_sub', 'fit_sne', 'fit_sue', 'fit_sus', 'fit_thr']
+# all scenarios
+scenarios = ['fit_eva', 'fit_sno', 'fit_sub', 'fit_sne', 'fit_sue', 'fit_sus', 'fit_thr', \
+             'fit_xva', 'fit_xno', 'fit_xub', 'fit_xne', 'fit_xue', 'fit_xus', 'fit_xhr']
+
+## only nn scenarios
+#scenariosToPlot = ['fit_eva', 'fit_sno', 'fit_sub', 'fit_sne', 'fit_sue', 'fit_sus', 'fit_thr']
+# only exp scenarios
+scenariosToPlot = ['fit_xva', 'fit_xno', 'fit_xub', 'fit_xne', 'fit_xue', 'fit_xus', 'fit_xhr']
 
 trainingScenarios = ['1', '2', '3', '4']
 
@@ -95,7 +103,7 @@ gs = fig.add_gridspec(8, 3, hspace=0, wspace=0)
 fig, axs = plt.subplots(8, 3, sharex='col', sharey = True)
 fig.set_size_inches(8.27,11.69)
 rij = 0
-for sc in scenarios:
+for sc in scenariosToPlot:
     a = df[ (df['sc'] == sc)] 
     for index, row in a.iterrows():
         #if row['lossValidationValue'] < 8e-6:
@@ -131,7 +139,7 @@ tssVariables = len(observedTssList)
 
 # timeseries
 
-def timeseriesPlot(modelledTss, observedTss, start, end):
+def timeseriesPlot(scenarios, modelledTss, observedTss, start, end):
     fig = plt.figure(dpi = dpi_figures)
     gs = fig.add_gridspec(8, 3, hspace=0, wspace=0)
     fig, axs = plt.subplots(8, 1, sharex='col', sharey = True)
@@ -158,13 +166,13 @@ i = 0
 while i < tssVariables:
     modelledTss = modelledTssList[i]
     observedTss = observedTssList[i]
-    timeseriesPlot(modelledTss, observedTss, startTimeTss, endTimeTss)
+    timeseriesPlot(scenariosToPlot, modelledTss, observedTss, startTimeTss, endTimeTss)
     i = i + 1
 
 
 # scatterplots
 
-def scatterPlot(modelledTss, observedTss, start, end):
+def scatterPlot(scenarios, modelledTss, observedTss, start, end):
     fig = plt.figure(dpi = dpi_figures)
     #gs = fig.add_gridspec(8, 3, hspace=0, wspace=0)
     #fig, axs = plt.subplots(8, 1, sharex='col', sharey = True)
@@ -192,25 +200,9 @@ i = 0
 while i < tssVariables:
     modelledTss = modelledTssList[i]
     observedTss = observedTssList[i]
-    scatterPlot(modelledTss, observedTss, startTimeTss, endTimeTss)
+    scatterPlot(scenariosToPlot, modelledTss, observedTss, startTimeTss, endTimeTss)
     i = i + 1
 
-
-#def scatterplot_rich(sfd, filename, variableOne, variableTwo, xlabel, ylabel, symbol, ylim):
-#    fig = plt.figure(dpi=600, figsize=(4,3))
-#    #fig = plt.figure(dpi=600)
-#    plt.xlabel(xlabel, fontsize = myFontSize)
-#    plt.ylabel(ylabel, fontsize = myFontSize)
-#    plt.xticks(fontsize = myFontSize)
-#    plt.yticks(fontsize = myFontSize)
-#    plt.plot(variableOne, variableTwo, symbol)
-#    plt.ylim(ylim)
-#    maxX = max(variableOne)
-#    plt.xlim((min(variableOne), 1.05 * maxX))
-#    fig.savefig(sfd + '/' + filename + ".pdf")
-#    plt.close(fig)
-#def responsePlot(dataFrame):
-#    for 
 
 #df['lossStop'] = lossStopList
 #df['lossTest'] = lossValiList
@@ -218,17 +210,13 @@ while i < tssVariables:
 #a = df[ (df['sc'] == 'fit_sub') & (df ['ts'] == 1)] 
 
 ##
-scenarios = ['fit_eva', 'fit_sno', 'fit_sub', 'fit_sne', 'fit_sue', 'fit_sus', 'fit_thr', 'fit_exp']
+#scenarios = ['fit_eva', 'fit_sno', 'fit_sub', 'fit_sne', 'fit_sue', 'fit_sus', 'fit_thr', 'fit_exp']
 
 print('#########################################################')
 
 variables = ['sc','ts','rs','lossTrainingValue', 'lossStoppingValue','lossValidationValue', 'NSEVal']
 #print(df[df['sc'] == 'fit_eva'].sort_values(by="lossTrainingValue").loc[:,['sc','ts','rs','lossTrainingValue', 'lossStoppingValue','lossValidationValue', 'NSEVal']])
-print(df[df['sc'] == 'fit_eva'].sort_values(by="lossTrainingValue").loc[:,variables])
-print(df[df['sc'] == 'fit_sno'].sort_values(by="lossTrainingValue").loc[:,variables])
-print(df[df['sc'] == 'fit_sub'].sort_values(by="lossTrainingValue").loc[:,variables])
-print(df[df['sc'] == 'fit_sne'].sort_values(by="lossTrainingValue").loc[:,variables])
-print(df[df['sc'] == 'fit_sue'].sort_values(by="lossTrainingValue").loc[:,variables])
-print(df[df['sc'] == 'fit_sus'].sort_values(by="lossTrainingValue").loc[:,variables])
-print(df[df['sc'] == 'fit_thr'].sort_values(by="lossTrainingValue").loc[:,variables])
-print(df[df['sc'] == 'fit_exp'].sort_values(by="lossTrainingValue").loc[:,variables])
+for scen in scenarios:
+    print(df[df['sc'] == scen].sort_values(by="lossTrainingValue").loc[:,variables])
+
+
