@@ -9,25 +9,27 @@ plt.rcParams["font.size"] = 8
 
 dpi_figures = 600
 
-# scenarioDirectory = '../data/scenarios/runs_from_sonic_velocity/kals_model_fit_on_observations/results/'
+scenarioDirectory = '../data/scenarios/runs_from_sonic_velocity/kals_model_fit_on_observations/results/'
 # scenarioDirectory = '../data/scenarios/runs_from_sonic_velocity/kals_model_fit_on_arti_data/results/'
-scenarioDirectory = "../data/scenarios/runs_from_sonic_velocity/kals_model_fit_on_arti_data_with_error/results/"  # note that the streamflow for validation is with error
+#scenarioDirectory = "../data/scenarios/runs_from_sonic_velocity/kals_model_fit_on_arti_data_with_error/results/"  # note that the streamflow for validation is with error
+
 figureDirectory = "../figures/"
 
 # only nn scenarios
-scenarios = [
-    "fit_eva",
-    "fit_sno",
-    "fit_sub",
-    "fit_sne",
-    "fit_sue",
-    "fit_sus",
-    "fit_thr",
-    "fit_exp",
-]
+#scenarios = [
+#    "fit_eva",
+#    "fit_sno",
+#    "fit_sub",
+#    "fit_sne",
+#    "fit_sue",
+#    "fit_sus",
+#    "fit_thr",
+#    "fit_exp",
+#]
+
 # all scenarios
-# scenarios = ['fit_eva', 'fit_sno', 'fit_sub', 'fit_sne', 'fit_sue', 'fit_sus', 'fit_thr', \
-#             'fit_xva', 'fit_xno', 'fit_xub', 'fit_xne', 'fit_xue', 'fit_xus', 'fit_xhr']
+scenarios = ['fit_eva', 'fit_sno', 'fit_sub', 'fit_sne', 'fit_sue', 'fit_sus', 'fit_thr', \
+             'fit_xva', 'fit_xno', 'fit_xub', 'fit_xne', 'fit_xue', 'fit_xus', 'fit_xhr']
 
 ## only nn scenarios
 scenariosToPlot = [
@@ -38,8 +40,9 @@ scenariosToPlot = [
     "fit_sue",
     "fit_sus",
     "fit_thr",
-    "fit_exp",
+    "fit_xhr",
 ]
+
 # only exp scenarios
 # scenariosToPlot = ['fit_xva', 'fit_xno', 'fit_xub', 'fit_xne', 'fit_xue', 'fit_xus', 'fit_xhr']
 
@@ -187,7 +190,6 @@ tssVariables = len(observedTssList)
 
 # timeseries
 
-
 def timeseriesPlot(scenarios, modelledTss, observedTss, start, end):
     fig = plt.figure(dpi=dpi_figures)
     gs = fig.add_gridspec(8, 3, hspace=0, wspace=0)
@@ -312,3 +314,7 @@ variables = [
 # print(df[df['sc'] == 'fit_eva'].sort_values(by="lossTrainingValue").loc[:,['sc','ts','rs','lossTrainingValue', 'lossStoppingValue','lossValidationValue', 'NSEVal']])
 for scen in scenarios:
     print(df[df["sc"] == scen].sort_values(by="lossTrainingValue").loc[:, variables])
+
+#print('best')
+#for scen in scenarios:
+#    print((df[df["sc"] == sc].sort_values(by="lossTrainingValue")).iloc[0, variables])
