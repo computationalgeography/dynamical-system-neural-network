@@ -8,21 +8,21 @@ from itertools import product
 
 dpi_figures = 600
 
-scenarioDirectory = '../data/scenarios/runs_from_sonic_velocity/kals_model_fit_on_observations/results/'
-#scenarioDirectory = '../data/scenarios/runs_from_sonic_velocity/kals_model_fit_on_arti_data/results/'
+#scenarioDirectory = '../data/scenarios/runs_from_sonic_velocity/kals_model_fit_on_observations/results/'
+scenarioDirectory = '../data/scenarios/runs_from_sonic_velocity/kals_model_fit_on_arti_data/results/'
 #scenarioDirectory = '../data/scenarios/runs_from_sonic_velocity/kals_model_fit_on_arti_data_with_error/results/'   # note that the streamflow for validation is with error
 figureDirectory = '../figures/'
 
 # only nn scenarios
-#scenarios = ['fit_eva', 'fit_sno', 'fit_sub', 'fit_sne', 'fit_sue', 'fit_sus', 'fit_thr']
+scenarios = ['fit_eva', 'fit_sno', 'fit_sub', 'fit_sne', 'fit_sue', 'fit_sus', 'fit_thr', 'fit_exp']
 # all scenarios
-scenarios = ['fit_eva', 'fit_sno', 'fit_sub', 'fit_sne', 'fit_sue', 'fit_sus', 'fit_thr', \
-             'fit_xva', 'fit_xno', 'fit_xub', 'fit_xne', 'fit_xue', 'fit_xus', 'fit_xhr']
+#scenarios = ['fit_eva', 'fit_sno', 'fit_sub', 'fit_sne', 'fit_sue', 'fit_sus', 'fit_thr', \
+#             'fit_xva', 'fit_xno', 'fit_xub', 'fit_xne', 'fit_xue', 'fit_xus', 'fit_xhr']
 
 ## only nn scenarios
-#scenariosToPlot = ['fit_eva', 'fit_sno', 'fit_sub', 'fit_sne', 'fit_sue', 'fit_sus', 'fit_thr']
+scenariosToPlot = ['fit_eva', 'fit_sno', 'fit_sub', 'fit_sne', 'fit_sue', 'fit_sus', 'fit_thr', 'fit_exp']
 # only exp scenarios
-scenariosToPlot = ['fit_xva', 'fit_xno', 'fit_xub', 'fit_xne', 'fit_xue', 'fit_xus', 'fit_xhr']
+#scenariosToPlot = ['fit_xva', 'fit_xno', 'fit_xub', 'fit_xne', 'fit_xue', 'fit_xus', 'fit_xhr']
 
 trainingScenarios = ['1', '2', '3', '4']
 
@@ -160,7 +160,8 @@ def timeseriesPlot(scenarios, modelledTss, observedTss, start, end):
     plt.close(fig)
 
 startTimeTss = 2 * 365
-endTimeTss = 5 * 365
+#endTimeTss = 5 * 365
+endTimeTss = len(observedTssList[0])
 
 i = 0
 while i < tssVariables:
@@ -172,6 +173,14 @@ while i < tssVariables:
 
 # scatterplots
 
+def rSquaredFormatted(x,y):
+    rM = numpy.corrcoef(x, y)
+    r = rM[0][1]
+    rSq = r * r
+    rSqFor = "{:.2f}".format(rSq)
+    return rSqFor
+
+
 def scatterPlot(scenarios, modelledTss, observedTss, start, end):
     fig = plt.figure(dpi = dpi_figures)
     #gs = fig.add_gridspec(8, 3, hspace=0, wspace=0)
@@ -182,14 +191,20 @@ def scatterPlot(scenarios, modelledTss, observedTss, start, end):
     rij = 0
     for sc in scenarios:
         a = (df[df['sc'] == sc].sort_values(by='lossTrainingValue')).iloc[0]
-        #axs[rij].hexbin(a[observedTss][start:end], a[modelledTss][start:end])
-        #axs[rij].plot(a[observedTss][start:end], a[modelledTss][start:end], markersize = 0.5, marker = '.', linestyle = 'none')
-        axs[rij].scatter(a[observedTss][start:end], a[modelledTss][start:end], s = 0.5)
+        x = a[observedTss][start:end]
+        y = a[modelledTss][start:end]
+        #hb = axs[rij].hexbin(x, y, gridsize=30, cmap='Greens', vmax=50, linewidths = 0.0)
+        hb = axs[rij].hexbin(x, y, gridsize=30, cmap='Greens', bins='log', linewidths = 0.0)
+        fig.colorbar(hb, ax=axs[rij], label='counts')
+        axs[rij].plot([0,10],[0,10], color = 'black', linewidth = 1.0)
+        rSqFor = rSquaredFormatted(x,y)
+        axs[rij].text(.99, .01, rSqFor, ha='right', va='bottom', transform=axs[rij].transAxes)
+        #axs[rij].scatter(a[observedTss][start:end], a[modelledTss][start:end], s = 0.5)
         axs[rij].set_ylim(0,max(a[observedTss][start:end]))
         axs[rij].set_xlim(0,max(a[observedTss][start:end]))
         axs[rij].set_aspect('equal')
         rij += 1
-    plt.subplots_adjust(wspace=0, hspace=0)
+    #plt.subplots_adjust(wspace=0, hspace=0)
     fig.savefig(figureDirectory + "sca_modartcomp_" + observedTss + ".pdf")
     plt.close(fig)
 
