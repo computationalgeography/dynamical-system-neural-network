@@ -4,13 +4,14 @@ import os
 import string
 from matplotlib import pyplot as plt
 from itertools import product
-#test
+
+plt.rcParams['font.size'] = 8
 
 dpi_figures = 600
 
 #scenarioDirectory = '../data/scenarios/runs_from_sonic_velocity/kals_model_fit_on_observations/results/'
-scenarioDirectory = '../data/scenarios/runs_from_sonic_velocity/kals_model_fit_on_arti_data/results/'
-#scenarioDirectory = '../data/scenarios/runs_from_sonic_velocity/kals_model_fit_on_arti_data_with_error/results/'   # note that the streamflow for validation is with error
+#scenarioDirectory = '../data/scenarios/runs_from_sonic_velocity/kals_model_fit_on_arti_data/results/'
+scenarioDirectory = '../data/scenarios/runs_from_sonic_velocity/kals_model_fit_on_arti_data_with_error/results/'   # note that the streamflow for validation is with error
 figureDirectory = '../figures/'
 
 # only nn scenarios
@@ -160,8 +161,7 @@ def timeseriesPlot(scenarios, modelledTss, observedTss, start, end):
     plt.close(fig)
 
 startTimeTss = 2 * 365
-#endTimeTss = 5 * 365
-endTimeTss = len(observedTssList[0])
+endTimeTss = 5 * 365
 
 i = 0
 while i < tssVariables:
@@ -173,11 +173,14 @@ while i < tssVariables:
 
 # scatterplots
 
+endTimeTss = len(observedTssList[0])
+#endTimeTss = 6 * 365 # len(df['valid_ts_OBS']) - 1
+
 def rSquaredFormatted(x,y):
     rM = numpy.corrcoef(x, y)
     r = rM[0][1]
     rSq = r * r
-    rSqFor = "{:.2f}".format(rSq)
+    rSqFor = "{:.3f}".format(rSq)
     return rSqFor
 
 
@@ -187,6 +190,7 @@ def scatterPlot(scenarios, modelledTss, observedTss, start, end):
     #fig, axs = plt.subplots(8, 1, sharex='col', sharey = True)
     fig, axs = plt.subplots(8, 1)
     fig.set_size_inches(8.27,11.69)
+    fig.subplots_adjust(hspace=0.1)
     #fig.set_size_inches(8.27/3.0,11.69)
     rij = 0
     for sc in scenarios:
@@ -195,13 +199,16 @@ def scatterPlot(scenarios, modelledTss, observedTss, start, end):
         y = a[modelledTss][start:end]
         #hb = axs[rij].hexbin(x, y, gridsize=30, cmap='Greens', vmax=50, linewidths = 0.0)
         hb = axs[rij].hexbin(x, y, gridsize=30, cmap='Greens', bins='log', linewidths = 0.0)
-        fig.colorbar(hb, ax=axs[rij], label='counts')
+        #fig.colorbar(hb, ax=axs[rij], label='counts', pad = 0.01)
+        fig.colorbar(hb, ax=axs[rij], pad = 0.01)
         axs[rij].plot([0,10],[0,10], color = 'black', linewidth = 1.0)
         rSqFor = rSquaredFormatted(x,y)
         axs[rij].text(.99, .01, rSqFor, ha='right', va='bottom', transform=axs[rij].transAxes)
         #axs[rij].scatter(a[observedTss][start:end], a[modelledTss][start:end], s = 0.5)
         axs[rij].set_ylim(0,max(a[observedTss][start:end]))
         axs[rij].set_xlim(0,max(a[observedTss][start:end]))
+        if rij < len(scenarios) - 1:
+           axs[rij].set(xticklabels=[])
         axs[rij].set_aspect('equal')
         rij += 1
     #plt.subplots_adjust(wspace=0, hspace=0)
