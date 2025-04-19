@@ -4,13 +4,21 @@ import os
 import string
 from matplotlib import pyplot as plt
 from itertools import product
+from matplotlib.transforms import Bbox
 
 plt.rcParams["font.size"] = 8
 
 dpi_figures = 600
 
+EGU = True
+
+if EGU:
+    fontSizeAxes = 12
+else:
+    fontSizeAxes = 10
+
 #scenarioDirectory = '../data/scenarios/runs_from_sonic_velocity/kals_model_fit_on_observations/results/'
-# scenarioDirectory = '../data/scenarios/runs_from_sonic_velocity/kals_model_fit_on_arti_data/results/'
+#scenarioDirectory = '../data/scenarios/runs_from_sonic_velocity/kals_model_fit_on_arti_data/results/'
 scenarioDirectory = "../data/scenarios/runs_from_sonic_velocity/kals_model_fit_on_arti_data_with_error_subf_val_noerror/results/"
 #scenarioDirectory = "../data/scenarios/runs_from_sonic_velocity/kals_model_fit_on_arti_data_with_error/results/"  # note that the streamflow for validation is with error
 
@@ -43,6 +51,24 @@ scenariosToPlot = [
     "fit_thr",
     "fit_exp"     # or xhr for observational data
 ]
+
+if EGU:
+    #scenarios = ["fit_sno", "fit_eva", "fit_thr"]
+    scenarios = ["fit_thr"]
+    scenariosToPlot = scenarios
+
+def full_extent(ax, pad=0.0):
+    """Get the full extent of an axes, including axes labels, tick labels, and
+    titles."""
+    # For text objects, we need to draw the figure first, otherwise the extents
+    # are undefined.
+    ax.figure.canvas.draw()
+    items = ax.get_xticklabels() + ax.get_yticklabels() 
+#    items += [ax, ax.title, ax.xaxis.label, ax.yaxis.label]
+    items += [ax, ax.title]
+    bbox = Bbox.union([item.get_window_extent() for item in items])
+
+    return bbox.expanded(1.4 + pad, 1.4 + pad)
 
 # only exp scenarios
 # scenariosToPlot = ['fit_xva', 'fit_xno', 'fit_xub', 'fit_xne', 'fit_xue', 'fit_xus', 'fit_xhr']
@@ -140,7 +166,8 @@ for sc in scenariosToPlot:
     for index, row in a.iterrows():
         # if row['lossValidationValue'] < 8e-6:
         # if row['lossValidationValue'] < 1e-7:
-        if row["lossTrainingValue"] < 7.3e-6:
+        #if row["lossTrainingValue"] < 7.3e-6:
+        if row["lossTrainingValue"] < 0.0000014:
             axs[rij, 0].plot(
                 row["response_eva_x"], row["response_eva_y"], color=row["color"]
             )
@@ -151,19 +178,26 @@ for sc in scenariosToPlot:
                 row["response_sub_x"], row["response_sub_y"], color=row["color"]
             )
         axs[rij, 0].set_yticks([0.0, 0.005, 0.010, 0.015])
-        axs[rij, 0].set_yticklabels([0.0, 0.005, 0.010, 0.015])
+        axs[rij, 0].set_yticklabels([0.0, 0.005, 0.010, 0.015], size=fontSizeAxes)
+        #axs[rij, 0].set_yticklabels([0.0, 0.005, 0.010, 0.015])
     rij += 1
-axs[0, 0].set_ylim(0, 0.02)
-axs[0, 2].set_xlim(0, 0.5)
-axs[7, 0].set_xlabel("temperature (C)")
-axs[7, 1].set_xlabel("temperature (C)")
-axs[7, 2].set_xlabel("store (m)")
+axs[0, 0].set_ylim(0, 0.015)
+axs[0, 2].set_xlim(0, 0.4)
+axs[7, 0].set_xlabel("temperature (C)", fontsize=fontSizeAxes)
+axs[7,0].xaxis.set_tick_params(labelsize=fontSizeAxes)
+axs[7,1].xaxis.set_tick_params(labelsize=fontSizeAxes)
+axs[7,2].xaxis.set_tick_params(labelsize=fontSizeAxes)
+axs[7, 1].set_xlabel("temperature (C)", fontsize=fontSizeAxes)
+axs[7, 2].set_xlabel("storage (m)", fontsize=fontSizeAxes)
 for i in range(0, 8):
-    axs[i, 0].set_ylabel("flux (m/day)")
-axs[0, 0].set_title("evapotranspiration", fontsize="10")
-axs[0, 1].set_title("snow melt", fontsize="10")
-axs[0, 2].set_title("outflow subsurface storage", fontsize="10")
-plt.subplots_adjust(wspace=0, hspace=0)
+    axs[i, 0].set_ylabel("flux (m/day)", fontsize=fontSizeAxes)
+axs[0, 0].set_title("evapotranspiration\nincluding sublimation", fontsize=fontSizeAxes)
+axs[0, 1].set_title("snow melt", fontsize=fontSizeAxes)
+axs[0, 2].set_title("outflow subsurf. storage", fontsize=fontSizeAxes)
+if EGU:
+    print('')
+else:
+    plt.subplots_adjust(wspace=0, hspace=0)
 fig.savefig(figureDirectory + "response.pdf")
 plt.close(fig)
 
@@ -253,7 +287,10 @@ def scatterPlot(scenarios, modelledTss, observedTss, start, end):
     # fig, axs = plt.subplots(8, 1, sharex='col', sharey = True)
     fig, axs = plt.subplots(8, 1)
     fig.set_size_inches(8.27, 11.69)
-    fig.subplots_adjust(hspace=0.1)
+    if EGU:
+        print('')
+    else:
+        fig.subplots_adjust(hspace=0.1)
     # fig.set_size_inches(8.27/3.0,11.69)
     rij = 0
     for sc in scenarios:
@@ -261,10 +298,10 @@ def scatterPlot(scenarios, modelledTss, observedTss, start, end):
         x = a[observedTss][start:end]
         y = a[modelledTss][start:end]
         hb = axs[rij].hexbin(
-            x, y, gridsize=30, cmap="Greens", bins="log", linewidths=0.0
+            x, y, gridsize=20, cmap="Greens", bins="log", linewidths=0.0
         )
         fig.colorbar(hb, ax=axs[rij], pad=0.01)
-        axs[rij].plot([0, 10], [0, 10], color="black", linewidth=1.0)
+        axs[rij].plot([0, 10], [0, 10], color="black", linewidth=0.5)
         rSqFor = rSquaredFormatted(x, y)
         axs[rij].text(
             0.99, 0.01, rSqFor, ha="right", va="bottom", transform=axs[rij].transAxes
@@ -277,7 +314,22 @@ def scatterPlot(scenarios, modelledTss, observedTss, start, end):
         axs[rij].set_aspect("equal")
         rij += 1
     # plt.subplots_adjust(wspace=0, hspace=0)
-    fig.savefig(figureDirectory + "sca_modartcomp_" + observedTss + ".pdf")
+    if EGU:
+        axs[1].remove()
+        axs[2].remove()
+        axs[3].remove()
+        axs[4].remove()
+        axs[5].remove()
+        axs[6].remove()
+        axs[7].remove()
+    if EGU:
+        # Save just the portion _inside_ the second axis's boundaries
+        extent = full_extent(axs[0]).transformed(fig.dpi_scale_trans.inverted())
+        # Alternatively,
+        #extent = axs[0].get_tightbbox(fig.canvas.renderer).transformed(fig.dpi_scale_trans.inverted())
+        fig.savefig(figureDirectory + "sca_modartcomp_" + observedTss + ".pdf", bbox_inches=extent)
+    else:
+        fig.savefig(figureDirectory + "sca_modartcomp_" + observedTss + ".pdf")
     plt.close(fig)
 
 
