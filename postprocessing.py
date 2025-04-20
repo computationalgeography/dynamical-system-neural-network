@@ -155,6 +155,27 @@ print(df)
 # a = df[ (df['sc'] == 'fit_sub') & (df['ts'] == 1) & df['rs'] == 1]
 
 
+def set_share_axes(axs, target=None, sharex=False, sharey=False):
+    if target is None:
+        target = axs.flat[0]
+    # Manage share using grouper objects
+    for ax in axs.flat:
+        if sharex:
+            target._shared_axes['x'].join(target, ax)
+        if sharey:
+            target._shared_axes['y'].join(target, ax)
+    # Turn off x tick labels and offset text for all but the bottom row
+    if sharex and axs.ndim > 1:
+        for ax in axs[:-1,:].flat:
+            ax.xaxis.set_tick_params(which='both', labelbottom=False, labeltop=False)
+            ax.xaxis.offsetText.set_visible(False)
+    # Turn off y tick labels and offset text for all but the left most column
+    if sharey and axs.ndim > 1:
+        for ax in axs[:,1:].flat:
+            ax.yaxis.set_tick_params(which='both', labelleft=False, labelright=False)
+            ax.yaxis.offsetText.set_visible(False)
+
+
 ###################
 # response curves #
 ###################
@@ -222,51 +243,174 @@ observedTssList = [
     "val_art_ts_sno_s",
     "val_art_ts_sub_f",
     "val_art_ts_sub_s",
-    "valid_ts_OBS",
+    #"valid_ts_OBS",
+    "val_art_ts_sub_f",
 ]
 tssVariables = len(observedTssList)
 
 # timeseries
 
-def timeseriesPlot(scenarios, modelledTss, observedTss, start, end):
+def timeSeriesPlotByVariable(scenarios, modelledTss, observedTss, start, end):
     fig = plt.figure(dpi=dpi_figures)
-    gs = fig.add_gridspec(8, 3, hspace=0, wspace=0)
-    fig, axs = plt.subplots(8, 1, sharex="col", sharey=True)
+    gs = fig.add_gridspec(9, 3, hspace=0, wspace=0)
+    #fig, axs = plt.subplots(9, 1, sharex="col", sharey=True)
+    fig, axs = plt.subplots(9, 1)
+    set_share_axes(axs[1:], sharex=True)
+    set_share_axes(axs[1:], sharey=True)
     fig.set_size_inches(8.27, 11.69)
-    rij = 0
+    rij = 1
+    # print temperature and precipitation in first row
+    # get the first scenario and the first run from that scenario
+    firstSc = (df[df["sc"] == scenarios[0]]).iloc[0]
+    axs[0].bar(
+            firstSc["valid_date"][start:end],
+            firstSc["valid_ts_precipitation"][start:end],
+            linewidth = 1.5,
+            color = "blue"
+            )
+    axs[0].yaxis.set_tick_params(labelsize=fontSizeAxes)
+    axs[0].set(xticklabels=[])
+    axTemp = axs[0].twinx()
+    axTemp.plot(
+            firstSc["valid_date"][start:end],
+            firstSc["valid_ts_temperature"][start:end] - 0.93,
+            linewidth = 1.0,
+            color = "black"
+            )
+    axTemp.plot(
+            firstSc["valid_date"][start:end],
+            (firstSc["valid_ts_temperature"][start:end] - 0.93)/100000,
+            linestyle = 'dashed',
+            linewidth = 0.5,
+            color = "black",
+            )
+    axTemp.yaxis.set_tick_params(labelsize=fontSizeAxes)
+    #axs[1]._shared_axes['y'].remove(axs[0])
+    # print rest in remaining rows
     for sc in scenarios:
         a = (df[df["sc"] == sc].sort_values(by="lossTrainingValue")).iloc[0]
         axs[rij].plot(
             a["valid_date"][start:end],
             a[observedTss][start:end],
-            linewidth=1.5,
-            color=green,
+            linewidth=1.0,
+            color=green
         )
         axs[rij].plot(
             a["valid_date"][start:end],
             a[modelledTss][start:end],
             linewidth=1.0,
-            color="black",
+            color="black"
         )
+        axs[rij].yaxis.set_tick_params(labelsize=fontSizeAxes)
+        axs[rij].locator_params(axis='y', nbins=2)
+        axs[rij].xaxis.set_tick_params(labelsize=fontSizeAxes, labelrotation = 30)
         rij += 1
     for i in range(0, 8):
         if observedTss[-1] == "f":
-            axs[i].set_ylabel("flux (m/day)")
+            axs[i].set_ylabel("flux (m/day)", size=fontSizeAxes)
         else:
-            axs[i].set_ylabel("storage (m)")
+            axs[i].set_ylabel("storage (m)", size=fontSizeAxes)
+    #axs[1]._shared_axes['y'].remove(axs[0])
+    axs[0].set_ylabel("precipitation\n(m/day)", size=fontSizeAxes, color = 'blue')
+    axTemp.set_ylabel("temperature\n(C)", size=fontSizeAxes)
+    axs[8].xaxis.set_tick_params(labelsize=fontSizeAxes, labelrotation = 30)
     plt.subplots_adjust(wspace=0, hspace=0)
+    if EGU:
+        axs[2].remove()
+        axs[3].remove()
+        axs[4].remove()
+        axs[5].remove()
+        axs[6].remove()
+        axs[7].remove()
+        axs[8].remove()
     fig.savefig(figureDirectory + "tss_modartcomp_" + observedTss + ".pdf")
+    plt.close(fig)
+
+def timeSeriesPlotByScenario(modelledTssEs, observedTssEs, scenario, start, end):
+    fig = plt.figure(dpi=dpi_figures)
+    gs = fig.add_gridspec(7, 3, hspace=0, wspace=0)
+    fig, axs = plt.subplots(7, 1)
+    set_share_axes(axs[1:], sharex=True)
+    fig.set_size_inches(8.27, 11.69)
+    rij = 1
+    # print temperature and precipitation in first row
+    # get the first scenario and the first run from that scenario
+    firstSc = (df[df["sc"] == scenario]).iloc[0]
+    axs[0].bar(
+            firstSc["valid_date"][start:end],
+            firstSc["valid_ts_precipitation"][start:end],
+            linewidth = 1.5,
+            color = "blue"
+            )
+    axs[0].yaxis.set_tick_params(labelsize=fontSizeAxes)
+    axs[0].set(xticklabels=[])
+    axTemp = axs[0].twinx()
+    axTemp.plot(
+            firstSc["valid_date"][start:end],
+            firstSc["valid_ts_temperature"][start:end] - 0.93,
+            linewidth = 1.0,
+            color = "black"
+            )
+    axTemp.plot(
+            firstSc["valid_date"][start:end],
+            (firstSc["valid_ts_temperature"][start:end] - 0.93)/100000,
+            linestyle = 'dashed',
+            linewidth = 0.5,
+            color = "black",
+            )
+    axTemp.yaxis.set_tick_params(labelsize=fontSizeAxes)
+    #axs[1]._shared_axes['y'].remove(axs[0])
+    # print rest in remaining rows
+    tssNumber = 0
+    for tss in modelledTssEs:
+        a = (df[df["sc"] == scenario].sort_values(by="lossTrainingValue")).iloc[0]
+        axs[rij].plot(
+            a["valid_date"][start:end],
+            a[observedTssEs[tssNumber]][start:end],
+            linewidth=1.0,
+            color=green
+        )
+        axs[rij].plot(
+            a["valid_date"][start:end],
+            a[tss][start:end],
+            linewidth=1.0,
+            color="black"
+        )
+        axs[rij].yaxis.set_tick_params(labelsize=fontSizeAxes)
+        axs[rij].locator_params(axis='y', nbins=2)
+        axs[rij].xaxis.set_tick_params(labelsize=fontSizeAxes, labelrotation = 30)
+        if rij < 6:
+            axs[rij].set(xticklabels=[])
+        if tss[-1] == "f":
+            axs[rij].set_ylabel("flux (m/day)", size=fontSizeAxes)
+        else:
+            axs[rij].set_ylabel("storage (m)", size=fontSizeAxes)
+        rij += 1
+        tssNumber += 1
+    axs[0].set_ylabel("precipitation\n(m/day)", size=fontSizeAxes, color = 'blue')
+    axTemp.set_ylabel("temperature (C)", size=fontSizeAxes)
+    axs[6].xaxis.set_tick_params(labelsize=fontSizeAxes, labelrotation = 30)
+    plt.subplots_adjust(wspace=0, hspace=0)
+    fig.savefig(figureDirectory + "tss_modartcomp_" + scenario + ".pdf")
     plt.close(fig)
 
 
 startTimeTss = 2 * 365
-endTimeTss = 5 * 365
+endTimeTss = 4 * 365
 
 i = 0
 while i < tssVariables:
     modelledTss = modelledTssList[i]
     observedTss = observedTssList[i]
-    timeseriesPlot(scenariosToPlot, modelledTss, observedTss, startTimeTss, endTimeTss)
+    timeSeriesPlotByVariable(scenariosToPlot, modelledTss, observedTss, startTimeTss, endTimeTss)
+    i = i + 1
+
+print(modelledTssList)
+print(observedTssList)
+
+i = 0
+for scenario in scenariosToPlot:
+    timeSeriesPlotByScenario(modelledTssList, observedTssList, scenario, startTimeTss, endTimeTss)
     i = i + 1
 
 
