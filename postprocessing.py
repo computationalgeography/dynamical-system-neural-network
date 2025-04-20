@@ -19,7 +19,10 @@ else:
 
 #scenarioDirectory = '../data/scenarios/runs_from_sonic_velocity/kals_model_fit_on_observations/results/'
 #scenarioDirectory = '../data/scenarios/runs_from_sonic_velocity/kals_model_fit_on_arti_data/results/'
+
+# no error in streamflow (replaced) and precipitation and temperature copied into the results folder
 scenarioDirectory = "../data/scenarios/runs_from_sonic_velocity/kals_model_fit_on_arti_data_with_error_subf_val_noerror/results/"
+
 #scenarioDirectory = "../data/scenarios/runs_from_sonic_velocity/kals_model_fit_on_arti_data_with_error/results/"  # note that the streamflow for validation is with error
 
 figureDirectory = "../figures/"
@@ -116,7 +119,6 @@ df["sc"] = scList
 df["ts"] = tsList
 df["rs"] = rsList
 
-
 for array in arrays:
     arrayContents = []
     for sc, ts, rs in product(scenarios, trainingScenarios, reRunScenarios):
@@ -129,6 +131,7 @@ for array in arrays:
 df["lossTrainingValue"] = df["lossTraining"].apply(lambda x: x[-1])
 df["lossValidationValue"] = df["lossValidation"].apply(lambda x: x[-1])
 df["lossStoppingValue"] = df["lossStopping"].apply(lambda x: x[-1])
+
 
 # for calculation of nash sutcliffe
 # remove first year (366) which was also not used for training

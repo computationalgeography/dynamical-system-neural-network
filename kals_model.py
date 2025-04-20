@@ -1175,6 +1175,8 @@ def training_loop(
                 (torch.tensor(streamFlowTimeSeries) / conversionFluxes).numpy(),
             )
             numpy.save(sfdAr + "train_date.npy", numpy.array(dateTimeSeries))
+            numpy.save(sfdAr + "train_ts_temperature.npy", numpy.array(temperatureTimeSeries))
+            numpy.save(sfdAr + "train_ts_precipitation.npy", numpy.array(precipitationTimeSeries))
             # validation
             timeSeriesPlot_rich(
                 sfd,
@@ -1252,6 +1254,8 @@ def training_loop(
                 (torch.tensor(streamFlowTimeSeriesVal) / conversionFluxes).numpy(),
             )
             numpy.save(sfdAr + "valid_date.npy", numpy.array(dateTimeSeriesVal))
+            numpy.save(sfdAr + "valid_ts_temperature.npy", numpy.array(temperatureTimeSeriesVal))
+            numpy.save(sfdAr + "valid_ts_precipitation.npy", numpy.array(precipitationTimeSeriesVal))
 
             # scatterplots, indep vs dep
             # mean over area only
