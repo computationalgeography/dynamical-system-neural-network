@@ -19,7 +19,7 @@ actual_snow_flux = True
 if EGU:
     fontSizeAxes = 12
 else:
-    fontSizeAxes = 10
+    fontSizeAxes = 10 
 
 number_of_fits_to_plot = 4
 
@@ -726,8 +726,6 @@ def nsePlot():
  
     i = 0
     for scen in scenariosToPlotExp:
-        print(scen)
-        exit()
         nse = (df[df["sc"] == scen].sort_values(by="lossTrainingValue")).iloc[0]["NSEVal"]
         if i == 0:
             plt.plot(names[i], nse, '+', color="black", label = "expert model")
@@ -739,5 +737,5 @@ def nsePlot():
     fig.savefig(figure_directory + "nse.pdf")
     plt.close(fig)
 
-
-nsePlot()
+if observed_scenario:
+    nsePlot()
