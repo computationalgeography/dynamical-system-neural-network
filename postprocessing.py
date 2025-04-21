@@ -676,8 +676,8 @@ variables = [
     "NSEVal",
 ]
 # print(df[df['sc'] == 'fit_eva'].sort_values(by="lossTrainingValue").loc[:,['sc','ts','rs','lossTrainingValue', 'lossStoppingValue','lossValidationValue', 'NSEVal']])
-#for scen in scenarios:
-#    print(df[df["sc"] == scen].sort_values(by="lossTrainingValue").loc[:, variables])
+for scen in scenarios:
+    print(df[df["sc"] == scen].sort_values(by="lossTrainingValue").loc[:, variables])
 
 def nsePlot():
     fig = plt.figure(dpi=dpi_figures, figsize = [2.5,2], tight_layout = {'pad': 1})
