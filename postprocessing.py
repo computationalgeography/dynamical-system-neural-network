@@ -10,22 +10,24 @@ plt.rcParams["font.size"] = 8
 
 dpi_figures = 600
 
-EGU = True
+EGU = False
+
+observed_scenario = True
 
 if EGU:
     fontSizeAxes = 12
 else:
     fontSizeAxes = 10
 
-#scenarioDirectory = '../data/scenarios/runs_from_sonic_velocity/kals_model_fit_on_observations/results/'
+scenarioDirectory = '../data/scenarios/runs_from_sonic_velocity/kals_model_fit_on_observations/results/'
 #scenarioDirectory = '../data/scenarios/runs_from_sonic_velocity/kals_model_fit_on_arti_data/results/'
 
 # no error in streamflow (replaced) and precipitation and temperature copied into the results folder
-scenarioDirectory = "../data/scenarios/runs_from_sonic_velocity/kals_model_fit_on_arti_data_with_error_subf_val_noerror/results/"
+#scenarioDirectory = "../data/scenarios/runs_from_sonic_velocity/kals_model_fit_on_arti_data_with_error_subf_val_noerror/results/"
 
 #scenarioDirectory = "../data/scenarios/runs_from_sonic_velocity/kals_model_fit_on_arti_data_with_error/results/"  # note that the streamflow for validation is with error
 
-figureDirectory = "../figures/"
+figure_directory = "../figures/"
 
 # only nn scenarios
 scenarios = [
@@ -44,7 +46,7 @@ scenarios = [
 #             'fit_xva', 'fit_xno', 'fit_xub', 'fit_xne', 'fit_xue', 'fit_xus', 'fit_xhr']
 
 ## only nn scenarios
-scenariosToPlot = [
+scenarios_to_plot = [
     "fit_eva",
     "fit_sno",
     "fit_sub",
@@ -58,7 +60,7 @@ scenariosToPlot = [
 if EGU:
     #scenarios = ["fit_sno", "fit_eva", "fit_thr"]
     scenarios = ["fit_thr"]
-    scenariosToPlot = scenarios
+    scenarios_to_plot = scenarios
 
 def full_extent(ax, pad=0.0):
     """Get the full extent of an axes, including axes labels, tick labels, and
@@ -74,7 +76,7 @@ def full_extent(ax, pad=0.0):
     return bbox.expanded(1.4 + pad, 1.4 + pad)
 
 # only exp scenarios
-# scenariosToPlot = ['fit_xva', 'fit_xno', 'fit_xub', 'fit_xne', 'fit_xue', 'fit_xus', 'fit_xhr']
+# scenarios_to_plot = ['fit_xva', 'fit_xno', 'fit_xub', 'fit_xne', 'fit_xue', 'fit_xus', 'fit_xhr']
 
 trainingScenarios = ["1", "2", "3", "4"]
 
@@ -146,10 +148,10 @@ green = "#4daf4a"
 blue = "#377eb8"
 red = "#e41a1c"
 purple = "#984ea3"
-df["color"] = numpy.where(df["ts"] == 1, green, "1")
-df["color"] = numpy.where(df["ts"] == 2, blue, df.color)
-df["color"] = numpy.where(df["ts"] == 3, red, df.color)
-df["color"] = numpy.where(df["ts"] == 4, purple, df.color)
+df["color"] = numpy.where(df["ts"] == 1, purple, "1")
+df["color"] = numpy.where(df["ts"] == 2, red, df.color)
+df["color"] = numpy.where(df["ts"] == 3, green, df.color)
+df["color"] = numpy.where(df["ts"] == 4, blue, df.color)
 print(df)
 
 # a = df[ (df['sc'] == 'fit_sub') & (df['ts'] == 1) & df['rs'] == 1]
@@ -185,7 +187,7 @@ gs = fig.add_gridspec(8, 3, hspace=0, wspace=0)
 fig, axs = plt.subplots(8, 3, sharex="col", sharey=True)
 fig.set_size_inches(8.27, 11.69)
 rij = 0
-for sc in scenariosToPlot:
+for sc in scenarios_to_plot:
     a = df[(df["sc"] == sc)]
     for index, row in a.iterrows():
         # if row['lossValidationValue'] < 8e-6:
@@ -222,14 +224,14 @@ if EGU:
     print('')
 else:
     plt.subplots_adjust(wspace=0, hspace=0)
-fig.savefig(figureDirectory + "response.pdf")
+fig.savefig(figure_directory + "response.pdf")
 plt.close(fig)
 
 ##########################
 # modelled vs artificial #
 ##########################
 
-modelledTssList = [
+modelled_tss_list = [
     "valid_ts_eva_f",
     "valid_ts_sno_f",
     "valid_ts_sno_s",
@@ -237,20 +239,31 @@ modelledTssList = [
     "valid_ts_sub_s",
     "valid_ts_sub_f",
 ]
-observedTssList = [
-    "val_art_ts_eva_f",
-    "val_art_ts_sno_f",
-    "val_art_ts_sno_s",
-    "val_art_ts_sub_f",
-    "val_art_ts_sub_s",
-    #"valid_ts_OBS",
-    "val_art_ts_sub_f",
-]
-tssVariables = len(observedTssList)
+
+if observed_scenario:
+    observed_tss_list = [
+        "val_art_ts_eva_f",
+        "val_art_ts_sno_f",
+        "val_art_ts_sno_s",
+        "val_art_ts_sub_f",
+        "val_art_ts_sub_s",
+        "valid_ts_OBS"
+    ]
+else:
+    observed_tss_list = [
+        "val_art_ts_eva_f",
+        "val_art_ts_sno_f",
+        "val_art_ts_sno_s",
+        "val_art_ts_sub_f",
+        "val_art_ts_sub_s",
+        "val_art_ts_sub_f"
+    ]
+
+tssVariables = len(observed_tss_list)
 
 # timeseries
 
-def timeSeriesPlotByVariable(scenarios, modelledTss, observedTss, start, end):
+def timeseries_plot_by_variable(scenarios, modelledTss, observedTss, start, end):
     fig = plt.figure(dpi=dpi_figures)
     gs = fig.add_gridspec(9, 3, hspace=0, wspace=0)
     #fig, axs = plt.subplots(9, 1, sharex="col", sharey=True)
@@ -323,7 +336,7 @@ def timeSeriesPlotByVariable(scenarios, modelledTss, observedTss, start, end):
         axs[6].remove()
         axs[7].remove()
         axs[8].remove()
-    fig.savefig(figureDirectory + "tss_modartcomp_" + observedTss + ".pdf")
+    fig.savefig(figure_directory + "tss_modartcomp_" + observedTss + ".pdf")
     plt.close(fig)
 
 def timeSeriesPlotByScenario(modelledTssEs, observedTssEs, scenario, start, end):
@@ -360,22 +373,37 @@ def timeSeriesPlotByScenario(modelledTssEs, observedTssEs, scenario, start, end)
             )
     axTemp.yaxis.set_tick_params(labelsize=fontSizeAxes)
     #axs[1]._shared_axes['y'].remove(axs[0])
-    # print rest in remaining rows
+    # Plot model output in rows starting in row 2.
     tssNumber = 0
     for tss in modelledTssEs:
-        a = (df[df["sc"] == scenario].sort_values(by="lossTrainingValue")).iloc[0]
-        axs[rij].plot(
-            a["valid_date"][start:end],
-            a[observedTssEs[tssNumber]][start:end],
-            linewidth=1.0,
-            color=green
-        )
-        axs[rij].plot(
-            a["valid_date"][start:end],
-            a[tss][start:end],
-            linewidth=1.0,
-            color="black"
-        )
+        for i in range(0,4):
+            a = (df[df["sc"] == scenario].sort_values(by="lossTrainingValue")).iloc[i]
+            # Plot observed timeseries either from artificial data or from observations.
+            observed_tss = observedTssEs[tssNumber]
+            if not(observed_scenario) or (observed_tss == 'valid_ts_OBS'):
+                axs[rij].plot(
+                    a["valid_date"][start:end],
+                    a[observed_tss][start:end],
+                    linewidth = 0.5,
+                    #color=green
+                    color='black'
+                )
+            # Plot modelled timeseries.
+            if i == 0:
+                line_width = 2.0
+                line_style = 'solid'
+            else:
+                line_width = 0.5
+                line_style = 'dashed'
+            axs[rij].plot(
+                a["valid_date"][start:end],
+                a[tss][start:end],
+                #linewidth=1.0,
+                linewidth = line_width,
+                linestyle = line_style,
+                #color="black"
+                color = a["color"]
+            )
         axs[rij].yaxis.set_tick_params(labelsize=fontSizeAxes)
         axs[rij].locator_params(axis='y', nbins=2)
         axs[rij].xaxis.set_tick_params(labelsize=fontSizeAxes, labelrotation = 30)
@@ -391,7 +419,7 @@ def timeSeriesPlotByScenario(modelledTssEs, observedTssEs, scenario, start, end)
     axTemp.set_ylabel("temperature (C)", size=fontSizeAxes)
     axs[6].xaxis.set_tick_params(labelsize=fontSizeAxes, labelrotation = 30)
     plt.subplots_adjust(wspace=0, hspace=0)
-    fig.savefig(figureDirectory + "tss_modartcomp_" + scenario + ".pdf")
+    fig.savefig(figure_directory + "tss_modartcomp_" + scenario + ".pdf")
     plt.close(fig)
 
 
@@ -400,23 +428,20 @@ endTimeTss = 4 * 365
 
 i = 0
 while i < tssVariables:
-    modelledTss = modelledTssList[i]
-    observedTss = observedTssList[i]
-    timeSeriesPlotByVariable(scenariosToPlot, modelledTss, observedTss, startTimeTss, endTimeTss)
+    modelledTss = modelled_tss_list[i]
+    observedTss = observed_tss_list[i]
+    timeseries_plot_by_variable(scenarios_to_plot, modelledTss, observedTss, startTimeTss, endTimeTss)
     i = i + 1
 
-print(modelledTssList)
-print(observedTssList)
-
 i = 0
-for scenario in scenariosToPlot:
-    timeSeriesPlotByScenario(modelledTssList, observedTssList, scenario, startTimeTss, endTimeTss)
+for scenario in scenarios_to_plot:
+    timeSeriesPlotByScenario(modelled_tss_list, observed_tss_list, scenario, startTimeTss, endTimeTss)
     i = i + 1
 
 
 # scatterplots
 
-endTimeTss = len(observedTssList[0])
+endTimeTss = len(observed_tss_list[0])
 # endTimeTss = 6 * 365 # len(df['valid_ts_OBS']) - 1
 
 
@@ -474,9 +499,9 @@ def scatterPlot(scenarios, modelledTss, observedTss, start, end):
         extent = full_extent(axs[0]).transformed(fig.dpi_scale_trans.inverted())
         # Alternatively,
         #extent = axs[0].get_tightbbox(fig.canvas.renderer).transformed(fig.dpi_scale_trans.inverted())
-        fig.savefig(figureDirectory + "sca_modartcomp_" + observedTss + ".pdf", bbox_inches=extent)
+        fig.savefig(figure_directory + "sca_modartcomp_" + observedTss + ".pdf", bbox_inches=extent)
     else:
-        fig.savefig(figureDirectory + "sca_modartcomp_" + observedTss + ".pdf")
+        fig.savefig(figure_directory + "sca_modartcomp_" + observedTss + ".pdf")
     plt.close(fig)
 
 
@@ -485,9 +510,9 @@ endTimeTss = 6 * 365  # len(df['valid_ts_OBS']) - 1
 
 i = 0
 while i < tssVariables:
-    modelledTss = modelledTssList[i]
-    observedTss = observedTssList[i]
-    scatterPlot(scenariosToPlot, modelledTss, observedTss, startTimeTss, endTimeTss)
+    modelledTss = modelled_tss_list[i]
+    observedTss = observed_tss_list[i]
+    scatterPlot(scenarios_to_plot, modelledTss, observedTss, startTimeTss, endTimeTss)
     i = i + 1
 
 
@@ -518,7 +543,7 @@ def nsePlot():
     fig = plt.figure(dpi=dpi_figures, figsize = [2.5,2], tight_layout = {'pad': 1})
     #fig.set_size_inches(8.27/4, 11.69/4)
 
-    scenariosToPlot = [
+    scenarios_to_plot = [
         "fit_eva",
         "fit_sno",
         "fit_sub",
@@ -550,7 +575,7 @@ def nsePlot():
 
 
     i = 0
-    for scen in scenariosToPlot:
+    for scen in scenarios_to_plot:
         nse = (df[df["sc"] == scen].sort_values(by="lossTrainingValue")).iloc[0]["NSEVal"]
         if i == 0:
             plt.plot(names[i], nse, '.', color="black", label = "neural network")
@@ -568,7 +593,7 @@ def nsePlot():
         i += 1
     plt.legend()
     plt.ylabel("NSE")
-    fig.savefig(figureDirectory + "nse.pdf")
+    fig.savefig(figure_directory + "nse.pdf")
     plt.close(fig)
 
 
