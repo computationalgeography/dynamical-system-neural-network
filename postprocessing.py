@@ -12,20 +12,21 @@ dpi_figures = 600
 
 EGU = False
 
-observed_scenario = False
+observed_scenario = True
 
 if EGU:
     fontSizeAxes = 12
 else:
     fontSizeAxes = 10
 
-scenarioDirectory = '../data/scenarios/runs_from_sonic_velocity/kals_model_fit_on_observations/results/'
-#scenarioDirectory = '../data/scenarios/runs_from_sonic_velocity/kals_model_fit_on_arti_data/results/'
-
-# no error in streamflow (replaced) and precipitation and temperature copied into the results folder
-scenarioDirectory = "../data/scenarios/runs_from_sonic_velocity/kals_model_fit_on_arti_data_with_error_subf_val_noerror/results/"
-
-#scenarioDirectory = "../data/scenarios/runs_from_sonic_velocity/kals_model_fit_on_arti_data_with_error/results/"  # note that the streamflow for validation is with error
+if observed_scenario:
+    scenarioDirectory = '../data/scenarios/runs_from_sonic_velocity/kals_model_fit_on_observations/results/'
+    #scenarioDirectory = '../data/scenarios/runs_from_sonic_velocity/kals_model_fit_on_arti_data/results/'
+else:
+    # no error in streamflow (replaced) and precipitation and temperature copied into the results folder
+    scenarioDirectory = "../data/scenarios/runs_from_sonic_velocity/kals_model_fit_on_arti_data_with_error_subf_val_noerror/results/"
+    #scenarioDirectory = "../data/scenarios/runs_from_sonic_velocity/kals_model_fit_on_arti_data_with_error/results/"
+    # note that the streamflow for validation is with error
 
 figure_directory = "../figures/"
 
@@ -56,6 +57,17 @@ scenarios_to_plot = [
     "fit_thr",
     "fit_exp"     # or xhr for observational data
 ]
+
+names = [
+           "E",
+           "S",
+           "G" ,
+           "ES",
+           "EG",
+           "SG",
+           "ESG",
+           "Exp"
+        ]
 
 if EGU:
     #scenarios = ["fit_sno", "fit_eva", "fit_thr"]
@@ -182,25 +194,35 @@ def set_share_axes(axs, target=None, sharex=False, sharey=False):
 # response curves #
 ###################
 
+
 fig = plt.figure(dpi=dpi_figures)
 gs = fig.add_gridspec(8, 3, hspace=0, wspace=0)
 fig, axs = plt.subplots(8, 3, sharex="col", sharey=True)
 fig.set_size_inches(8.27, 11.69)
 rij = 0
+
+# load the reference artificial models for plotting
 df_first_ts_rs = df[(df["ts"] == 1) & (df["rs"] == 1)]
+response_eva_x = numpy.array(df_first_ts_rs[df["sc"] == "fit_sno"]["response_eva_x"])[0]
+response_eva_y = numpy.array(df_first_ts_rs[df["sc"] == "fit_sno"]["response_eva_y"])[0]
+response_sno_x = numpy.array(df_first_ts_rs[df["sc"] == "fit_eva"]["response_sno_x"])[0]
+response_sno_y = numpy.array(df_first_ts_rs[df["sc"] == "fit_eva"]["response_sno_y"])[0]
+response_sub_x = numpy.array(df_first_ts_rs[df["sc"] == "fit_eva"]["response_sub_x"])[0]
+response_sub_y = numpy.array(df_first_ts_rs[df["sc"] == "fit_eva"]["response_sub_y"])[0]
+
+rij = 0
 for sc in scenarios_to_plot:
     #a = df[(df["sc"] == sc)]
     a = (df[df["sc"] == sc].sort_values(by="lossTrainingValue"))
     i = 0
     for index, row in a.iterrows():
-        #if row["lossTrainingValue"] < 7.3e-6:
-        #if row["lossTrainingValue"] < 0.0000014:
         if i < 4:
+            # Plot the modelled response curves.
             if i == 0:
-                line_width = 2.5
+                line_width = 2.0
                 line_style = 'solid'
             else:
-                line_width = 1.0
+                line_width = 0.5
                 line_style = 'dashed'
             axs[rij, 0].plot(
                 row["response_eva_x"], row["response_eva_y"], color=row["color"],
@@ -217,14 +239,73 @@ for sc in scenarios_to_plot:
                 linewidth = line_width,
                 linestyle = line_style
             )
+            if True: # observed_scenario:
+                # Clear subplots
+                if row["sc"] == 'fit_eva':
+                    axs[rij,1].cla()
+                    axs[rij,2].cla()
+                if row["sc"] == 'fit_sno':
+                    axs[rij,0].cla()
+                    axs[rij,2].cla()
+                if row["sc"] == 'fit_sub':
+                    axs[rij,0].cla()
+                    axs[rij,1].cla()
+                if row["sc"] == 'fit_sne':
+                    axs[rij,2].cla()
+                if row["sc"] == 'fit_sue':
+                    axs[rij,1].cla()
+                if row["sc"] == 'fit_sus':
+                    axs[rij,0].cla()
+            i += 1
+
+
+#names = [
+#           "E",
+#           "S",
+#           "G" ,
+#           "ES",
+#           "EG",
+#           "SG",
+#           "ESG",
+#           "Exp"
+#        ]
+
+    i = 0
+    for index, row in a.iterrows():
+        if i < 4:
+            if True & (i == 0):
+                # Plot the reference response curves.
+                n = names[rij]
+                o = observed_scenario == True
+                if not ((n == "E") or (n == "ES") or (n == "EG") or (n == "ESG")) & o:
+                    axs[rij, 0].plot(
+                        response_eva_x, response_eva_y,
+                        linewidth = 1,
+                        linestyle = 'solid',
+                        color='black'
+                    )
+                if not ((n == "S") or (n == "ES") or (n == "SG") or (n == "ESG")) & o:
+                    axs[rij, 1].plot(
+                        response_sno_x, response_sno_y,
+                        linewidth = 1,
+                        linestyle = 'solid',
+                        color='black'
+                    )
+                axs[rij, 2].plot(
+                    response_sub_x, response_sub_y,
+                    linewidth = 1,
+                    linestyle = 'solid',
+                    color='black'
+                )
+
+
         axs[rij, 0].set_yticks([0.0, 0.005, 0.010, 0.015])
         axs[rij, 0].set_yticklabels([0.0, 0.005, 0.010, 0.015], size=fontSizeAxes)
-        #axs[rij, 0].set_yticklabels([0.0, 0.005, 0.010, 0.015])
         i += 1
     rij += 1
 axs[0, 0].set_ylim(0, 0.015)
 axs[0, 2].set_xlim(0, 0.4)
-axs[0, 1].set_xlim(0, 10)
+axs[0, 1].set_xlim(-5, 10)
 axs[7, 0].set_xlabel("temperature (C)", fontsize=fontSizeAxes)
 axs[7,0].xaxis.set_tick_params(labelsize=fontSizeAxes)
 axs[7,1].xaxis.set_tick_params(labelsize=fontSizeAxes)
