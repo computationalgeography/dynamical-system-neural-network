@@ -12,7 +12,7 @@ dpi_figures = 600
 
 EGU = False
 
-observed_scenario = True
+observed_scenario = False
 
 if EGU:
     fontSizeAxes = 12
@@ -23,7 +23,7 @@ scenarioDirectory = '../data/scenarios/runs_from_sonic_velocity/kals_model_fit_o
 #scenarioDirectory = '../data/scenarios/runs_from_sonic_velocity/kals_model_fit_on_arti_data/results/'
 
 # no error in streamflow (replaced) and precipitation and temperature copied into the results folder
-#scenarioDirectory = "../data/scenarios/runs_from_sonic_velocity/kals_model_fit_on_arti_data_with_error_subf_val_noerror/results/"
+scenarioDirectory = "../data/scenarios/runs_from_sonic_velocity/kals_model_fit_on_arti_data_with_error_subf_val_noerror/results/"
 
 #scenarioDirectory = "../data/scenarios/runs_from_sonic_velocity/kals_model_fit_on_arti_data_with_error/results/"  # note that the streamflow for validation is with error
 
@@ -187,28 +187,44 @@ gs = fig.add_gridspec(8, 3, hspace=0, wspace=0)
 fig, axs = plt.subplots(8, 3, sharex="col", sharey=True)
 fig.set_size_inches(8.27, 11.69)
 rij = 0
+df_first_ts_rs = df[(df["ts"] == 1) & (df["rs"] == 1)]
 for sc in scenarios_to_plot:
-    a = df[(df["sc"] == sc)]
+    #a = df[(df["sc"] == sc)]
+    a = (df[df["sc"] == sc].sort_values(by="lossTrainingValue"))
+    i = 0
     for index, row in a.iterrows():
-        # if row['lossValidationValue'] < 8e-6:
-        # if row['lossValidationValue'] < 1e-7:
         #if row["lossTrainingValue"] < 7.3e-6:
-        if row["lossTrainingValue"] < 0.0000014:
+        #if row["lossTrainingValue"] < 0.0000014:
+        if i < 4:
+            if i == 0:
+                line_width = 2.5
+                line_style = 'solid'
+            else:
+                line_width = 1.0
+                line_style = 'dashed'
             axs[rij, 0].plot(
-                row["response_eva_x"], row["response_eva_y"], color=row["color"]
+                row["response_eva_x"], row["response_eva_y"], color=row["color"],
+                linewidth = line_width,
+                linestyle = line_style
             )
             axs[rij, 1].plot(
-                row["response_sno_x"], row["response_sno_y"], color=row["color"]
+                row["response_sno_x"], row["response_sno_y"], color=row["color"],
+                linewidth = line_width,
+                linestyle = line_style
             )
             axs[rij, 2].plot(
-                row["response_sub_x"], row["response_sub_y"], color=row["color"]
+                row["response_sub_x"], row["response_sub_y"], color=row["color"],
+                linewidth = line_width,
+                linestyle = line_style
             )
         axs[rij, 0].set_yticks([0.0, 0.005, 0.010, 0.015])
         axs[rij, 0].set_yticklabels([0.0, 0.005, 0.010, 0.015], size=fontSizeAxes)
         #axs[rij, 0].set_yticklabels([0.0, 0.005, 0.010, 0.015])
+        i += 1
     rij += 1
 axs[0, 0].set_ylim(0, 0.015)
 axs[0, 2].set_xlim(0, 0.4)
+axs[0, 1].set_xlim(0, 10)
 axs[7, 0].set_xlabel("temperature (C)", fontsize=fontSizeAxes)
 axs[7,0].xaxis.set_tick_params(labelsize=fontSizeAxes)
 axs[7,1].xaxis.set_tick_params(labelsize=fontSizeAxes)
@@ -339,7 +355,7 @@ def timeseries_plot_by_variable(scenarios, modelledTss, observedTss, start, end)
     fig.savefig(figure_directory + "tss_modartcomp_" + observedTss + ".pdf")
     plt.close(fig)
 
-def timeSeriesPlotByScenario(modelledTssEs, observedTssEs, scenario, start, end):
+def timeseries_plot_by_scenario(modelledTssEs, observedTssEs, scenario, start, end):
     fig = plt.figure(dpi=dpi_figures)
     gs = fig.add_gridspec(7, 3, hspace=0, wspace=0)
     fig, axs = plt.subplots(7, 1)
@@ -390,7 +406,7 @@ def timeSeriesPlotByScenario(modelledTssEs, observedTssEs, scenario, start, end)
                 )
             # Plot modelled timeseries.
             if i == 0:
-                line_width = 2.0
+                line_width = 1.5
                 line_style = 'solid'
             else:
                 line_width = 0.5
@@ -435,7 +451,7 @@ while i < tssVariables:
 
 i = 0
 for scenario in scenarios_to_plot:
-    timeSeriesPlotByScenario(modelled_tss_list, observed_tss_list, scenario, startTimeTss, endTimeTss)
+    timeseries_plot_by_scenario(modelled_tss_list, observed_tss_list, scenario, startTimeTss, endTimeTss)
     i = i + 1
 
 
