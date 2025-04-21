@@ -12,7 +12,7 @@ dpi_figures = 600
 
 EGU = False
 
-observed_scenario = False
+observed_scenario = True
 
 actual_snow_flux = True
 
@@ -25,7 +25,6 @@ number_of_fits_to_plot = 4
 
 if observed_scenario:
     scenarioDirectory = '../data/scenarios/runs_from_sonic_velocity/kals_model_fit_on_observations/results/'
-    #scenarioDirectory = '../data/scenarios/runs_from_sonic_velocity/kals_model_fit_on_arti_data/results/'
 else:
     # no error in streamflow (replaced) and precipitation and temperature copied into the results folder
     scenarioDirectory = "../data/scenarios/runs_from_sonic_velocity/kals_model_fit_on_arti_data_with_error_subf_val_noerror/results/"
@@ -33,6 +32,7 @@ else:
     # note that the streamflow for validation is with error
 
 figure_directory = "../figures/"
+
 
 # only nn scenarios
 scenarios = [
@@ -46,21 +46,47 @@ scenarios = [
     "fit_exp",
 ]
 
-## all scenarios
-#scenarios = ['fit_eva', 'fit_sno', 'fit_sub', 'fit_sne', 'fit_sue', 'fit_sus', 'fit_thr', \
-#             'fit_xva', 'fit_xno', 'fit_xub', 'fit_xne', 'fit_xue', 'fit_xus', 'fit_xhr']
+if observed_scenario:
+    # all scenarios
+    scenarios = ['fit_eva', 'fit_sno', 'fit_sub', 'fit_sne', 'fit_sue', 'fit_sus', 'fit_thr', \
+             'fit_xva', 'fit_xno', 'fit_xub', 'fit_xne', 'fit_xue', 'fit_xus', 'fit_xhr']
 
-## only nn scenarios
-scenarios_to_plot = [
-    "fit_eva",
-    "fit_sno",
-    "fit_sub",
-    "fit_sne",
-    "fit_sue",
-    "fit_sus",
-    "fit_thr",
-    "fit_exp"     # or xhr for observational data
-]
+    ## only nn scenarios
+    scenarios_to_plot = [
+        "fit_eva",
+        "fit_sno",
+        "fit_sub",
+        "fit_sne",
+        "fit_sue",
+        "fit_sus",
+        "fit_thr",
+        "fit_xhr"  
+    ]
+
+else:
+    # only nn scenarios
+    scenarios = [
+        "fit_eva",
+        "fit_sno",
+        "fit_sub",
+        "fit_sne",
+        "fit_sue",
+        "fit_sus",
+        "fit_thr",
+        "fit_exp",
+    ]
+
+    ## only nn scenarios
+    scenarios_to_plot = [
+        "fit_eva",
+        "fit_sno",
+        "fit_sub",
+        "fit_sne",
+        "fit_sue",
+        "fit_sus",
+        "fit_thr",
+        "fit_exp"     # or xhr for observational data
+    ]
 
 names = [
            "E",
@@ -156,12 +182,14 @@ if actual_snow_flux:
         stor = row["valid_ts_sno_s"]
         newFlux = numpy.where(stor < 0.0001, 0.0, flux)
         df["valid_ts_sno_f"][index] = newFlux
+        #df.loc[index, "valid_ts_sno_f"] = newFlux
 
     for index, row in df.iterrows():
         flux = row["val_art_ts_sno_f"]
         stor = row["val_art_ts_sno_s"]
         newFlux = numpy.where(stor < 0.0001, 0.0, flux)
         df["val_art_ts_sno_f"][index] = newFlux
+        #df.loc[index, "val_art_ts_sno_f"] = newFlux
 
 # for calculation of nash sutcliffe
 # remove first year (366) which was also not used for training
@@ -348,8 +376,7 @@ modelled_tss_list = [
     "valid_ts_sno_f",
     "valid_ts_sno_s",
     "valid_ts_sub_f",
-    "valid_ts_sub_s",
-    "valid_ts_sub_f",
+    "valid_ts_sub_s"
 ]
 
 if observed_scenario:
@@ -357,9 +384,8 @@ if observed_scenario:
         "val_art_ts_eva_f",
         "val_art_ts_sno_f",
         "val_art_ts_sno_s",
-        "val_art_ts_sub_f",
-        "val_art_ts_sub_s",
-        "valid_ts_OBS"
+        "valid_ts_OBS",
+        "val_art_ts_sub_s"
     ]
 else:
     observed_tss_list = [
@@ -367,8 +393,7 @@ else:
         "val_art_ts_sno_f",
         "val_art_ts_sno_s",
         "val_art_ts_sub_f",
-        "val_art_ts_sub_s",
-        "val_art_ts_sub_f"
+        "val_art_ts_sub_s"
     ]
 
 tssVariables = len(observed_tss_list)
@@ -587,7 +612,9 @@ def scatterPlot(scenarios, modelledTss, observedTss, start, end):
         )
         fig.colorbar(hb, ax=axs[rij], pad=0.01)
         axs[rij].plot([0, 10], [0, 10], color="black", linewidth=0.5)
-        rSqFor = rSquaredFormatted(x, y)
+        xAll = a[observedTss][366:]
+        yAll = a[modelledTss][366:]
+        rSqFor = rSquaredFormatted(xAll, yAll)
         axs[rij].text(
             0.99, 0.01, rSqFor, ha="right", va="bottom", transform=axs[rij].transAxes
         )
@@ -696,8 +723,11 @@ def nsePlot():
             plt.plot(names[i], nse, '.', color="black")
         i += 1
 
+ 
     i = 0
     for scen in scenariosToPlotExp:
+        print(scen)
+        exit()
         nse = (df[df["sc"] == scen].sort_values(by="lossTrainingValue")).iloc[0]["NSEVal"]
         if i == 0:
             plt.plot(names[i], nse, '+', color="black", label = "expert model")
@@ -710,4 +740,4 @@ def nsePlot():
     plt.close(fig)
 
 
-#nsePlot()
+nsePlot()
