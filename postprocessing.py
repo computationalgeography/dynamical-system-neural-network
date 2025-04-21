@@ -12,12 +12,16 @@ dpi_figures = 600
 
 EGU = False
 
-observed_scenario = True
+observed_scenario = False
+
+actual_snow_flux = True
 
 if EGU:
     fontSizeAxes = 12
 else:
     fontSizeAxes = 10
+
+number_of_fits_to_plot = 4
 
 if observed_scenario:
     scenarioDirectory = '../data/scenarios/runs_from_sonic_velocity/kals_model_fit_on_observations/results/'
@@ -146,6 +150,18 @@ df["lossTrainingValue"] = df["lossTraining"].apply(lambda x: x[-1])
 df["lossValidationValue"] = df["lossValidation"].apply(lambda x: x[-1])
 df["lossStoppingValue"] = df["lossStopping"].apply(lambda x: x[-1])
 
+if actual_snow_flux:
+    for index, row in df.iterrows():
+        flux = row["valid_ts_sno_f"]
+        stor = row["valid_ts_sno_s"]
+        newFlux = numpy.where(stor < 0.0001, 0.0, flux)
+        df["valid_ts_sno_f"][index] = newFlux
+
+    for index, row in df.iterrows():
+        flux = row["val_art_ts_sno_f"]
+        stor = row["val_art_ts_sno_s"]
+        newFlux = numpy.where(stor < 0.0001, 0.0, flux)
+        df["val_art_ts_sno_f"][index] = newFlux
 
 # for calculation of nash sutcliffe
 # remove first year (366) which was also not used for training
@@ -164,10 +180,6 @@ df["color"] = numpy.where(df["ts"] == 1, purple, "1")
 df["color"] = numpy.where(df["ts"] == 2, red, df.color)
 df["color"] = numpy.where(df["ts"] == 3, green, df.color)
 df["color"] = numpy.where(df["ts"] == 4, blue, df.color)
-print(df)
-
-# a = df[ (df['sc'] == 'fit_sub') & (df['ts'] == 1) & df['rs'] == 1]
-
 
 def set_share_axes(axs, target=None, sharex=False, sharey=False):
     if target is None:
@@ -202,13 +214,13 @@ fig.set_size_inches(8.27, 11.69)
 rij = 0
 
 # load the reference artificial models for plotting
-df_first_ts_rs = df[(df["ts"] == 1) & (df["rs"] == 1)]
-response_eva_x = numpy.array(df_first_ts_rs[df["sc"] == "fit_sno"]["response_eva_x"])[0]
-response_eva_y = numpy.array(df_first_ts_rs[df["sc"] == "fit_sno"]["response_eva_y"])[0]
-response_sno_x = numpy.array(df_first_ts_rs[df["sc"] == "fit_eva"]["response_sno_x"])[0]
-response_sno_y = numpy.array(df_first_ts_rs[df["sc"] == "fit_eva"]["response_sno_y"])[0]
-response_sub_x = numpy.array(df_first_ts_rs[df["sc"] == "fit_eva"]["response_sub_x"])[0]
-response_sub_y = numpy.array(df_first_ts_rs[df["sc"] == "fit_eva"]["response_sub_y"])[0]
+df_first = df[(df["ts"] == 1) & (df["rs"] == 1)]
+response_eva_x = numpy.array(df_first[df_first["sc"] == "fit_sno"]["response_eva_x"])[0]
+response_eva_y = numpy.array(df_first[df_first["sc"] == "fit_sno"]["response_eva_y"])[0]
+response_sno_x = numpy.array(df_first[df_first["sc"] == "fit_eva"]["response_sno_x"])[0]
+response_sno_y = numpy.array(df_first[df_first["sc"] == "fit_eva"]["response_sno_y"])[0]
+response_sub_x = numpy.array(df_first[df_first["sc"] == "fit_eva"]["response_sub_x"])[0]
+response_sub_y = numpy.array(df_first[df_first["sc"] == "fit_eva"]["response_sub_y"])[0]
 
 rij = 0
 for sc in scenarios_to_plot:
@@ -216,13 +228,13 @@ for sc in scenarios_to_plot:
     a = (df[df["sc"] == sc].sort_values(by="lossTrainingValue"))
     i = 0
     for index, row in a.iterrows():
-        if i < 4:
+        if i < number_of_fits_to_plot:
             # Plot the modelled response curves.
             if i == 0:
-                line_width = 2.0
+                line_width = 2.5
                 line_style = 'solid'
             else:
-                line_width = 0.5
+                line_width = 0.7
                 line_style = 'dashed'
             axs[rij, 0].plot(
                 row["response_eva_x"], row["response_eva_y"], color=row["color"],
@@ -259,53 +271,58 @@ for sc in scenarios_to_plot:
             i += 1
 
 
-#names = [
-#           "E",
-#           "S",
-#           "G" ,
-#           "ES",
-#           "EG",
-#           "SG",
-#           "ESG",
-#           "Exp"
-#        ]
-
     i = 0
     for index, row in a.iterrows():
-        if i < 4:
-            if True & (i == 0):
-                # Plot the reference response curves.
-                n = names[rij]
-                o = observed_scenario == True
-                if not ((n == "E") or (n == "ES") or (n == "EG") or (n == "ESG")) & o:
-                    axs[rij, 0].plot(
-                        response_eva_x, response_eva_y,
-                        linewidth = 1,
-                        linestyle = 'solid',
-                        color='black'
-                    )
-                if not ((n == "S") or (n == "ES") or (n == "SG") or (n == "ESG")) & o:
-                    axs[rij, 1].plot(
-                        response_sno_x, response_sno_y,
-                        linewidth = 1,
-                        linestyle = 'solid',
-                        color='black'
-                    )
+        if i == 0:
+            # Plot the reference response curves.
+            n = names[rij]
+            o = observed_scenario == True
+            if not ((n == "E") or (n == "ES") or (n == "EG") or (n == "ESG") or (n == "Exp")) & o:
+                axs[rij, 0].plot(
+                    response_eva_x, response_eva_y,
+                    linewidth = 1,
+                    linestyle = 'solid',
+                    color='black',
+                    zorder = -10
+                )
+            if not ((n == "S") or (n == "ES") or (n == "SG") or (n == "ESG") or (n == "Exp")) & o:
+                axs[rij, 1].plot(
+                    response_sno_x, response_sno_y,
+                    linewidth = 1,
+                    linestyle = 'solid',
+                    color='black',
+                    zorder = -10
+                )
+            if not ((n == "G") or (n == "EG") or (n == "SG") or (n == "ESG") or (n == "Exp")) & o:
                 axs[rij, 2].plot(
                     response_sub_x, response_sub_y,
                     linewidth = 1,
                     linestyle = 'solid',
-                    color='black'
+                    color='black',
+                    zorder = -10
                 )
+            # Plot the panel labels
+            axs[rij,0].text(.05, .93, n, ha='left', va='top', transform=axs[rij,0].transAxes, size = fontSizeAxes * 1.5)
 
 
-        axs[rij, 0].set_yticks([0.0, 0.005, 0.010, 0.015])
-        axs[rij, 0].set_yticklabels([0.0, 0.005, 0.010, 0.015], size=fontSizeAxes)
+
+        axs[rij, 0].set_yticks([0.0, 0.010])
+        axs[rij, 0].set_yticklabels([0.0, 0.010], size=fontSizeAxes)
         i += 1
     rij += 1
 axs[0, 0].set_ylim(0, 0.015)
+
+axs[0, 0].set_xlim(-10, 15)
+axs[0, 1].set_xlim(-2, 8)
 axs[0, 2].set_xlim(0, 0.4)
-axs[0, 1].set_xlim(-5, 10)
+
+axs[7, 0].set_xticks([-10, -5, 0, 5, 10])
+axs[7, 0].set_xticklabels([-10, -5, 0, 5, 10], size=fontSizeAxes)
+
+labels = [-2, 0, 2, 4, 6]
+axs[7, 1].set_xticks(labels)
+axs[7, 1].set_xticklabels(labels, size=fontSizeAxes)
+
 axs[7, 0].set_xlabel("temperature (C)", fontsize=fontSizeAxes)
 axs[7,0].xaxis.set_tick_params(labelsize=fontSizeAxes)
 axs[7,1].xaxis.set_tick_params(labelsize=fontSizeAxes)
@@ -317,9 +334,7 @@ for i in range(0, 8):
 axs[0, 0].set_title("evapotranspiration\nincluding sublimation", fontsize=fontSizeAxes)
 axs[0, 1].set_title("snow melt", fontsize=fontSizeAxes)
 axs[0, 2].set_title("outflow subsurf. storage", fontsize=fontSizeAxes)
-if EGU:
-    print('')
-else:
+if not EGU:
     plt.subplots_adjust(wspace=0, hspace=0)
 fig.savefig(figure_directory + "response.pdf")
 plt.close(fig)
@@ -473,7 +488,7 @@ def timeseries_plot_by_scenario(modelledTssEs, observedTssEs, scenario, start, e
     # Plot model output in rows starting in row 2.
     tssNumber = 0
     for tss in modelledTssEs:
-        for i in range(0,4):
+        for i in range(0,number_of_fits_to_plot):
             a = (df[df["sc"] == scenario].sort_values(by="lossTrainingValue")).iloc[i]
             # Plot observed timeseries either from artificial data or from observations.
             observed_tss = observedTssEs[tssNumber]
@@ -489,9 +504,11 @@ def timeseries_plot_by_scenario(modelledTssEs, observedTssEs, scenario, start, e
             if i == 0:
                 line_width = 1.5
                 line_style = 'solid'
+                z_order = 10
             else:
                 line_width = 0.5
                 line_style = 'dashed'
+                z_order = -10
             axs[rij].plot(
                 a["valid_date"][start:end],
                 a[tss][start:end],
@@ -499,7 +516,8 @@ def timeseries_plot_by_scenario(modelledTssEs, observedTssEs, scenario, start, e
                 linewidth = line_width,
                 linestyle = line_style,
                 #color="black"
-                color = a["color"]
+                color = a["color"],
+                zorder = z_order
             )
         axs[rij].yaxis.set_tick_params(labelsize=fontSizeAxes)
         axs[rij].locator_params(axis='y', nbins=2)
@@ -556,9 +574,7 @@ def scatterPlot(scenarios, modelledTss, observedTss, start, end):
     # fig, axs = plt.subplots(8, 1, sharex='col', sharey = True)
     fig, axs = plt.subplots(8, 1)
     fig.set_size_inches(8.27, 11.69)
-    if EGU:
-        print('')
-    else:
+    if not EGU:
         fig.subplots_adjust(hspace=0.1)
     # fig.set_size_inches(8.27/3.0,11.69)
     rij = 0
@@ -567,7 +583,7 @@ def scatterPlot(scenarios, modelledTss, observedTss, start, end):
         x = a[observedTss][start:end]
         y = a[modelledTss][start:end]
         hb = axs[rij].hexbin(
-            x, y, gridsize=20, cmap="Greens", bins="log", linewidths=0.0
+            x, y, gridsize=15, cmap="Greens", bins="log", linewidths=0.0
         )
         fig.colorbar(hb, ax=axs[rij], pad=0.01)
         axs[rij].plot([0, 10], [0, 10], color="black", linewidth=0.5)
@@ -621,7 +637,7 @@ while i < tssVariables:
 ##
 # scenarios = ['fit_eva', 'fit_sno', 'fit_sub', 'fit_sne', 'fit_sue', 'fit_sus', 'fit_thr', 'fit_exp']
 
-print("#########################################################")
+#print("#########################################################")
 
 variables = [
     "sc",
@@ -633,8 +649,8 @@ variables = [
     "NSEVal",
 ]
 # print(df[df['sc'] == 'fit_eva'].sort_values(by="lossTrainingValue").loc[:,['sc','ts','rs','lossTrainingValue', 'lossStoppingValue','lossValidationValue', 'NSEVal']])
-for scen in scenarios:
-    print(df[df["sc"] == scen].sort_values(by="lossTrainingValue").loc[:, variables])
+#for scen in scenarios:
+#    print(df[df["sc"] == scen].sort_values(by="lossTrainingValue").loc[:, variables])
 
 def nsePlot():
     fig = plt.figure(dpi=dpi_figures, figsize = [2.5,2], tight_layout = {'pad': 1})
