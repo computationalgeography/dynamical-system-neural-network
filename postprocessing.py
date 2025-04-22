@@ -477,9 +477,10 @@ def timeseries_plot_by_variable(scenarios, modelledTss, observedTss, start, end)
     plt.close(fig)
 
 def timeseries_plot_by_scenario(modelledTssEs, observedTssEs, scenario, start, end):
+    rows_in_figure = 6
     fig = plt.figure(dpi=dpi_figures)
-    gs = fig.add_gridspec(7, 3, hspace=0, wspace=0)
-    fig, axs = plt.subplots(7, 1)
+    gs = fig.add_gridspec(rows_in_figure, 3, hspace=0, wspace=0)
+    fig, axs = plt.subplots(rows_in_figure, 1)
     set_share_axes(axs[1:], sharex=True)
     fig.set_size_inches(8.27, 11.69)
     rij = 1
@@ -547,7 +548,7 @@ def timeseries_plot_by_scenario(modelledTssEs, observedTssEs, scenario, start, e
         axs[rij].yaxis.set_tick_params(labelsize=fontSizeAxes)
         axs[rij].locator_params(axis='y', nbins=2)
         axs[rij].xaxis.set_tick_params(labelsize=fontSizeAxes, labelrotation = 30)
-        if rij < 6:
+        if rij < rows_in_figure - 1:
             axs[rij].set(xticklabels=[])
         if tss[-1] == "f":
             axs[rij].set_ylabel("flux (m/day)", size=fontSizeAxes)
@@ -557,7 +558,7 @@ def timeseries_plot_by_scenario(modelledTssEs, observedTssEs, scenario, start, e
         tssNumber += 1
     axs[0].set_ylabel("precipitation\n(m/day)", size=fontSizeAxes, color = 'blue')
     axTemp.set_ylabel("temperature (C)", size=fontSizeAxes)
-    axs[6].xaxis.set_tick_params(labelsize=fontSizeAxes, labelrotation = 30)
+    axs[rows_in_figure - 1].xaxis.set_tick_params(labelsize=fontSizeAxes, labelrotation = 30)
     plt.subplots_adjust(wspace=0, hspace=0)
     fig.savefig(figure_directory + "tss_modartcomp_" + scenario + ".pdf")
     plt.close(fig)
