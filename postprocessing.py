@@ -5,37 +5,45 @@ import string
 from matplotlib import pyplot as plt
 from itertools import product
 from matplotlib.transforms import Bbox
+from matplotlib.lines import Line2D
 
 plt.rcParams["font.size"] = 8
 plt.rcParams.update({'figure.max_open_warning': 0})
 
 dpi_figures = 600
 
-EGU = True
+EGU = False
 
 observed_scenario = False
 
 actual_snow_flux = True
 
 if EGU:
-    fontSizeAxes = 12
+    font_size_axes = 12
 else:
-    fontSizeAxes = 10 
+    font_size_axes = 10 
 
 number_of_fits_to_plot = 4
 
 data_dir = '../data/scenarios/runs_from_sonic_velocity/'
 
+labels_variables = ['evapotranspiration',
+                    'snow melt',
+                    'snow storage',
+                    'outflow subsurface storage (streamflow)',
+                    'subsurface storage'
+                    ]
+
 if observed_scenario:
-    scenarioDirectory = data_dir + \
+    scenario_directory = data_dir + \
                         'kals_model_fit_on_observations/results/'
 else:
     # No error in streamflow (replaced) and precipitation and temperature
     # copied into the results folder
-    scenarioDirectory = data_dir + \
+    scenario_directory = data_dir + \
                         'kals_model_fit_on_arti_data_with_error_subf_val_noerror/results/'
     # Note that the streamflow for validation is with error
-    #scenarioDirectory = data_dir + "kals_model_fit_on_arti_data_with_error/results/"
+    #scenario_directory = data_dir + "kals_model_fit_on_arti_data_with_error/results/"
 
 figure_directory = "../figures/"
 
@@ -136,7 +144,7 @@ for s in aRange:
     reRunScenarios.append(str(s))
 
 folderWithArrays = (
-    scenarioDirectory
+    scenario_directory
     + "/"
     + scenarios[0]
     + "/"
@@ -172,7 +180,7 @@ df["rs"] = rsList
 for array in arrays:
     arrayContents = []
     for sc, ts, rs in product(scenarios, trainingScenarios, reRunScenarios):
-        folder = scenarioDirectory + sc + "/" + ts + "/" + rs + "/arrays/"
+        folder = scenario_directory + sc + "/" + ts + "/" + rs + "/arrays/"
         arrayName = folder + array + ".npy"
         arrayContent = numpy.load(arrayName, allow_pickle=True)
         arrayContents.append(arrayContent)
@@ -254,6 +262,9 @@ response_sno_y = numpy.array(df_first[df_first["sc"] == "fit_eva"]["response_sno
 response_sub_x = numpy.array(df_first[df_first["sc"] == "fit_eva"]["response_sub_x"])[0]
 response_sub_y = numpy.array(df_first[df_first["sc"] == "fit_eva"]["response_sub_y"])[0]
 
+line_width_best = 2.5
+line_width_other = 0.7
+
 rij = 0
 for sc in scenarios_to_plot:
     #a = df[(df["sc"] == sc)]
@@ -261,17 +272,24 @@ for sc in scenarios_to_plot:
     i = 0
     for index, row in a.iterrows():
         if i < number_of_fits_to_plot:
+            if i == 1:
+                label_to_print = 'modelled (2nd - 4th), all colours'
+            else:
+                label_to_print = ''
+            if i == 0:
+                label_to_print = 'modelled (best), all colours'
             # Plot the modelled response curves.
             if i == 0:
-                line_width = 2.5
+                line_width = line_width_best 
                 line_style = 'solid'
             else:
-                line_width = 0.7
+                line_width = line_width_other 
                 line_style = 'dashed'
             axs[rij, 0].plot(
                 row["response_eva_x"], row["response_eva_y"], color=row["color"],
                 linewidth = line_width,
-                linestyle = line_style
+                linestyle = line_style,
+                label = label_to_print 
             )
             axs[rij, 1].plot(
                 row["response_sno_x"], row["response_sno_y"], color=row["color"],
@@ -315,10 +333,11 @@ for sc in scenarios_to_plot:
                     linewidth = 1,
                     linestyle = 'solid',
                     color='black',
-                    zorder = -10
+                    zorder = -10,
+                    label = 'synthetic'
                 )
             if not ((n == "S") or (n == "ES") or (n == "SG") or (n == "ESG") or (n == "Exp")) & o:
-                axs[rij, 1].plot(
+                    axs[rij, 1].plot(
                     response_sno_x, response_sno_y,
                     linewidth = 1,
                     linestyle = 'solid',
@@ -335,14 +354,22 @@ for sc in scenarios_to_plot:
                 )
             if not EGU:
                 # Plot the panel labels
-                axs[rij,0].text(.05, .93, n, ha='left', va='top', transform=axs[rij,0].transAxes, size = fontSizeAxes * 1.5)
-
+                axs[rij,0].text(.05, .93, n, ha='left', va='top', transform=axs[rij,0].transAxes, size = font_size_axes * 1.5)
 
 
         axs[rij, 0].set_yticks([0.0, 0.010])
-        axs[rij, 0].set_yticklabels([0.0, 0.010], size=fontSizeAxes)
+        axs[rij, 0].set_yticklabels([0.0, 0.010], size=font_size_axes)
         i += 1
     rij += 1
+custom_lines = [Line2D([0], [0], color=green, lw=line_width_best, ls='solid'),
+                Line2D([0], [0], color=green, lw=line_width_other, ls='dashed'),
+                Line2D([0], [0], color='black', lw=1)]
+if observed_scenario:
+    legend_text = ['model, best (all colours)', 'model, 2nd-4th best (all colours)', 'conceptual']
+else:
+    legend_text = ['model, best (all colours)', 'model, 2nd-4th best (all colours)', 'synthetic']
+axs[7,0].legend(custom_lines, legend_text, loc = 'upper center', bbox_to_anchor = (1.5, -0.5), ncol = 3)
+
 axs[0, 0].set_ylim(0, 0.015)
 
 axs[0, 0].set_xlim(-10, 15)
@@ -350,23 +377,23 @@ axs[0, 1].set_xlim(-2, 8)
 axs[0, 2].set_xlim(0, 0.4)
 
 axs[7, 0].set_xticks([-10, -5, 0, 5, 10])
-axs[7, 0].set_xticklabels([-10, -5, 0, 5, 10], size=fontSizeAxes)
+axs[7, 0].set_xticklabels([-10, -5, 0, 5, 10], size=font_size_axes)
 
 labels = [-2, 0, 2, 4, 6]
 axs[7, 1].set_xticks(labels)
-axs[7, 1].set_xticklabels(labels, size=fontSizeAxes)
+axs[7, 1].set_xticklabels(labels, size=font_size_axes)
 
-axs[7, 0].set_xlabel("temperature (C)", fontsize=fontSizeAxes)
-axs[7,0].xaxis.set_tick_params(labelsize=fontSizeAxes)
-axs[7,1].xaxis.set_tick_params(labelsize=fontSizeAxes)
-axs[7,2].xaxis.set_tick_params(labelsize=fontSizeAxes)
-axs[7, 1].set_xlabel("temperature (C)", fontsize=fontSizeAxes)
-axs[7, 2].set_xlabel("storage (m)", fontsize=fontSizeAxes)
+axs[7, 0].set_xlabel("temperature ($\degree$C)", fontsize=font_size_axes)
+axs[7,0].xaxis.set_tick_params(labelsize=font_size_axes)
+axs[7,1].xaxis.set_tick_params(labelsize=font_size_axes)
+axs[7,2].xaxis.set_tick_params(labelsize=font_size_axes)
+axs[7, 1].set_xlabel("temperature ($\degree$C)", fontsize=font_size_axes)
+axs[7, 2].set_xlabel("subsurface storage (m)", fontsize=font_size_axes)
 for i in range(0, 8):
-    axs[i, 0].set_ylabel("flux (m/day)", fontsize=fontSizeAxes)
-axs[0, 0].set_title("evapotranspiration\nincluding sublimation", fontsize=fontSizeAxes)
-axs[0, 1].set_title("snow melt", fontsize=fontSizeAxes)
-axs[0, 2].set_title("outflow subsurf. storage", fontsize=fontSizeAxes)
+    axs[i, 0].set_ylabel("flux (m/day)", fontsize=font_size_axes)
+axs[0, 0].set_title("evapotranspiration\nincluding sublimation", fontsize=font_size_axes)
+axs[0, 1].set_title("snow melt", fontsize=font_size_axes)
+axs[0, 2].set_title("outflow subsurf. storage", fontsize=font_size_axes)
 if not EGU:
     plt.subplots_adjust(wspace=0, hspace=0)
 fig.savefig(figure_directory + "response.pdf")
@@ -423,7 +450,7 @@ def timeseries_plot_by_variable(scenarios, modelledTss, observedTss, start, end)
             linewidth = 1.5,
             color = "blue"
             )
-    axs[0].yaxis.set_tick_params(labelsize=fontSizeAxes)
+    axs[0].yaxis.set_tick_params(labelsize=font_size_axes)
     axs[0].set(xticklabels=[])
     axTemp = axs[0].twinx()
     axTemp.plot(
@@ -439,7 +466,7 @@ def timeseries_plot_by_variable(scenarios, modelledTss, observedTss, start, end)
             linewidth = 0.5,
             color = "black",
             )
-    axTemp.yaxis.set_tick_params(labelsize=fontSizeAxes)
+    axTemp.yaxis.set_tick_params(labelsize=font_size_axes)
     #axs[1]._shared_axes['y'].remove(axs[0])
     # print rest in remaining rows
     for sc in scenarios:
@@ -456,19 +483,19 @@ def timeseries_plot_by_variable(scenarios, modelledTss, observedTss, start, end)
             linewidth=1.0,
             color="black"
         )
-        axs[rij].yaxis.set_tick_params(labelsize=fontSizeAxes)
+        axs[rij].yaxis.set_tick_params(labelsize=font_size_axes)
         axs[rij].locator_params(axis='y', nbins=2)
-        axs[rij].xaxis.set_tick_params(labelsize=fontSizeAxes, labelrotation = 30)
+        axs[rij].xaxis.set_tick_params(labelsize=font_size_axes, labelrotation = 30)
         rij += 1
     for i in range(0, 8):
         if observedTss[-1] == "f":
-            axs[i].set_ylabel("flux (m/day)", size=fontSizeAxes)
+            axs[i].set_ylabel("flux (m/day)", size=font_size_axes)
         else:
-            axs[i].set_ylabel("storage (m)", size=fontSizeAxes)
+            axs[i].set_ylabel("storage (m)", size=font_size_axes)
     #axs[1]._shared_axes['y'].remove(axs[0])
-    axs[0].set_ylabel("precipitation\n(m/day)", size=fontSizeAxes, color = 'blue')
-    axTemp.set_ylabel("temperature\n(C)", size=fontSizeAxes)
-    axs[8].xaxis.set_tick_params(labelsize=fontSizeAxes, labelrotation = 30)
+    axs[0].set_ylabel("precipitation\n(m/day)", size=font_size_axes, color = 'blue')
+    axTemp.set_ylabel("temperature\n($\degree$C)", size=font_size_axes)
+    axs[8].xaxis.set_tick_params(labelsize=font_size_axes, labelrotation = 30)
     plt.subplots_adjust(wspace=0, hspace=0)
     if EGU:
         axs[2].remove()
@@ -494,27 +521,27 @@ def timeseries_plot_by_scenario(modelledTssEs, observedTssEs, scenario, start, e
     firstSc = (df[df["sc"] == scenario]).iloc[0]
     axs[0].bar(
             firstSc["valid_date"][start:end],
-            firstSc["valid_ts_precipitation"][start:end],
+            firstSc["valid_ts_precipitation"][start:end]/1000,
             linewidth = 1.5,
             color = "blue"
             )
-    axs[0].yaxis.set_tick_params(labelsize=fontSizeAxes)
+    axs[0].yaxis.set_tick_params(labelsize=font_size_axes)
     axs[0].set(xticklabels=[])
     axTemp = axs[0].twinx()
     axTemp.plot(
             firstSc["valid_date"][start:end],
             firstSc["valid_ts_temperature"][start:end] - 0.93,
             linewidth = 1.0,
-            color = "black"
+            color = red 
             )
     axTemp.plot(
             firstSc["valid_date"][start:end],
             (firstSc["valid_ts_temperature"][start:end] - 0.93)/100000,
             linestyle = 'dashed',
             linewidth = 0.5,
-            color = "black",
+            color = red,
             )
-    axTemp.yaxis.set_tick_params(labelsize=fontSizeAxes)
+    axTemp.yaxis.set_tick_params(labelsize=font_size_axes)
     #axs[1]._shared_axes['y'].remove(axs[0])
     # Plot model output in rows starting in row 2.
     tssNumber = 0
@@ -533,11 +560,13 @@ def timeseries_plot_by_scenario(modelledTssEs, observedTssEs, scenario, start, e
                 )
             # Plot modelled timeseries.
             if i == 0:
-                line_width = 1.5
+                line_width_best = 1.5
+                line_width = line_width_best 
                 line_style = 'solid'
                 z_order = 10
             else:
-                line_width = 0.5
+                line_width_other = 0.5
+                line_width = line_width_other 
                 line_style = 'dashed'
                 z_order = -10
             axs[rij].plot(
@@ -550,20 +579,32 @@ def timeseries_plot_by_scenario(modelledTssEs, observedTssEs, scenario, start, e
                 color = a["color"],
                 zorder = z_order
             )
-        axs[rij].yaxis.set_tick_params(labelsize=fontSizeAxes)
-        axs[rij].locator_params(axis='y', nbins=2)
-        axs[rij].xaxis.set_tick_params(labelsize=fontSizeAxes, labelrotation = 30)
+            axs[rij].text(.02, .93, labels_variables[rij-1], ha='left', va='top', \
+                          transform=axs[rij].transAxes, size = font_size_axes,
+                          zorder = 10, backgroundcolor = 'white')
+        axs[rij].yaxis.set_tick_params(labelsize=font_size_axes)
+        axs[rij].locator_params(axis='y', nbins=3)
+        axs[rij].xaxis.set_tick_params(labelsize=font_size_axes, ) #labelrotation = 30)
         if rij < rows_in_figure - 1:
             axs[rij].set(xticklabels=[])
         if tss[-1] == "f":
-            axs[rij].set_ylabel("flux (m/day)", size=fontSizeAxes)
+            axs[rij].set_ylabel("flux (m/day)", size=font_size_axes)
         else:
-            axs[rij].set_ylabel("storage (m)", size=fontSizeAxes)
+            axs[rij].set_ylabel("storage (m)", size=font_size_axes)
         rij += 1
         tssNumber += 1
-    axs[0].set_ylabel("precipitation\n(m/day)", size=fontSizeAxes, color = 'blue')
-    axTemp.set_ylabel("temperature (C)", size=fontSizeAxes)
-    axs[rows_in_figure - 1].xaxis.set_tick_params(labelsize=fontSizeAxes, labelrotation = 30)
+    axs[0].set_ylabel("precipitation\n(m/day)", size=font_size_axes, color = 'blue')
+    axTemp.set_ylabel("temperature ($\degree$C)", size=font_size_axes, color = red)
+    axs[rows_in_figure - 1].xaxis.set_tick_params(labelsize=font_size_axes, ) # labelrotation = 30)
+    custom_lines = [Line2D([0], [0], color=green, lw=line_width_best, ls='solid'),
+                    Line2D([0], [0], color=green, lw=line_width_other, ls='dashed'),
+                    Line2D([0], [0], color='black', lw=1)]
+    if observed_scenario:
+        legend_text = ['model, best (all colours)', 'model, 2nd-4th best (all colours)', 'observed']
+    else:
+        legend_text = ['model, best (all colours)', 'model, 2nd-4th best (all colours)', 'synthetic']
+    axs[rows_in_figure - 1].legend(custom_lines, legend_text, loc = 'upper center', \
+                                   bbox_to_anchor = (0.5, -0.25), ncol = 3)
     plt.subplots_adjust(wspace=0, hspace=0)
     fig.savefig(figure_directory + "tss_modartcomp_" + scenario + ".pdf")
     plt.close(fig)
@@ -666,22 +707,22 @@ def scatter_plot_by_scenario(modelledTssEs, observedTssEs, scenario, name, start
         axs[rij].set_ylim(0, max(x))
         axs[rij].set_xlim(0, max(x))
         cbar = fig.colorbar(hb, ax=axs[rij], pad=0.01)
-        cbar.ax.tick_params(labelsize=fontSizeAxes)
+        cbar.ax.tick_params(labelsize=font_size_axes)
         axs[rij].plot([0, 10], [0, 10], color="black", linewidth=1.0)
         rSqFor = rSquaredFormatted(x, y)
         axs[rij].text(
-            0.99, 0.01, '$r^2$ = ' + rSqFor, ha="right", va="bottom", transform=axs[rij].transAxes, size = fontSizeAxes
+            0.99, 0.01, '$r^2$ = ' + rSqFor, ha="right", va="bottom", transform=axs[rij].transAxes, size = font_size_axes
         )
         #if rij < len(scenarios) - 1:
         #    axs[rij].set(xticklabels=[])
         axs[rij].set_aspect("equal")
-        axs[rij].xaxis.set_tick_params(labelsize=fontSizeAxes)
-        axs[rij].yaxis.set_tick_params(labelsize=fontSizeAxes)
+        axs[rij].xaxis.set_tick_params(labelsize=font_size_axes)
+        axs[rij].yaxis.set_tick_params(labelsize=font_size_axes)
         if not EGU:
             if tss[-1] == "f":
-                axs[rij].set_ylabel("flux (m/day)", size=fontSizeAxes)
+                axs[rij].set_ylabel("flux (m/day)", size=font_size_axes)
             else:
-                axs[rij].set_ylabel("storage (m)", size=fontSizeAxes)
+                axs[rij].set_ylabel("storage (m)", size=font_size_axes)
         rij += 1
         tssNumber += 1
     axs[0].set_title(name)
