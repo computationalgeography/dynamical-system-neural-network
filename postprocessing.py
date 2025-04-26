@@ -7,12 +7,13 @@ from itertools import product
 from matplotlib.transforms import Bbox
 
 plt.rcParams["font.size"] = 8
+plt.rcParams.update({'figure.max_open_warning': 0})
 
 dpi_figures = 600
 
-EGU = False
+EGU = True
 
-observed_scenario = True
+observed_scenario = False
 
 actual_snow_flux = True
 
@@ -23,13 +24,18 @@ else:
 
 number_of_fits_to_plot = 4
 
+data_dir = '../data/scenarios/runs_from_sonic_velocity/'
+
 if observed_scenario:
-    scenarioDirectory = '../data/scenarios/runs_from_sonic_velocity/kals_model_fit_on_observations/results/'
+    scenarioDirectory = data_dir + \
+                        'kals_model_fit_on_observations/results/'
 else:
-    # no error in streamflow (replaced) and precipitation and temperature copied into the results folder
-    scenarioDirectory = "../data/scenarios/runs_from_sonic_velocity/kals_model_fit_on_arti_data_with_error_subf_val_noerror/results/"
-    #scenarioDirectory = "../data/scenarios/runs_from_sonic_velocity/kals_model_fit_on_arti_data_with_error/results/"
-    # note that the streamflow for validation is with error
+    # No error in streamflow (replaced) and precipitation and temperature
+    # copied into the results folder
+    scenarioDirectory = data_dir + \
+                        'kals_model_fit_on_arti_data_with_error_subf_val_noerror/results/'
+    # Note that the streamflow for validation is with error
+    #scenarioDirectory = data_dir + "kals_model_fit_on_arti_data_with_error/results/"
 
 figure_directory = "../figures/"
 
@@ -99,10 +105,10 @@ names = [
            "Exp"
         ]
 
-if EGU:
-    #scenarios = ["fit_sno", "fit_eva", "fit_thr"]
-    scenarios = ["fit_thr"]
-    scenarios_to_plot = scenarios
+#if EGU:
+#    #scenarios = ["fit_sno", "fit_eva", "fit_thr"]
+#    scenarios = ["fit_thr"]
+#    scenarios_to_plot = scenarios
 
 def full_extent(ax, pad=0.0):
     """Get the full extent of an axes, including axes labels, tick labels, and
@@ -176,20 +182,18 @@ df["lossTrainingValue"] = df["lossTraining"].apply(lambda x: x[-1])
 df["lossValidationValue"] = df["lossValidation"].apply(lambda x: x[-1])
 df["lossStoppingValue"] = df["lossStopping"].apply(lambda x: x[-1])
 
+# Replace potential snow melt by actual snow melt both for synthetic data
+# and for ML modelled data
 if actual_snow_flux:
-    for index, row in df.iterrows():
-        flux = row["valid_ts_sno_f"]
-        stor = row["valid_ts_sno_s"]
-        newFlux = numpy.where(stor < 0.0001, 0.0, flux)
-        df["valid_ts_sno_f"][index] = newFlux
-        #df.loc[index, "valid_ts_sno_f"] = newFlux
+    df['valid_ts_sno_f'] = df.apply(lambda x: \
+                           numpy.where(x['valid_ts_sno_s'] < 0.0001, 0.0, \
+                           x['valid_ts_sno_f']), \
+                           axis=1)
+    df['val_art_ts_sno_f'] = df.apply(lambda x: \
+                           numpy.where(x['val_art_ts_sno_s'] < 0.0001, 0.0, \
+                           x['val_art_ts_sno_f']), \
+                           axis=1)
 
-    for index, row in df.iterrows():
-        flux = row["val_art_ts_sno_f"]
-        stor = row["val_art_ts_sno_s"]
-        newFlux = numpy.where(stor < 0.0001, 0.0, flux)
-        df["val_art_ts_sno_f"][index] = newFlux
-        #df.loc[index, "val_art_ts_sno_f"] = newFlux
 
 # for calculation of nash sutcliffe
 # remove first year (366) which was also not used for training
@@ -329,8 +333,9 @@ for sc in scenarios_to_plot:
                     color='black',
                     zorder = -10
                 )
-            # Plot the panel labels
-            axs[rij,0].text(.05, .93, n, ha='left', va='top', transform=axs[rij,0].transAxes, size = fontSizeAxes * 1.5)
+            if not EGU:
+                # Plot the panel labels
+                axs[rij,0].text(.05, .93, n, ha='left', va='top', transform=axs[rij,0].transAxes, size = fontSizeAxes * 1.5)
 
 
 
@@ -582,10 +587,6 @@ for scenario in scenarios_to_plot:
 
 # scatterplots
 
-endTimeTss = len(observed_tss_list[0])
-# endTimeTss = 6 * 365 # len(df['valid_ts_OBS']) - 1
-
-
 def rSquaredFormatted(x, y):
     rM = numpy.corrcoef(x, y)
     r = rM[0][1]
@@ -594,7 +595,7 @@ def rSquaredFormatted(x, y):
     return rSqFor
 
 
-def scatterPlot(scenarios, modelledTss, observedTss, start, end):
+def scatter_plot_by_variable(scenarios, modelledTss, observedTss, start, end):
     fig = plt.figure(dpi=dpi_figures)
     # gs = fig.add_gridspec(8, 3, hspace=0, wspace=0)
     # fig, axs = plt.subplots(8, 1, sharex='col', sharey = True)
@@ -611,11 +612,9 @@ def scatterPlot(scenarios, modelledTss, observedTss, start, end):
         hb = axs[rij].hexbin(
             x, y, gridsize=15, cmap="Greens", bins="log", linewidths=0.0
         )
-        fig.colorbar(hb, ax=axs[rij], pad=0.01)
+        #fig.colorbar(hb, ax=axs[rij], pad=0.01)
         axs[rij].plot([0, 10], [0, 10], color="black", linewidth=0.5)
-        xAll = a[observedTss][366:]
-        yAll = a[modelledTss][366:]
-        rSqFor = rSquaredFormatted(xAll, yAll)
+        rSqFor = rSquaredFormatted(x, y)
         axs[rij].text(
             0.99, 0.01, rSqFor, ha="right", va="bottom", transform=axs[rij].transAxes
         )
@@ -627,14 +626,14 @@ def scatterPlot(scenarios, modelledTss, observedTss, start, end):
         axs[rij].set_aspect("equal")
         rij += 1
     # plt.subplots_adjust(wspace=0, hspace=0)
-    if EGU:
-        axs[1].remove()
-        axs[2].remove()
-        axs[3].remove()
-        axs[4].remove()
-        axs[5].remove()
-        axs[6].remove()
-        axs[7].remove()
+    #if EGU:
+    #    axs[1].remove()
+    #    axs[2].remove()
+    #    axs[3].remove()
+    #    axs[4].remove()
+    #    axs[5].remove()
+    #    axs[6].remove()
+    #    axs[7].remove()
     if EGU:
         # Save just the portion _inside_ the second axis's boundaries
         extent = full_extent(axs[0]).transformed(fig.dpi_scale_trans.inverted())
@@ -645,15 +644,81 @@ def scatterPlot(scenarios, modelledTss, observedTss, start, end):
         fig.savefig(figure_directory + "sca_modartcomp_" + observedTss + ".pdf")
     plt.close(fig)
 
+def scatter_plot_by_scenario(modelledTssEs, observedTssEs, scenario, name, start, end):
+    fig = plt.figure(dpi=dpi_figures)
+    # gs = fig.add_gridspec(8, 3, hspace=0, wspace=0)
+    # fig, axs = plt.subplots(8, 1, sharex='col', sharey = True)
+    fig, axs = plt.subplots(5, 1)
+    fig.set_size_inches(8.27, 11.69)
+    #if not EGU:
+    #    fig.subplots_adjust(hspace=0.1)
+    # fig.set_size_inches(8.27/3.0,11.69)
+    rij = 0
+    tssNumber = 0
+    for tss in modelledTssEs:
+        a = (df[df["sc"] == scenario].sort_values(by="lossTrainingValue")).iloc[0]
+        observed_tss = observedTssEs[tssNumber]
+        x = a[observed_tss][start:end]
+        y = a[tss][start:end]
+        hb = axs[rij].hexbin(
+            x, y, gridsize=15, cmap="Greens", bins="log", linewidths=0.0
+        )
+        axs[rij].set_ylim(0, max(x))
+        axs[rij].set_xlim(0, max(x))
+        cbar = fig.colorbar(hb, ax=axs[rij], pad=0.01)
+        cbar.ax.tick_params(labelsize=fontSizeAxes)
+        axs[rij].plot([0, 10], [0, 10], color="black", linewidth=1.0)
+        rSqFor = rSquaredFormatted(x, y)
+        axs[rij].text(
+            0.99, 0.01, '$r^2$ = ' + rSqFor, ha="right", va="bottom", transform=axs[rij].transAxes, size = fontSizeAxes
+        )
+        #if rij < len(scenarios) - 1:
+        #    axs[rij].set(xticklabels=[])
+        axs[rij].set_aspect("equal")
+        axs[rij].xaxis.set_tick_params(labelsize=fontSizeAxes)
+        axs[rij].yaxis.set_tick_params(labelsize=fontSizeAxes)
+        if not EGU:
+            if tss[-1] == "f":
+                axs[rij].set_ylabel("flux (m/day)", size=fontSizeAxes)
+            else:
+                axs[rij].set_ylabel("storage (m)", size=fontSizeAxes)
+        rij += 1
+        tssNumber += 1
+    axs[0].set_title(name)
+    # plt.subplots_adjust(wspace=0, hspace=0)
+    #if EGU:
+    #    axs[1].remove()
+    #    axs[2].remove()
+    #    axs[3].remove()
+    #    axs[4].remove()
+    #    axs[5].remove()
+    #    axs[6].remove()
+    #    axs[7].remove()
+    #if EGU:
+    #    # Save just the portion _inside_ the second axis's boundaries
+    #    extent = full_extent(axs[0]).transformed(fig.dpi_scale_trans.inverted())
+    #    # Alternatively,
+    #    #extent = axs[0].get_tightbbox(fig.canvas.renderer).transformed(fig.dpi_scale_trans.inverted())
+    #    fig.savefig(figure_directory + "sca_modartcomp_" + scenario + ".pdf", bbox_inches=extent)
+    #else:
+    fig.savefig(figure_directory + "sca_modartcomp_" + scenario + ".pdf")
+    plt.close(fig)
 
-startTimeTss = 2 * 365
-endTimeTss = 6 * 365  # len(df['valid_ts_OBS']) - 1
+
+startTimeTss = 1 * 365
+endTimeTss = len(df['val_art_ts_eva_f'].iloc[0])
 
 i = 0
 while i < tssVariables:
     modelledTss = modelled_tss_list[i]
     observedTss = observed_tss_list[i]
-    scatterPlot(scenarios_to_plot, modelledTss, observedTss, startTimeTss, endTimeTss)
+    scatter_plot_by_variable(scenarios_to_plot, modelledTss, observedTss, startTimeTss, endTimeTss)
+    i = i + 1
+
+i = 0
+for scenario in scenarios_to_plot:
+    name = names[i]
+    scatter_plot_by_scenario(modelled_tss_list, observed_tss_list, scenario, name, startTimeTss, endTimeTss)
     i = i + 1
 
 
@@ -677,8 +742,8 @@ variables = [
     "NSEVal",
 ]
 # print(df[df['sc'] == 'fit_eva'].sort_values(by="lossTrainingValue").loc[:,['sc','ts','rs','lossTrainingValue', 'lossStoppingValue','lossValidationValue', 'NSEVal']])
-for scen in scenarios:
-    print(df[df["sc"] == scen].sort_values(by="lossTrainingValue").loc[:, variables])
+#for scen in scenarios:
+#    print(df[df["sc"] == scen].sort_values(by="lossTrainingValue").loc[:, variables])
 
 def nsePlot():
     fig = plt.figure(dpi=dpi_figures, figsize = [2.5,2], tight_layout = {'pad': 1})
