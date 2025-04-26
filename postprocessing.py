@@ -849,7 +849,7 @@ def nsePlot(black):
             if fit == 0:
                 plt.plot(names[i], nse, '.', color=color, label = label, markersize = 12)
             else:
-                plt.plot(names[i], nse, '.', color=color, markersize = 3)
+                plt.plot(names[i], nse, '.', color=color, markersize = 2)
             i += 1
         fit += 1
 
@@ -869,18 +869,18 @@ def nsePlot(black):
             else:
                 color = (df[df["sc"] == scen].sort_values(by="lossTrainingValue")).iloc[fit]["color"]
             if fit == 0:
-                plt.plot(names[i], nse, '+', color=color, label = label, markersize = 10)
+                plt.plot(names[i], nse, '_', color=color, label = label, markersize = 10)
             else:
-                plt.plot(names[i], nse, '+', color=color, markersize = 3)
+                plt.plot(names[i], nse, '_', color=color, markersize = 3)
             i += 1
         fit += 1
-    plt.legend()
+    plt.legend(fontsize = font_size_axes * 0.8)
     plt.ylabel("NSE")
     fig.savefig(figure_directory + "nse.pdf")
     plt.close(fig)
 
 if observed_scenario:
-    nsePlot(True)
+    nsePlot(False)
 
 
 
