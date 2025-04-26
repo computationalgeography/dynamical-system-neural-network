@@ -14,14 +14,17 @@ dpi_figures = 600
 
 EGU = False
 
-observed_scenario = False
+observed_scenario = True
 
 actual_snow_flux = True
 
 if EGU:
     font_size_axes = 12
 else:
-    font_size_axes = 10 
+    font_size_axes = 8 
+
+create_scatter = False
+create_timeseries = False
 
 number_of_fits_to_plot = 4
 
@@ -33,6 +36,15 @@ labels_variables = ['evapotranspiration',
                     'outflow subsurface storage (streamflow)',
                     'subsurface storage'
                     ]
+
+labels_variables_tight = ['evapotranspiration',
+                    'snow melt',
+                    'snow storage',
+                    'outflow subsurface\nstorage (streamflow)',
+                    'subsurface storage'
+                    ]
+
+
 
 if observed_scenario:
     scenario_directory = data_dir + \
@@ -613,17 +625,21 @@ def timeseries_plot_by_scenario(modelledTssEs, observedTssEs, scenario, start, e
 startTimeTss = 2 * 365
 endTimeTss = 4 * 365
 
-i = 0
-while i < tssVariables:
-    modelledTss = modelled_tss_list[i]
-    observedTss = observed_tss_list[i]
-    timeseries_plot_by_variable(scenarios_to_plot, modelledTss, observedTss, startTimeTss, endTimeTss)
-    i = i + 1
 
-i = 0
-for scenario in scenarios_to_plot:
-    timeseries_plot_by_scenario(modelled_tss_list, observed_tss_list, scenario, startTimeTss, endTimeTss)
-    i = i + 1
+if create_timeseries:
+    # Plot for each variable all scenarios
+    #i = 0
+    #while i < tssVariables:
+    #    modelledTss = modelled_tss_list[i]
+    #    observedTss = observed_tss_list[i]
+    #    timeseries_plot_by_variable(scenarios_to_plot, modelledTss, observedTss, startTimeTss, endTimeTss)
+    #    i = i + 1
+    
+    # Plot for each scenario all variables
+    i = 0
+    for scenario in scenarios_to_plot:
+        timeseries_plot_by_scenario(modelled_tss_list, observed_tss_list, scenario, startTimeTss, endTimeTss)
+        i = i + 1
 
 
 # scatterplots
@@ -640,8 +656,13 @@ def scatter_plot_by_variable(scenarios, modelledTss, observedTss, start, end):
     fig = plt.figure(dpi=dpi_figures)
     # gs = fig.add_gridspec(8, 3, hspace=0, wspace=0)
     # fig, axs = plt.subplots(8, 1, sharex='col', sharey = True)
-    fig, axs = plt.subplots(8, 1)
-    fig.set_size_inches(8.27, 11.69)
+    #fig, axs = plt.subplots(8, 1)
+    #fig.set_size_inches(8.27, 11.69)
+    fig, axen = plt.subplots(3, 3)
+    axs = [axen[0,0], axen[0,1], axen[0,2],
+           axen[1,0], axen[1,1], axen[1,2],
+           axen[2,0], axen[2,1], axen[2,2]]
+    fig.set_size_inches(8.27, 5.2 * 1.5)
     if not EGU:
         fig.subplots_adjust(hspace=0.1)
     # fig.set_size_inches(8.27/3.0,11.69)
@@ -653,7 +674,8 @@ def scatter_plot_by_variable(scenarios, modelledTss, observedTss, start, end):
         hb = axs[rij].hexbin(
             x, y, gridsize=15, cmap="Greens", bins="log", linewidths=0.0
         )
-        #fig.colorbar(hb, ax=axs[rij], pad=0.01)
+        ##fig.colorbar(hb, ax=axs[rij], pad=0.01)
+        cbar = fig.colorbar(hb, ax=axs[rij], fraction=0.046, pad=0.04)
         axs[rij].plot([0, 10], [0, 10], color="black", linewidth=0.5)
         rSqFor = rSquaredFormatted(x, y)
         axs[rij].text(
@@ -662,38 +684,30 @@ def scatter_plot_by_variable(scenarios, modelledTss, observedTss, start, end):
         # axs[rij].scatter(a[observedTss][start:end], a[modelledTss][start:end], s = 0.5)
         axs[rij].set_ylim(0, max(a[observedTss][start:end]))
         axs[rij].set_xlim(0, max(a[observedTss][start:end]))
-        if rij < len(scenarios) - 1:
-            axs[rij].set(xticklabels=[])
+        #if rij < len(scenarios) - 1:
+        #    axs[rij].set(xticklabels=[])
         axs[rij].set_aspect("equal")
+        axs[rij].xaxis.set_tick_params(labelsize=font_size_axes * 0.9)
+        axs[rij].yaxis.set_tick_params(labelsize=font_size_axes * 0.9)
+        axs[rij].text(.05, .95, names[rij], ha='left', va='top', \
+                      transform=axs[rij].transAxes, size = font_size_axes)
+        axs[rij].locator_params(axis='y', nbins=2)
+        axs[rij].locator_params(axis='x', nbins=2)
         rij += 1
-    # plt.subplots_adjust(wspace=0, hspace=0)
-    #if EGU:
-    #    axs[1].remove()
-    #    axs[2].remove()
-    #    axs[3].remove()
-    #    axs[4].remove()
-    #    axs[5].remove()
-    #    axs[6].remove()
-    #    axs[7].remove()
-    if EGU:
-        # Save just the portion _inside_ the second axis's boundaries
-        extent = full_extent(axs[0]).transformed(fig.dpi_scale_trans.inverted())
-        # Alternatively,
-        #extent = axs[0].get_tightbbox(fig.canvas.renderer).transformed(fig.dpi_scale_trans.inverted())
-        fig.savefig(figure_directory + "sca_modartcomp_" + observedTss + ".pdf", bbox_inches=extent)
-    else:
-        fig.savefig(figure_directory + "sca_modartcomp_" + observedTss + ".pdf")
+    axs[8].remove()
+    plt.subplots_adjust(wspace=0.5, hspace=0)
+    fig.savefig(figure_directory + "sca_modartcomp_" + observedTss + ".pdf")
     plt.close(fig)
 
 def scatter_plot_by_scenario(modelledTssEs, observedTssEs, scenario, name, start, end):
+    plt.close('all')
     fig = plt.figure(dpi=dpi_figures)
     # gs = fig.add_gridspec(8, 3, hspace=0, wspace=0)
     # fig, axs = plt.subplots(8, 1, sharex='col', sharey = True)
-    fig, axs = plt.subplots(5, 1)
-    fig.set_size_inches(8.27, 11.69)
-    #if not EGU:
-    #    fig.subplots_adjust(hspace=0.1)
-    # fig.set_size_inches(8.27/3.0,11.69)
+    #fig, axs = plt.subplots(5, 1)
+    fig, axen = plt.subplots(2, 3)
+    axs = [axen[0,0], axen[0,1], axen[0,2], axen[1,0], axen[1,1], axen[1,2]]
+    fig.set_size_inches(8.27, 5.0)
     rij = 0
     tssNumber = 0
     for tss in modelledTssEs:
@@ -706,9 +720,9 @@ def scatter_plot_by_scenario(modelledTssEs, observedTssEs, scenario, name, start
         )
         axs[rij].set_ylim(0, max(x))
         axs[rij].set_xlim(0, max(x))
-        cbar = fig.colorbar(hb, ax=axs[rij], pad=0.01)
+        cbar = fig.colorbar(hb, ax=axs[rij], fraction=0.046, pad=0.04)
         cbar.ax.tick_params(labelsize=font_size_axes)
-        axs[rij].plot([0, 10], [0, 10], color="black", linewidth=1.0)
+        axs[rij].plot([0, 10], [0, 10], color="black", linewidth=1.0, linestyle = 'dashed')
         rSqFor = rSquaredFormatted(x, y)
         axs[rij].text(
             0.99, 0.01, '$r^2$ = ' + rSqFor, ha="right", va="bottom", transform=axs[rij].transAxes, size = font_size_axes
@@ -716,32 +730,24 @@ def scatter_plot_by_scenario(modelledTssEs, observedTssEs, scenario, name, start
         #if rij < len(scenarios) - 1:
         #    axs[rij].set(xticklabels=[])
         axs[rij].set_aspect("equal")
-        axs[rij].xaxis.set_tick_params(labelsize=font_size_axes)
-        axs[rij].yaxis.set_tick_params(labelsize=font_size_axes)
+        axs[rij].xaxis.set_tick_params(labelsize=font_size_axes * 0.9)
+        axs[rij].yaxis.set_tick_params(labelsize=font_size_axes * 0.9)
         if not EGU:
             if tss[-1] == "f":
                 axs[rij].set_ylabel("flux (m/day)", size=font_size_axes)
+                axs[rij].set_xlabel("flux (m/day)", size=font_size_axes)
             else:
                 axs[rij].set_ylabel("storage (m)", size=font_size_axes)
+                axs[rij].set_xlabel("storage (m)", size=font_size_axes)
+        axs[rij].text(.05, .95, labels_variables_tight[rij], ha='left', va='top', \
+                      transform=axs[rij].transAxes, size = font_size_axes)
+        axs[rij].locator_params(axis='y', nbins=2)
+        axs[rij].locator_params(axis='x', nbins=2)
         rij += 1
         tssNumber += 1
-    axs[0].set_title(name)
-    # plt.subplots_adjust(wspace=0, hspace=0)
-    #if EGU:
-    #    axs[1].remove()
-    #    axs[2].remove()
-    #    axs[3].remove()
-    #    axs[4].remove()
-    #    axs[5].remove()
-    #    axs[6].remove()
-    #    axs[7].remove()
-    #if EGU:
-    #    # Save just the portion _inside_ the second axis's boundaries
-    #    extent = full_extent(axs[0]).transformed(fig.dpi_scale_trans.inverted())
-    #    # Alternatively,
-    #    #extent = axs[0].get_tightbbox(fig.canvas.renderer).transformed(fig.dpi_scale_trans.inverted())
-    #    fig.savefig(figure_directory + "sca_modartcomp_" + scenario + ".pdf", bbox_inches=extent)
-    #else:
+    #axs[0].set_title(name)
+    axs[5].remove()
+    plt.subplots_adjust(wspace=0.6, hspace=0)
     fig.savefig(figure_directory + "sca_modartcomp_" + scenario + ".pdf")
     plt.close(fig)
 
@@ -749,18 +755,21 @@ def scatter_plot_by_scenario(modelledTssEs, observedTssEs, scenario, name, start
 startTimeTss = 1 * 365
 endTimeTss = len(df['val_art_ts_eva_f'].iloc[0])
 
-i = 0
-while i < tssVariables:
-    modelledTss = modelled_tss_list[i]
-    observedTss = observed_tss_list[i]
-    scatter_plot_by_variable(scenarios_to_plot, modelledTss, observedTss, startTimeTss, endTimeTss)
-    i = i + 1
-
-i = 0
-for scenario in scenarios_to_plot:
-    name = names[i]
-    scatter_plot_by_scenario(modelled_tss_list, observed_tss_list, scenario, name, startTimeTss, endTimeTss)
-    i = i + 1
+if create_scatter:
+    # Plot for each variable all scenarios
+    i = 0
+    while i < tssVariables:
+        modelledTss = modelled_tss_list[i]
+        observedTss = observed_tss_list[i]
+        scatter_plot_by_variable(scenarios_to_plot, modelledTss, observedTss, startTimeTss, endTimeTss)
+        i = i + 1
+    
+    # Plot for each scenario all variables
+    i = 0
+    for scenario in scenarios_to_plot:
+        name = names[i]
+        scatter_plot_by_scenario(modelled_tss_list, observed_tss_list, scenario, name, startTimeTss, endTimeTss)
+        i = i + 1
 
 
 # df['lossStop'] = lossStopList
@@ -786,9 +795,8 @@ variables = [
 #for scen in scenarios:
 #    print(df[df["sc"] == scen].sort_values(by="lossTrainingValue").loc[:, variables])
 
-def nsePlot():
+def nsePlot(black):
     fig = plt.figure(dpi=dpi_figures, figsize = [2.5,2], tight_layout = {'pad': 1})
-    #fig.set_size_inches(8.27/4, 11.69/4)
 
     scenarios_to_plot = [
         "fit_eva",
@@ -820,29 +828,67 @@ def nsePlot():
            "ESG"
         ]
 
-
+    if black:
+        nr_fits = 1
+    else:
+        nr_fits = number_of_fits_to_plot
     i = 0
-    for scen in scenarios_to_plot:
-        nse = (df[df["sc"] == scen].sort_values(by="lossTrainingValue")).iloc[0]["NSEVal"]
-        if i == 0:
-            plt.plot(names[i], nse, '.', color="black", label = "neural network")
-        else:
-            plt.plot(names[i], nse, '.', color="black")
-        i += 1
+    fit = 0
+    while fit < nr_fits:
+        i = 0
+        for scen in scenarios_to_plot:
+            if (fit == 0) & (i == 0):
+                label = "neural network"
+            else:
+                label = ""
+            nse = (df[df["sc"] == scen].sort_values(by="lossTrainingValue")).iloc[fit]["NSEVal"]
+            if black:
+                color = "black"
+            else:
+                color = (df[df["sc"] == scen].sort_values(by="lossTrainingValue")).iloc[fit]["color"]
+            if fit == 0:
+                plt.plot(names[i], nse, '.', color=color, label = label, markersize = 12)
+            else:
+                plt.plot(names[i], nse, '.', color=color, markersize = 3)
+            i += 1
+        fit += 1
 
  
     i = 0
-    for scen in scenariosToPlotExp:
-        nse = (df[df["sc"] == scen].sort_values(by="lossTrainingValue")).iloc[0]["NSEVal"]
-        if i == 0:
-            plt.plot(names[i], nse, '+', color="black", label = "expert model")
-        else:
-            plt.plot(names[i], nse, '+', color="black")
-        i += 1
+    fit = 0
+    while fit < nr_fits:
+        i = 0
+        for scen in scenariosToPlotExp:
+            if (fit == 0) & (i == 0):
+                label = "conceptual model"
+            else:
+                label = ""
+            nse = (df[df["sc"] == scen].sort_values(by="lossTrainingValue")).iloc[fit]["NSEVal"]
+            if black:
+                color = "black"
+            else:
+                color = (df[df["sc"] == scen].sort_values(by="lossTrainingValue")).iloc[fit]["color"]
+            if fit == 0:
+                plt.plot(names[i], nse, '+', color=color, label = label, markersize = 10)
+            else:
+                plt.plot(names[i], nse, '+', color=color, markersize = 3)
+            i += 1
+        fit += 1
     plt.legend()
     plt.ylabel("NSE")
     fig.savefig(figure_directory + "nse.pdf")
     plt.close(fig)
 
 if observed_scenario:
-    nsePlot()
+    nsePlot(True)
+
+
+
+### unused code
+    #if EGU:
+    #    # Save just the portion _inside_ the second axis's boundaries
+    #    extent = full_extent(axs[0]).transformed(fig.dpi_scale_trans.inverted())
+    #    # Alternatively,
+    #    #extent = axs[0].get_tightbbox(fig.canvas.renderer).transformed(fig.dpi_scale_trans.inverted())
+    #    fig.savefig(figure_directory + "sca_modartcomp_" + scenario + ".pdf", bbox_inches=extent)
+
