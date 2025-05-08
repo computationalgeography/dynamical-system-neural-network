@@ -23,8 +23,8 @@ if EGU:
 else:
     font_size_axes = 8 
 
-create_scatter = False
-create_timeseries = False
+create_scatter = True
+create_timeseries = True
 
 number_of_fits_to_plot = 4
 
@@ -49,6 +49,9 @@ labels_variables_tight = ['evapotranspiration',
 if observed_scenario:
     scenario_directory = data_dir + \
                         'kals_model_fit_on_observations/results/'
+                        # 'kals_model_two_areas_fit_on_observations/results/'
+                        # 'kals_model_two_areas_fit_on_artificial_data_with_error/results/'
+                        #'kals_model_fit_on_observations/results/'
 else:
     # No error in streamflow (replaced) and precipitation and temperature
     # copied into the results folder
@@ -792,8 +795,8 @@ variables = [
     "NSEVal",
 ]
 # print(df[df['sc'] == 'fit_eva'].sort_values(by="lossTrainingValue").loc[:,['sc','ts','rs','lossTrainingValue', 'lossStoppingValue','lossValidationValue', 'NSEVal']])
-#for scen in scenarios:
-#    print(df[df["sc"] == scen].sort_values(by="lossTrainingValue").loc[:, variables])
+for scen in scenarios:
+    print(df[df["sc"] == scen].sort_values(by="lossTrainingValue").loc[:, variables])
 
 def nsePlot(black):
     fig = plt.figure(dpi=dpi_figures, figsize = [2.5,2], tight_layout = {'pad': 1})
