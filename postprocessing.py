@@ -146,23 +146,23 @@ def full_extent(ax, pad=0.0):
 # only exp scenarios
 # scenarios_to_plot = ['fit_xva', 'fit_xno', 'fit_xub', 'fit_xne', 'fit_xue', 'fit_xus', 'fit_xhr']
 
-trainingScenarios = ["1", "2", "3", "4"]
+training_scenarios = ["1", "2", "3", "4"]
 
 # rerun scenarios
 numberOfScenarios = 2
 aRange = numpy.arange(1, numberOfScenarios + 1)
-reRunScenarios = []
+rerun_scenarios = []
 for s in aRange:
-    reRunScenarios.append(str(s))
+    rerun_scenarios.append(str(s))
 
 folderWithArrays = (
     scenario_directory
     + "/"
     + scenarios[0]
     + "/"
-    + trainingScenarios[0]
+    + training_scenarios[0]
     + "/"
-    + reRunScenarios[0]
+    + rerun_scenarios[0]
     + "/arrays"
 )
 arrayFiles = os.listdir(folderWithArrays)
@@ -181,7 +181,7 @@ scList = []
 tsList = []
 rsList = []
 
-for sc, ts, rs in product(scenarios, trainingScenarios, reRunScenarios):
+for sc, ts, rs in product(scenarios, training_scenarios, rerun_scenarios):
     scList.append(sc)
     tsList.append(int(ts))
     rsList.append(int(rs))
@@ -191,7 +191,7 @@ df["rs"] = rsList
 
 for array in arrays:
     arrayContents = []
-    for sc, ts, rs in product(scenarios, trainingScenarios, reRunScenarios):
+    for sc, ts, rs in product(scenarios, training_scenarios, rerun_scenarios):
         folder = scenario_directory + sc + "/" + ts + "/" + rs + "/arrays/"
         arrayName = folder + array + ".npy"
         arrayContent = numpy.load(arrayName, allow_pickle=True)
@@ -440,11 +440,11 @@ else:
         "val_art_ts_sub_s"
     ]
 
-tssVariables = len(observed_tss_list)
+tss_variables = len(observed_tss_list)
 
 # timeseries
 
-def timeseries_plot_by_variable(scenarios, modelledTss, observedTss, start, end):
+def timeseries_plot_by_variable(scenarios, modelled_tss, observed_tss, start, end):
     fig = plt.figure(dpi=dpi_figures)
     gs = fig.add_gridspec(9, 3, hspace=0, wspace=0)
     #fig, axs = plt.subplots(9, 1, sharex="col", sharey=True)
@@ -485,13 +485,13 @@ def timeseries_plot_by_variable(scenarios, modelledTss, observedTss, start, end)
         a = (df[df["sc"] == sc].sort_values(by="lossTrainingValue")).iloc[0]
         axs[rij].plot(
             a["valid_date"][start:end],
-            a[observedTss][start:end],
+            a[observed_tss][start:end],
             linewidth=1.0,
             color=green
         )
         axs[rij].plot(
             a["valid_date"][start:end],
-            a[modelledTss][start:end],
+            a[modelled_tss][start:end],
             linewidth=1.0,
             color="black"
         )
@@ -500,7 +500,7 @@ def timeseries_plot_by_variable(scenarios, modelledTss, observedTss, start, end)
         axs[rij].xaxis.set_tick_params(labelsize=font_size_axes, labelrotation = 30)
         rij += 1
     for i in range(0, 8):
-        if observedTss[-1] == "f":
+        if observed_tss[-1] == "f":
             axs[i].set_ylabel("flux (m/day)", size=font_size_axes)
         else:
             axs[i].set_ylabel("storage (m)", size=font_size_axes)
@@ -517,10 +517,10 @@ def timeseries_plot_by_variable(scenarios, modelledTss, observedTss, start, end)
         axs[6].remove()
         axs[7].remove()
         axs[8].remove()
-    fig.savefig(figure_directory + "tss_modartcomp_" + observedTss + ".pdf")
+    fig.savefig(figure_directory + "tss_modartcomp_" + observed_tss + ".pdf")
     plt.close(fig)
 
-def timeseries_plot_by_scenario(modelledTssEs, observedTssEs, scenario, start, end):
+def timeseries_plot_by_scenario(modelled_tss_es, observed_tss_es, scenario, start, end):
     rows_in_figure = 6
     fig = plt.figure(dpi=dpi_figures)
     gs = fig.add_gridspec(rows_in_figure, 3, hspace=0, wspace=0)
@@ -557,11 +557,11 @@ def timeseries_plot_by_scenario(modelledTssEs, observedTssEs, scenario, start, e
     #axs[1]._shared_axes['y'].remove(axs[0])
     # Plot model output in rows starting in row 2.
     tssNumber = 0
-    for tss in modelledTssEs:
+    for tss in modelled_tss_es:
         for i in range(0,number_of_fits_to_plot):
             a = (df[df["sc"] == scenario].sort_values(by="lossTrainingValue")).iloc[i]
             # Plot observed timeseries either from artificial data or from observations.
-            observed_tss = observedTssEs[tssNumber]
+            observed_tss = observed_tss_es[tssNumber]
             if not(observed_scenario) or (observed_tss == 'valid_ts_OBS'):
                 axs[rij].plot(
                     a["valid_date"][start:end],
@@ -629,10 +629,10 @@ endTimeTss = 4 * 365
 if create_timeseries:
     # Plot for each variable all scenarios
     #i = 0
-    #while i < tssVariables:
-    #    modelledTss = modelled_tss_list[i]
-    #    observedTss = observed_tss_list[i]
-    #    timeseries_plot_by_variable(scenarios_to_plot, modelledTss, observedTss, startTimeTss, endTimeTss)
+    #while i < tss_variables:
+    #    modelled_tss = modelled_tss_list[i]
+    #    observed_tss = observed_tss_list[i]
+    #    timeseries_plot_by_variable(scenarios_to_plot, modelled_tss, observed_tss, startTimeTss, endTimeTss)
     #    i = i + 1
     
     # Plot for each scenario all variables
@@ -648,11 +648,11 @@ def rSquaredFormatted(x, y):
     rM = numpy.corrcoef(x, y)
     r = rM[0][1]
     rSq = r * r
-    rSqFor = "{:.3f}".format(rSq)
-    return rSqFor
+    r_sq_for = "{:.3f}".format(rSq)
+    return r_sq_for
 
 
-def scatter_plot_by_variable(scenarios, modelledTss, observedTss, start, end):
+def scatter_plot_by_variable(scenarios, modelled_tss, observed_tss, start, end):
     fig = plt.figure(dpi=dpi_figures)
     # gs = fig.add_gridspec(8, 3, hspace=0, wspace=0)
     # fig, axs = plt.subplots(8, 1, sharex='col', sharey = True)
@@ -669,21 +669,21 @@ def scatter_plot_by_variable(scenarios, modelledTss, observedTss, start, end):
     rij = 0
     for sc in scenarios:
         a = (df[df["sc"] == sc].sort_values(by="lossTrainingValue")).iloc[0]
-        x = a[observedTss][start:end]
-        y = a[modelledTss][start:end]
+        x = a[observed_tss][start:end]
+        y = a[modelled_tss][start:end]
         hb = axs[rij].hexbin(
             x, y, gridsize=15, cmap="Greens", bins="log", linewidths=0.0
         )
         ##fig.colorbar(hb, ax=axs[rij], pad=0.01)
         cbar = fig.colorbar(hb, ax=axs[rij], fraction=0.046, pad=0.04)
         axs[rij].plot([0, 10], [0, 10], color="black", linewidth=0.5)
-        rSqFor = rSquaredFormatted(x, y)
+        r_sq_for = rSquaredFormatted(x, y)
         axs[rij].text(
-            0.99, 0.01, rSqFor, ha="right", va="bottom", transform=axs[rij].transAxes
+            0.99, 0.01, r_sq_for, ha="right", va="bottom", transform=axs[rij].transAxes
         )
-        # axs[rij].scatter(a[observedTss][start:end], a[modelledTss][start:end], s = 0.5)
-        axs[rij].set_ylim(0, max(a[observedTss][start:end]))
-        axs[rij].set_xlim(0, max(a[observedTss][start:end]))
+        # axs[rij].scatter(a[observed_tss][start:end], a[modelled_tss][start:end], s = 0.5)
+        axs[rij].set_ylim(0, max(a[observed_tss][start:end]))
+        axs[rij].set_xlim(0, max(a[observed_tss][start:end]))
         #if rij < len(scenarios) - 1:
         #    axs[rij].set(xticklabels=[])
         axs[rij].set_aspect("equal")
@@ -696,10 +696,10 @@ def scatter_plot_by_variable(scenarios, modelledTss, observedTss, start, end):
         rij += 1
     axs[8].remove()
     plt.subplots_adjust(wspace=0.5, hspace=0)
-    fig.savefig(figure_directory + "sca_modartcomp_" + observedTss + ".pdf")
+    fig.savefig(figure_directory + "sca_modartcomp_" + observed_tss + ".pdf")
     plt.close(fig)
 
-def scatter_plot_by_scenario(modelledTssEs, observedTssEs, scenario, name, start, end):
+def scatter_plot_by_scenario(modelled_tss_es, observed_tss_es, scenario, name, start, end):
     plt.close('all')
     fig = plt.figure(dpi=dpi_figures)
     # gs = fig.add_gridspec(8, 3, hspace=0, wspace=0)
@@ -710,9 +710,9 @@ def scatter_plot_by_scenario(modelledTssEs, observedTssEs, scenario, name, start
     fig.set_size_inches(8.27, 5.0)
     rij = 0
     tssNumber = 0
-    for tss in modelledTssEs:
+    for tss in modelled_tss_es:
         a = (df[df["sc"] == scenario].sort_values(by="lossTrainingValue")).iloc[0]
-        observed_tss = observedTssEs[tssNumber]
+        observed_tss = observed_tss_es[tssNumber]
         x = a[observed_tss][start:end]
         y = a[tss][start:end]
         hb = axs[rij].hexbin(
@@ -723,9 +723,9 @@ def scatter_plot_by_scenario(modelledTssEs, observedTssEs, scenario, name, start
         cbar = fig.colorbar(hb, ax=axs[rij], fraction=0.046, pad=0.04)
         cbar.ax.tick_params(labelsize=font_size_axes)
         axs[rij].plot([0, 10], [0, 10], color="black", linewidth=1.0, linestyle = 'dashed')
-        rSqFor = rSquaredFormatted(x, y)
+        r_sq_for = rSquaredFormatted(x, y)
         axs[rij].text(
-            0.99, 0.01, '$r^2$ = ' + rSqFor, ha="right", va="bottom", transform=axs[rij].transAxes, size = font_size_axes
+            0.99, 0.01, '$r^2$ = ' + r_sq_for, ha="right", va="bottom", transform=axs[rij].transAxes, size = font_size_axes
         )
         #if rij < len(scenarios) - 1:
         #    axs[rij].set(xticklabels=[])
@@ -758,10 +758,10 @@ endTimeTss = len(df['val_art_ts_eva_f'].iloc[0])
 if create_scatter:
     # Plot for each variable all scenarios
     i = 0
-    while i < tssVariables:
-        modelledTss = modelled_tss_list[i]
-        observedTss = observed_tss_list[i]
-        scatter_plot_by_variable(scenarios_to_plot, modelledTss, observedTss, startTimeTss, endTimeTss)
+    while i < tss_variables:
+        modelled_tss = modelled_tss_list[i]
+        observed_tss = observed_tss_list[i]
+        scatter_plot_by_variable(scenarios_to_plot, modelled_tss, observed_tss, startTimeTss, endTimeTss)
         i = i + 1
     
     # Plot for each scenario all variables
