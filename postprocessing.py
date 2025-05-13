@@ -14,12 +14,12 @@ dpi_figures = 600
 
 EGU = False
 
-observed_scenario = True
+observed_scenario = False
 
 actual_snow_flux = True
 
 if EGU:
-    font_size_axes = 12
+    font_size_axes = 9
 else:
     font_size_axes = 8 
 
