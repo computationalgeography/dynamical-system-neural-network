@@ -13,23 +13,20 @@ import os
 import sys
 import string
 
-# import matplotlib.pyplot as plt
 
 run_in_batch = False
 
 # inputs for running in batch mode
 if run_in_batch:
-    first = sys.argv[
-        1
-    ]  # ranges from 1 up to and including the number of fitting scenarios used
-    second = sys.argv[
-        2
-    ]  # is 1 or 3 (training scenarios, 1 represents 1 and 2, 3 represents 3 and 4)
-    third = sys.argv[3]  # is 1 or 1,2 or 1,2,3 etc, splitted at , (rerun scenario)
+    # ranges from 1 up to and including the number of fitting scenarios used
+    first = sys.argv[1]
+    # is 1 or 3 (training scenarios, 1 represents 1 and 2, 3 represents 3 and 4)
+    second = sys.argv[2]
+    # is 1 or 1,2 or 1,2,3 etc, splitted at , (rerun scenario)
+    third = sys.argv[3]
 
-deep_layer = (
-    True  # note that for true, it may need to be in the parameter list of the optimizer
-)
+# note that for true, it may need to be in the parameter list of the optimizer
+deep_layer = (True)
 
 m = torch.nn.ReLU()
 
@@ -44,23 +41,28 @@ else:
 
 one_area = True
 print_parameters = True
-L1Regularization = False  # https://github.com/christianversloot/machine-learning-articles/blob/main/how-to-use-l1-l2-and-elastic-net-regularization-with-pytorch.md
+# https://github.com/christianversloot/machine-learning-articles/
+# blob/main/how-to-use-l1-l2-and-elastic-net-regularization-with-pytorch.md
+l1_regularization = False
 
 input_data_directory = "../data/inputData/"
 output_data_directory = "../data/outputData/"
 
-conversionFluxes = 549.3
+conversion_fluxes = 549.3
 
+# line width in plots
 width = 0.25
+
+# font size in plots
+myFontSize = 7
 
 # meteo start date is 1 jan 1979, end date is 31 juli 2014
 # so do not select a time stem outside this range
 # streamflow available always in this period
 
-myFontSize = 7
 
 
-def seedGenerator(string):
+def seed_generator(string):
     tot = 0
     i = 1
     for letter in string:
@@ -69,18 +71,18 @@ def seedGenerator(string):
     return tot + seedAll
 
 
-def timeSeriesPlot(dateTimeSeries, variableTimeSeriesList, ylabel):
+def timeSeriesPlot(date_time_series, variableTimeSeriesList, ylabel):
     fig = plt.figure(dpi=600)
     plt.xlabel("time")
     plt.ylabel(ylabel)
     for item in variableTimeSeriesList:
-        plt.plot(dateTimeSeries, item, linewidth=width)
+        plt.plot(date_time_series, item, linewidth=width)
     fig.savefig(ylabel + ".pdf")
     plt.close(fig)
 
 
 def timeSeriesPlot_rich(
-    sfd, fileName, dateTimeSeries, variableTimeSeriesList, xlabel, ylabel
+    sfd, fileName, date_time_series, variableTimeSeriesList, xlabel, ylabel
 ):
     fig = plt.figure(dpi=600, figsize=(6, 3))
     plt.xlabel(xlabel, fontsize=myFontSize)
@@ -90,7 +92,7 @@ def timeSeriesPlot_rich(
     plt.grid(True, linewidth=width, linestyle="dotted")
     plt.locator_params(axis="y", nbins=30)
     for item in variableTimeSeriesList:
-        plt.plot(dateTimeSeries, item, linewidth=width)
+        plt.plot(date_time_series, item, linewidth=width)
     fig.savefig(sfd + "/" + fileName + ".pdf")
     plt.close(fig)
 
@@ -182,12 +184,12 @@ class EarlyStopper:
 
 
 def createMeteoData(input_data_directory, output_data_directory, startDate, endDate):
-    precipitationFile = open(output_data_directory + "precipitation.txt", "w")
+    precipitation_file = open(output_data_directory + "precipitation.txt", "w")
     temperatureFile = open(output_data_directory + "temperature.txt", "w")
     date = datetime.date(1979, 1, 1)
     timestep = datetime.timedelta(days=1)
 
-    temperatureTimeSeries = []
+    temperature_time_series = []
     precipitationTimeSeries = []
 
     with open(input_data_directory + "weatherdata-470125_corrected.csv") as csv_file:
@@ -211,19 +213,19 @@ def createMeteoData(input_data_directory, output_data_directory, startDate, endD
                 precip = row[6]
                 # if (date >= start) and (date <= end):
                 if (date >= startDate) and (date <= endDate):
-                    precipitationFile.write(str(line_out_count) + " " + precip + "\n")
+                    precipitation_file.write(str(line_out_count) + " " + precip + "\n")
                     precipitationTimeSeries.append(float(precip))
                     temperatureFile.write(
                         str(line_out_count) + " " + str(temperature) + "\n"
                     )
-                    temperatureTimeSeries.append(temperature)
+                    temperature_time_series.append(temperature)
                     line_out_count += 1
                 line_count += 1
                 date = date + timestep
 
-    precipitationFile.close()
+    precipitation_file.close()
     temperatureFile.close()
-    return temperatureTimeSeries, precipitationTimeSeries
+    return temperature_time_series, precipitationTimeSeries
 
 
 def create_streamflow_data(input_data_directory, output_data_directory, start, end):
@@ -235,7 +237,7 @@ def create_streamflow_data(input_data_directory, output_data_directory, start, e
     dischargeFileContent = dischargeFile.readlines()
 
     streamFlowTimeSeries = []
-    dateTimeSeries = []
+    date_time_series = []
 
     line_out_count = 1
     for i in range(0, len(dischargeFileContent)):
@@ -244,38 +246,38 @@ def create_streamflow_data(input_data_directory, output_data_directory, start, e
         if (date >= start) and (date <= end):
             streamFlowFile.write(str(line_out_count) + " " + discharge + "\n")
             streamFlowTimeSeries.append(float(discharge))
-            dateTimeSeries.append(date)
+            date_time_series.append(date)
             line_out_count += 1
         date = date + timestep
 
     dischargeFile.close()
-    return streamFlowTimeSeries, dateTimeSeries
+    return streamFlowTimeSeries, date_time_series
 
 
 ## data for training
-# temperatureTimeSeries, precipitationTimeSeries = createMeteoData(input_data_directory, output_data_directory, start, end)
-# streamFlowTimeSeries, dateTimeSeries = create_streamflow_data(input_data_directory, output_data_directory, start, end)
+# temperature_time_series, precipitationTimeSeries = createMeteoData(input_data_directory, output_data_directory, start, end)
+# streamFlowTimeSeries, date_time_series = create_streamflow_data(input_data_directory, output_data_directory, start, end)
 #
 ## data for validation
 # startVal = datetime.date(1997, 10 , 1)
 # endVal = datetime.date(2013, 10, 1)
-# temperatureTimeSeriesVal, precipitationTimeSeriesVal = createMeteoData(input_data_directory, output_data_directory, startVal, endVal)
-# streamFlowTimeSeriesVal, dateTimeSeriesVal = create_streamflow_data(input_data_directory, output_data_directory, startVal, endVal)
+# temperature_time_series_val, precipitation_time_series_val = createMeteoData(input_data_directory, output_data_directory, startVal, endVal)
+# streamflow_time_series_val, date_time_series_val = create_streamflow_data(input_data_directory, output_data_directory, startVal, endVal)
 #
 #
 # aRange = range(1,len(streamFlowTimeSeries)+1,1)
 # f = plt.figure()
 # f, axs = plt.subplots(2, 2)
-# axs[0,0].scatter(temperatureTimeSeries, streamFlowTimeSeries, s = 1 )
+# axs[0,0].scatter(temperature_time_series, streamFlowTimeSeries, s = 1 )
 # axs[0,0].set_ylabel('streamflow')
 # axs[0,0].set_xlabel('temperature')
 #
 # width=0.25
-# axs[0,1].plot(dateTimeSeries, numpy.asarray(temperatureTimeSeries), linewidth=width)
+# axs[0,1].plot(date_time_series, numpy.asarray(temperature_time_series), linewidth=width)
 # axs[0,1].set_ylabel('temperature')
-# axs[1,0].plot(dateTimeSeries, numpy.asarray(streamFlowTimeSeries), linewidth=width)
+# axs[1,0].plot(date_time_series, numpy.asarray(streamFlowTimeSeries), linewidth=width)
 # axs[1,0].set_ylabel('streamflow')
-# axs[1,1].plot(dateTimeSeries, numpy.asarray(precipitationTimeSeries), linewidth=width)
+# axs[1,1].plot(date_time_series, numpy.asarray(precipitationTimeSeries), linewidth=width)
 # axs[1,1].set_ylabel('precipitation')
 #
 # axs[1,0].xaxis.set_major_locator(plt.MaxNLocator(3))
@@ -366,8 +368,8 @@ class Net(nn.Module):
                 }
             )
 
-    def eva_f_calculate(self, temp, modeEva, deep_layer, linearArt):
-        if modeEva == "obsCreation":
+    def eva_f_calculate(self, temp, mode_eva, deep_layer, linearArt):
+        if mode_eva == "obsCreation":
             if linearArt:
                 # potential evapotranspiration
                 # https://en.wikipedia.org/wiki/Blaney–Criddle_equation (see link for params)
@@ -390,12 +392,12 @@ class Net(nn.Module):
                     ) + 0.0001 * torch.tensor([temp + 15.0])
                 else:
                     EPot = torch.tensor([0.0])
-        if modeEva == "fit":
+        if mode_eva == "fit":
             out_eva_f = m(self.eva_f_d((torch.tensor([temp]))))
             if deep_layer:
                 out_eva_f = m(self.eva_f_dd(out_eva_f))
             EPot = torch.sigmoid(self.eva_f_c(out_eva_f)) / 75.0  # /750.0 or /1000.0
-        if modeEva == "fitExpert":
+        if mode_eva == "fitExpert":
             # potential evapotranspiration
             # https://en.wikipedia.org/wiki/Blaney–Criddle_equation (see link for params)
             EPot = torch.max(
@@ -498,7 +500,7 @@ class Net(nn.Module):
         sub_s_initial,  # initial subsurface storage
         temperature,  # temperature time series
         precipitation,  # precipitation time series
-        modeEva,  # mode evapotranspiration
+        mode_eva,  # mode evapotranspiration
         modeSno,  # mode snow
         modeSub,  # mode subsurface
         modeTem,  # temperature offset
@@ -561,7 +563,7 @@ class Net(nn.Module):
                 # potential evapotranspiration
 
                 EPot = torch.max(
-                    self.eva_f_calculate(temp, modeEva, deep_layer, linearArt),
+                    self.eva_f_calculate(temp, mode_eva, deep_layer, linearArt),
                     torch.tensor(0.0),
                 )
 
@@ -683,7 +685,7 @@ class Net(nn.Module):
 
 
 def createArtificialObservations(
-    temperatureTimeSeries,
+    temperature_time_series,
     precipitationTimeSeries,
     addErrorToArtificialStreamFlow,
     linearArt,
@@ -697,9 +699,9 @@ def createArtificialObservations(
             False,
             torch.tensor(sno_s_initial),
             torch.tensor(sub_s_initial),
-            torch.tensor(temperatureTimeSeries),
+            torch.tensor(temperature_time_series),
             torch.tensor(precipitationTimeSeries),
-            modeEva="obsCreation",
+            mode_eva="obsCreation",
             modeSno="obsCreation",
             modeSub="obsCreation",
             modeTem="obsCreation",
@@ -733,18 +735,18 @@ def training_loop(
     loss_fn,
     sno_s_initial,
     sub_s_initial,
-    temperatureTimeSeries,
+    temperature_time_series,
     precipitationTimeSeries,
     streamFlowTimeSeries,
-    dateTimeSeries,
+    date_time_series,
     temperatureTimeSeriesSto,
     precipitationTimeSeriesSto,
     streamFlowTimeSeriesSto,
     dateTimeSeriesSto,
-    temperatureTimeSeriesVal,
-    precipitationTimeSeriesVal,
-    streamFlowTimeSeriesVal,
-    dateTimeSeriesVal,
+    temperature_time_series_val,
+    precipitation_time_series_val,
+    streamflow_time_series_val,
+    date_time_series_val,
     sno_s_ts,
     sub_s_ts,
     sno_f_ts,
@@ -762,7 +764,7 @@ def training_loop(
     eva_f_tsVal,
     trainingData,
     fitOnObservations,
-    modeEvaTrain,
+    mode_eva_train,
     modeSnoTrain,
     modeSubTrain,
     modeTemTrain,
@@ -822,9 +824,9 @@ def training_loop(
             firstEpochs,
             torch.tensor(sno_s_initial),
             torch.tensor(sub_s_initial),
-            torch.tensor(temperatureTimeSeries),
+            torch.tensor(temperature_time_series),
             torch.tensor(precipitationTimeSeries),
-            modeEva=modeEvaTrain,
+            mode_eva=mode_eva_train,
             modeSno=modeSnoTrain,
             modeSub=modeSubTrain,
             modeTem=modeTemTrain,
@@ -845,7 +847,7 @@ def training_loop(
             else:
                 loss_train = loss_fn(
                     tr_sub_f_ts,
-                    torch.tensor(streamFlowTimeSeries) / conversionFluxes,
+                    torch.tensor(streamFlowTimeSeries) / conversion_fluxes,
                     training,
                 )
         else:
@@ -875,7 +877,7 @@ def training_loop(
             #                   torch.tensor(sub_s_initial),
             #                   torch.tensor(temperatureTimeSeriesSto),
             #                   torch.tensor(precipitationTimeSeriesSto),
-            #                   modeEva = modeEvaTrain,
+            #                   mode_eva = mode_eva_train,
             #                   modeSno = modeSnoTrain,
             #                   modeSub = modeSubTrain,
             #                   modeTem = modeTemTrain,
@@ -889,7 +891,7 @@ def training_loop(
             if fitOnObservations:
                 loss_trainSto = loss_fn(
                     tr_sub_f_ts,
-                    torch.tensor(streamFlowTimeSeries) / conversionFluxes,
+                    torch.tensor(streamFlowTimeSeries) / conversion_fluxes,
                     stopping,
                 )
             else:
@@ -912,9 +914,9 @@ def training_loop(
                 True,
                 torch.tensor(sno_s_initial),
                 torch.tensor(sub_s_initial),
-                torch.tensor(temperatureTimeSeriesVal),
-                torch.tensor(precipitationTimeSeriesVal),
-                modeEva=modeEvaTrain,
+                torch.tensor(temperature_time_series_val),
+                torch.tensor(precipitation_time_series_val),
+                mode_eva=mode_eva_train,
                 modeSno=modeSnoTrain,
                 modeSub=modeSubTrain,
                 modeTem=modeTemTrain,
@@ -929,7 +931,7 @@ def training_loop(
             if fitOnObservations:
                 loss_trainVal = loss_fn(
                     tr_sub_f_tsVal,
-                    torch.tensor(streamFlowTimeSeriesVal) / conversionFluxes,
+                    torch.tensor(streamflow_time_series_val) / conversion_fluxes,
                     validation,
                 )
             else:
@@ -937,7 +939,7 @@ def training_loop(
 
         lossValidationSeries.append(loss_trainVal.item())
 
-        if L1Regularization:
+        if l1_regularization:
             # Compute L1 loss component
             l1_weight = 0.000001
             l1_parameters = []
@@ -973,7 +975,7 @@ def training_loop(
                 print("Fitting on artificial data")
             # print('learning rates (eva, sub, sno)', scheduler.get_last_lr())
             print("learning rate sub", optimizer.param_groups[0]["lr"])
-            if L1Regularization:
+            if l1_regularization:
                 print("l1", l1.item())
             print(epoch, "snow flux", tr_sno_f_ts.mean().item(), end="")
             print(epoch, "snow stor", tr_sno_s_ts.mean().item(), end="")
@@ -1000,7 +1002,7 @@ def training_loop(
                     sfdAr + "sno_parameter.npy",
                     hydromodel.sno_parameter.detach().numpy(),
                 )
-            if modeEvaTrain == "fitExpert":
+            if mode_eva_train == "fitExpert":
                 print(
                     "eva parameter:",
                     hydromodel.eva_parameter.detach().numpy()[0],
@@ -1063,7 +1065,7 @@ def training_loop(
             numpy.save(sfdAr + "response_sno_x.npy", numpy.array(a))
             numpy.save(sfdAr + "response_sno_y.npy", numpy.array(b))
 
-            a, b = hydromodel.com_f_response(modeEvaTrain, deep_layer, "eva", linearArt)
+            a, b = hydromodel.com_f_response(mode_eva_train, deep_layer, "eva", linearArt)
             scatterplot_rich(
                 sfd,
                 "response_eva",
@@ -1107,7 +1109,7 @@ def training_loop(
             timeSeriesPlot_rich(
                 sfd,
                 "train_ts_eva_f",
-                dateTimeSeries,
+                date_time_series,
                 [tr_eva_f_ts.detach().numpy(), eva_f_ts.detach().numpy()],
                 "time",
                 "flux (m/day)",
@@ -1115,7 +1117,7 @@ def training_loop(
             timeSeriesPlot_rich(
                 sfd,
                 "train_ts_sub_f",
-                dateTimeSeries,
+                date_time_series,
                 [tr_sub_f_ts.detach().numpy(), sub_f_ts.detach().numpy()],
                 "time",
                 "flux (m/day)",
@@ -1123,7 +1125,7 @@ def training_loop(
             timeSeriesPlot_rich(
                 sfd,
                 "train_ts_sub_s",
-                dateTimeSeries,
+                date_time_series,
                 [tr_sub_s_ts.detach().numpy(), sub_s_ts.detach().numpy()],
                 "time",
                 "storage (m/day)",
@@ -1131,7 +1133,7 @@ def training_loop(
             timeSeriesPlot_rich(
                 sfd,
                 "train_ts_sno_f",
-                dateTimeSeries,
+                date_time_series,
                 [tr_sno_f_ts.detach().numpy(), sno_f_ts.detach().numpy()],
                 "time",
                 "flux (m/day)",
@@ -1139,7 +1141,7 @@ def training_loop(
             timeSeriesPlot_rich(
                 sfd,
                 "train_ts_sno_s",
-                dateTimeSeries,
+                date_time_series,
                 [tr_sno_s_ts.detach().numpy(), sno_s_ts.detach().numpy()],
                 "time",
                 "storage (m/day)",
@@ -1147,10 +1149,10 @@ def training_loop(
             timeSeriesPlot_rich(
                 sfd,
                 "train_ts_OBS",
-                dateTimeSeries,
+                date_time_series,
                 [
                     tr_sub_f_ts.detach().numpy(),
-                    torch.tensor(streamFlowTimeSeries) / conversionFluxes,
+                    torch.tensor(streamFlowTimeSeries) / conversion_fluxes,
                 ],
                 "time",
                 "flux (m/day",
@@ -1172,16 +1174,16 @@ def training_loop(
             )
             numpy.save(
                 sfdAr + "train_ts_OBS",
-                (torch.tensor(streamFlowTimeSeries) / conversionFluxes).numpy(),
+                (torch.tensor(streamFlowTimeSeries) / conversion_fluxes).numpy(),
             )
-            numpy.save(sfdAr + "train_date.npy", numpy.array(dateTimeSeries))
-            numpy.save(sfdAr + "train_ts_temperature.npy", numpy.array(temperatureTimeSeries))
+            numpy.save(sfdAr + "train_date.npy", numpy.array(date_time_series))
+            numpy.save(sfdAr + "train_ts_temperature.npy", numpy.array(temperature_time_series))
             numpy.save(sfdAr + "train_ts_precipitation.npy", numpy.array(precipitationTimeSeries))
             # validation
             timeSeriesPlot_rich(
                 sfd,
                 "valid_ts_eva_f",
-                dateTimeSeriesVal,
+                date_time_series_val,
                 [tr_eva_f_tsVal.detach().numpy()],
                 "time",
                 "flux (m/day)",
@@ -1189,7 +1191,7 @@ def training_loop(
             timeSeriesPlot_rich(
                 sfd,
                 "valid_ts_sub_f",
-                dateTimeSeriesVal,
+                date_time_series_val,
                 [tr_sub_f_tsVal.detach().numpy()],
                 "time",
                 "flux (m/day)",
@@ -1197,7 +1199,7 @@ def training_loop(
             timeSeriesPlot_rich(
                 sfd,
                 "valid_ts_sub_s",
-                dateTimeSeriesVal,
+                date_time_series_val,
                 [tr_sub_s_tsVal.detach().numpy()],
                 "time",
                 "storage (m/day)",
@@ -1205,7 +1207,7 @@ def training_loop(
             timeSeriesPlot_rich(
                 sfd,
                 "valid_ts_sno_f",
-                dateTimeSeriesVal,
+                date_time_series_val,
                 [tr_sno_f_tsVal.detach().numpy()],
                 "time",
                 "flux (m/day)",
@@ -1213,7 +1215,7 @@ def training_loop(
             timeSeriesPlot_rich(
                 sfd,
                 "valid_ts_sno_s",
-                dateTimeSeriesVal,
+                date_time_series_val,
                 [tr_sno_s_tsVal.detach().numpy()],
                 "time",
                 "storage (m/day)",
@@ -1221,10 +1223,10 @@ def training_loop(
             timeSeriesPlot_rich(
                 sfd,
                 "valid_ts_OBS",
-                dateTimeSeriesVal,
+                date_time_series_val,
                 [
                     tr_sub_f_tsVal.detach().numpy(),
-                    torch.tensor(streamFlowTimeSeriesVal) / conversionFluxes,
+                    torch.tensor(streamflow_time_series_val) / conversion_fluxes,
                 ],
                 "time",
                 "flux (m/day",
@@ -1251,11 +1253,11 @@ def training_loop(
             )
             numpy.save(
                 sfdAr + "valid_ts_OBS",
-                (torch.tensor(streamFlowTimeSeriesVal) / conversionFluxes).numpy(),
+                (torch.tensor(streamflow_time_series_val) / conversion_fluxes).numpy(),
             )
-            numpy.save(sfdAr + "valid_date.npy", numpy.array(dateTimeSeriesVal))
-            numpy.save(sfdAr + "valid_ts_temperature.npy", numpy.array(temperatureTimeSeriesVal))
-            numpy.save(sfdAr + "valid_ts_precipitation.npy", numpy.array(precipitationTimeSeriesVal))
+            numpy.save(sfdAr + "valid_date.npy", numpy.array(date_time_series_val))
+            numpy.save(sfdAr + "valid_ts_temperature.npy", numpy.array(temperature_time_series_val))
+            numpy.save(sfdAr + "valid_ts_precipitation.npy", numpy.array(precipitation_time_series_val))
 
             # scatterplots, indep vs dep
             # mean over area only
@@ -1263,7 +1265,7 @@ def training_loop(
             scatterplot_rich(
                 sfd,
                 "loss_pre_eva_f_sc",
-                temperatureTimeSeries,
+                temperature_time_series,
                 tr_eva_f_ts.detach().numpy(),
                 "temperature (C)",
                 "flux (m/day)",
@@ -1273,7 +1275,7 @@ def training_loop(
             scatterplot_rich(
                 sfd,
                 "loss_eva_f_sc",
-                temperatureTimeSeries,
+                temperature_time_series,
                 eva_f_ts,
                 "temperature (C)",
                 "flux (m/day)",
@@ -1284,7 +1286,7 @@ def training_loop(
             scatterplot_rich(
                 sfd,
                 "loss_pre_sno_f_sc",
-                temperatureTimeSeries,
+                temperature_time_series,
                 tr_sno_f_ts.detach().numpy(),
                 "temperature (C)",
                 "flux (m/day)",
@@ -1294,7 +1296,7 @@ def training_loop(
             scatterplot_rich(
                 sfd,
                 "loss_sno_f_sc",
-                temperatureTimeSeries,
+                temperature_time_series,
                 sno_f_ts,
                 "temperature (C))",
                 "flux (m/day)",
@@ -1329,7 +1331,7 @@ def training_loop(
                 timeSeriesPlot_rich(
                     sfd,
                     "train_ts_sno_s_areas",
-                    dateTimeSeries,
+                    date_time_series,
                     [a[0], a[1]],
                     "time",
                     "storage (m)",
@@ -1339,7 +1341,7 @@ def training_loop(
                 timeSeriesPlot_rich(
                     sfd,
                     "train_ts_sub_s_areas",
-                    dateTimeSeries,
+                    date_time_series,
                     [a[0], a[1]],
                     "time",
                     "storage (m)",
@@ -1349,7 +1351,7 @@ def training_loop(
                 timeSeriesPlot_rich(
                     sfd,
                     "train_ts_sno_f_areas",
-                    dateTimeSeries,
+                    date_time_series,
                     [a[0], a[1]],
                     "time",
                     "flux (m/day)",
@@ -1359,7 +1361,7 @@ def training_loop(
                 timeSeriesPlot_rich(
                     sfd,
                     "train_ts_sub_f_areas",
-                    dateTimeSeries,
+                    date_time_series,
                     [a[0], a[1]],
                     "time",
                     "flux (m/day)",
@@ -1369,7 +1371,7 @@ def training_loop(
                 timeSeriesPlot_rich(
                     sfd,
                     "train_ts_eva_f_areas",
-                    dateTimeSeries,
+                    date_time_series,
                     [a[0], a[1]],
                     "time",
                     "flux (m/day)",
@@ -1380,7 +1382,7 @@ def training_loop(
                 timeSeriesPlot_rich(
                     sfd,
                     "valid_ts_sno_s_areas",
-                    dateTimeSeries,
+                    date_time_series,
                     [a[0], a[1]],
                     "time",
                     "storage (m)",
@@ -1390,7 +1392,7 @@ def training_loop(
                 timeSeriesPlot_rich(
                     sfd,
                     "valid_ts_sub_s_areas",
-                    dateTimeSeries,
+                    date_time_series,
                     [a[0], a[1]],
                     "time",
                     "storage (m)",
@@ -1400,7 +1402,7 @@ def training_loop(
                 timeSeriesPlot_rich(
                     sfd,
                     "valid_ts_sno_f_areas",
-                    dateTimeSeries,
+                    date_time_series,
                     [a[0], a[1]],
                     "time",
                     "flux (m/day)",
@@ -1410,7 +1412,7 @@ def training_loop(
                 timeSeriesPlot_rich(
                     sfd,
                     "valid_ts_sub_f_areas",
-                    dateTimeSeries,
+                    date_time_series,
                     [a[0], a[1]],
                     "time",
                     "flux (m/day)",
@@ -1420,7 +1422,7 @@ def training_loop(
                 timeSeriesPlot_rich(
                     sfd,
                     "valid_ts_eva_f_areas",
-                    dateTimeSeries,
+                    date_time_series,
                     [a[0], a[1]],
                     "time",
                     "flux (m/day)",
@@ -1481,14 +1483,14 @@ else:
 # training period 1
 startOne = datetime.date(1979, 10, 1)
 endOne = datetime.date(1996, 9, 26)
-temperatureTimeSeries, precipitationTimeSeries = createMeteoData(
+temperature_time_series, precipitationTimeSeries = createMeteoData(
     input_data_directory, output_data_directory, startOne, endOne
 )
-streamFlowTimeSeries, dateTimeSeries = create_streamflow_data(
+streamFlowTimeSeries, date_time_series = create_streamflow_data(
     input_data_directory, output_data_directory, startOne, endOne
 )
 sno_s_ts, sub_s_ts, sno_f_ts, sub_f_ts, eva_f_ts = createArtificialObservations(
-    temperatureTimeSeries,
+    temperature_time_series,
     precipitationTimeSeries,
     addErrorToArtificialStreamFlow,
     linearArt,
@@ -1516,16 +1518,16 @@ sno_s_tsTwo, sub_s_tsTwo, sno_f_tsTwo, sub_f_tsTwo, eva_f_tsTwo = (
 # data for validation, ie testing
 startVal = datetime.date(1995, 10, 1)
 endVal = datetime.date(2012, 9, 26)
-temperatureTimeSeriesVal, precipitationTimeSeriesVal = createMeteoData(
+temperature_time_series_val, precipitation_time_series_val = createMeteoData(
     input_data_directory, output_data_directory, startVal, endVal
 )
-streamFlowTimeSeriesVal, dateTimeSeriesVal = create_streamflow_data(
+streamflow_time_series_val, date_time_series_val = create_streamflow_data(
     input_data_directory, output_data_directory, startVal, endVal
 )
 # note that no error is added to artificial streamflow in any case as it is used for validation only
 sno_s_tsVal, sub_s_tsVal, sno_f_tsVal, sub_f_tsVal, eva_f_tsVal = (
     createArtificialObservations(
-        temperatureTimeSeriesVal, precipitationTimeSeriesVal, False, linearArt
+        temperature_time_series_val, precipitation_time_series_val, False, linearArt
     )
 )
 
@@ -1537,7 +1539,7 @@ sub_s_initial = 0.0
 # fitting scenarios #
 #####################
 
-nrEpochs = 5000
+nr_epochs = 5000
 
 # expert models (n = 7)
 
@@ -1548,7 +1550,7 @@ xub = {
     "modeSubTrain": "fitExpert",
     "modeTemTrain": "obsCreation",
     "modeEvPTrain": "obsCreation",
-    "nrEpochs": nrEpochs,
+    "nrEpochs": nr_epochs,
 }
 xno = {
     "name": "fit_xno",
@@ -1557,7 +1559,7 @@ xno = {
     "modeSubTrain": "obsCreation",
     "modeTemTrain": "obsCreation",
     "modeEvPTrain": "obsCreation",
-    "nrEpochs": nrEpochs,
+    "nrEpochs": nr_epochs,
 }
 xva = {
     "name": "fit_xva",
@@ -1566,7 +1568,7 @@ xva = {
     "modeSubTrain": "obsCreation",
     "modeTemTrain": "obsCreation",
     "modeEvPTrain": "obsCreation",
-    "nrEpochs": nrEpochs,
+    "nrEpochs": nr_epochs,
 }
 xus = {
     "name": "fit_xus",
@@ -1575,7 +1577,7 @@ xus = {
     "modeSubTrain": "fitExpert",
     "modeTemTrain": "obsCreation",
     "modeEvPTrain": "obsCreation",
-    "nrEpochs": nrEpochs,
+    "nrEpochs": nr_epochs,
 }
 xue = {
     "name": "fit_xue",
@@ -1584,7 +1586,7 @@ xue = {
     "modeSubTrain": "fitExpert",
     "modeTemTrain": "obsCreation",
     "modeEvPTrain": "obsCreation",
-    "nrEpochs": nrEpochs,
+    "nrEpochs": nr_epochs,
 }
 xne = {
     "name": "fit_xne",
@@ -1593,7 +1595,7 @@ xne = {
     "modeSubTrain": "obsCreation",
     "modeTemTrain": "obsCreation",
     "modeEvPTrain": "obsCreation",
-    "nrEpochs": nrEpochs,
+    "nrEpochs": nr_epochs,
 }
 xhr = {
     "name": "fit_xhr",
@@ -1602,7 +1604,7 @@ xhr = {
     "modeSubTrain": "fitExpert",
     "modeTemTrain": "obsCreation",  # fixed as not considered here
     "modeEvPTrain": "obsCreation",  # idem
-    "nrEpochs": nrEpochs,
+    "nrEpochs": nr_epochs,
 }
 
 
@@ -1615,7 +1617,7 @@ sub = {
     "modeSubTrain": "fit",
     "modeTemTrain": "obsCreation",
     "modeEvPTrain": "obsCreation",
-    "nrEpochs": nrEpochs,
+    "nrEpochs": nr_epochs,
 }
 sno = {
     "name": "fit_sno",
@@ -1624,7 +1626,7 @@ sno = {
     "modeSubTrain": "obsCreation",
     "modeTemTrain": "obsCreation",
     "modeEvPTrain": "obsCreation",
-    "nrEpochs": nrEpochs,
+    "nrEpochs": nr_epochs,
 }
 eva = {
     "name": "fit_eva",
@@ -1633,7 +1635,7 @@ eva = {
     "modeSubTrain": "obsCreation",
     "modeTemTrain": "obsCreation",
     "modeEvPTrain": "obsCreation",
-    "nrEpochs": nrEpochs,
+    "nrEpochs": nr_epochs,
 }
 sus = {
     "name": "fit_sus",
@@ -1642,7 +1644,7 @@ sus = {
     "modeSubTrain": "fit",
     "modeTemTrain": "obsCreation",
     "modeEvPTrain": "obsCreation",
-    "nrEpochs": nrEpochs,
+    "nrEpochs": nr_epochs,
 }
 sue = {
     "name": "fit_sue",
@@ -1651,7 +1653,7 @@ sue = {
     "modeSubTrain": "fit",
     "modeTemTrain": "obsCreation",
     "modeEvPTrain": "obsCreation",
-    "nrEpochs": nrEpochs,
+    "nrEpochs": nr_epochs,
 }
 sne = {
     "name": "fit_sne",
@@ -1660,7 +1662,7 @@ sne = {
     "modeSubTrain": "obsCreation",
     "modeTemTrain": "obsCreation",
     "modeEvPTrain": "obsCreation",
-    "nrEpochs": nrEpochs,
+    "nrEpochs": nr_epochs,
 }
 thr = {
     "name": "fit_thr",
@@ -1669,7 +1671,7 @@ thr = {
     "modeSubTrain": "fit",
     "modeTemTrain": "obsCreation",
     "modeEvPTrain": "obsCreation",
-    "nrEpochs": nrEpochs,
+    "nrEpochs": nr_epochs,
 }
 
 # fitting_scenarios define what components are fitted and what aren't
@@ -1692,10 +1694,10 @@ outOne, outTwo, outThree, outFour = createTrainingIndices()
 one = {
     "name": "1",
     "stopping": outOne,
-    "temperature": temperatureTimeSeries,
+    "temperature": temperature_time_series,
     "precipitation": precipitationTimeSeries,
     "streamFlow": streamFlowTimeSeries,
-    "date": dateTimeSeries,
+    "date": date_time_series,
     "temperatureSto": temperatureTimeSeriesTwo,
     "precipitationSto": precipitationTimeSeriesTwo,
     "streamFlowSto": streamFlowTimeSeriesTwo,
@@ -1745,7 +1747,7 @@ for fs in fitting_scenarios:
         for rs in re_run_scenarios:
             scenario_directory = fs["name"] + "/" + ts["name"] + "/" + rs
             print(scenario_directory)
-            seed = seedGenerator(scenario_directory)
+            seed = seed_generator(scenario_directory)
             print("seed is", seed)
             torch.manual_seed(seed)
             hydromodel = Net()
@@ -1795,10 +1797,10 @@ for fs in fitting_scenarios:
                 ts["precipitationSto"],
                 ts["streamFlowSto"],
                 ts["dateSto"],
-                temperatureTimeSeriesVal,
-                precipitationTimeSeriesVal,
-                streamFlowTimeSeriesVal,
-                dateTimeSeriesVal,
+                temperature_time_series_val,
+                precipitation_time_series_val,
+                streamflow_time_series_val,
+                date_time_series_val,
                 ts["sno_s_ts"],
                 ts["sub_s_ts"],
                 ts["sno_f_ts"],
