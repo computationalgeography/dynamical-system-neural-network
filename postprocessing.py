@@ -14,7 +14,7 @@ dpi_figures = 600
 
 EGU = False
 
-observed_scenario = False
+observed_scenario = True
 
 actual_snow_flux = True
 
