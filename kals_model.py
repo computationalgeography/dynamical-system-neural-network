@@ -16,7 +16,7 @@ import string
 
 run_in_batch = False
 
-# inputs for running in batch mode
+# inputs for running in batch mode.
 if run_in_batch:
     # ranges from 1 up to and including the number of fitting scenarios used
     first = sys.argv[1]
