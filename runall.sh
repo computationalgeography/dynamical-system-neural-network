@@ -1,112 +1,14 @@
-nohup python -u kals_model.py 1 1 1 > nohup111.out &
-nohup python -u kals_model.py 1 3 1 > nohup131.out &
-nohup python -u kals_model.py 2 1 1 > nohup211.out &
-nohup python -u kals_model.py 2 3 1 > nohup231.out &
-nohup python -u kals_model.py 3 1 1 > nohup311.out &
-nohup python -u kals_model.py 3 3 1 > nohup331.out &
-nohup python -u kals_model.py 4 1 1 > nohup411.out &
-nohup python -u kals_model.py 4 3 1 > nohup431.out &
-nohup python -u kals_model.py 5 1 1 > nohup511.out &
-nohup python -u kals_model.py 5 3 1 > nohup531.out &
-nohup python -u kals_model.py 6 1 1 > nohup611.out &
-nohup python -u kals_model.py 6 3 1 > nohup631.out &
-nohup python -u kals_model.py 7 1 1 > nohup711.out &
-nohup python -u kals_model.py 7 3 1 > nohup731.out &
-nohup python -u kals_model.py 8 1 1 > nohup811.out &
-nohup python -u kals_model.py 8 3 1 > nohup831.out &
-nohup python -u kals_model.py 9 1 1 > nohup911.out &
-nohup python -u kals_model.py 9 3 1 > nohup931.out &
-nohup python -u kals_model.py 10 1 1 > nohup1011.out &
-nohup python -u kals_model.py 10 3 1 > nohup1031.out &
-nohup python -u kals_model.py 11 1 1 > nohup1111.out &
-nohup python -u kals_model.py 11 3 1 > nohup1131.out &
-nohup python -u kals_model.py 12 1 1 > nohup1211.out &
-nohup python -u kals_model.py 12 3 1 > nohup1231.out &
-nohup python -u kals_model.py 13 1 1 > nohup1311.out &
-nohup python -u kals_model.py 13 3 1 > nohup1331.out &
-nohup python -u kals_model.py 14 1 1 > nohup1411.out &
-nohup python -u kals_model.py 14 3 1 > nohup1431.out &
-nohup python -u kals_model.py 1 1 2 > nohup112.out &
-nohup python -u kals_model.py 2 3 2 > nohup132.out &
-nohup python -u kals_model.py 2 1 2 > nohup212.out &
-nohup python -u kals_model.py 2 3 2 > nohup232.out &
-nohup python -u kals_model.py 3 1 2 > nohup312.out &
-nohup python -u kals_model.py 3 3 2 > nohup332.out &
-nohup python -u kals_model.py 4 1 2 > nohup412.out &
-nohup python -u kals_model.py 4 3 2 > nohup432.out &
-nohup python -u kals_model.py 5 1 2 > nohup512.out &
-nohup python -u kals_model.py 5 3 2 > nohup532.out &
-nohup python -u kals_model.py 6 1 2 > nohup612.out &
-nohup python -u kals_model.py 6 3 2 > nohup632.out &
-nohup python -u kals_model.py 7 1 2 > nohup712.out &
-nohup python -u kals_model.py 7 3 2 > nohup732.out &
-nohup python -u kals_model.py 8 1 2 > nohup812.out &
-nohup python -u kals_model.py 8 3 2 > nohup832.out &
-nohup python -u kals_model.py 9 1 2 > nohup912.out &
-nohup python -u kals_model.py 9 3 2 > nohup932.out &
-nohup python -u kals_model.py 10 1 2 > nohup1012.out &
-nohup python -u kals_model.py 10 3 2 > nohup1032.out &
-nohup python -u kals_model.py 11 1 2 > nohup1112.out &
-nohup python -u kals_model.py 11 3 2 > nohup1132.out &
-nohup python -u kals_model.py 12 1 2 > nohup1212.out &
-nohup python -u kals_model.py 12 3 2 > nohup1232.out &
-nohup python -u kals_model.py 13 1 2 > nohup1312.out &
-nohup python -u kals_model.py 13 3 2 > nohup1332.out &
-nohup python -u kals_model.py 14 1 2 > nohup1412.out &
-nohup python -u kals_model.py 14 3 2 > nohup1432.out &
-nohup python -u kals_model.py 1 1 3 > nohup113.out &
-nohup python -u kals_model.py 1 3 3 > nohup133.out &
-nohup python -u kals_model.py 2 1 3 > nohup213.out &
-nohup python -u kals_model.py 2 3 3 > nohup233.out &
-nohup python -u kals_model.py 3 1 3 > nohup313.out &
-nohup python -u kals_model.py 3 3 3 > nohup333.out &
-nohup python -u kals_model.py 4 1 3 > nohup413.out &
-nohup python -u kals_model.py 4 3 3 > nohup433.out &
-nohup python -u kals_model.py 5 1 3 > nohup513.out &
-nohup python -u kals_model.py 5 3 3 > nohup533.out &
-nohup python -u kals_model.py 6 1 3 > nohup613.out &
-nohup python -u kals_model.py 6 3 3 > nohup633.out &
-nohup python -u kals_model.py 7 1 3 > nohup713.out &
-nohup python -u kals_model.py 7 3 3 > nohup733.out &
-nohup python -u kals_model.py 8 1 3 > nohup813.out &
-nohup python -u kals_model.py 8 3 3 > nohup833.out &
-nohup python -u kals_model.py 9 1 3 > nohup913.out &
-nohup python -u kals_model.py 9 3 3 > nohup933.out &
-nohup python -u kals_model.py 10 1 3 > nohup1013.out &
-nohup python -u kals_model.py 10 3 3 > nohup1033.out &
-nohup python -u kals_model.py 11 1 3 > nohup1113.out &
-nohup python -u kals_model.py 11 3 3 > nohup1133.out &
-nohup python -u kals_model.py 12 1 3 > nohup1213.out &
-nohup python -u kals_model.py 12 3 3 > nohup1233.out &
-nohup python -u kals_model.py 13 1 3 > nohup1313.out &
-nohup python -u kals_model.py 13 3 3 > nohup1333.out &
-nohup python -u kals_model.py 14 1 3 > nohup1413.out &
-nohup python -u kals_model.py 14 3 3 > nohup1433.out &
-nohup python -u kals_model.py 1 1 4 > nohup114.out &
-nohup python -u kals_model.py 1 3 4 > nohup134.out &
-nohup python -u kals_model.py 2 1 4 > nohup214.out &
-nohup python -u kals_model.py 2 3 4 > nohup234.out &
-nohup python -u kals_model.py 3 1 4 > nohup314.out &
-nohup python -u kals_model.py 3 3 4 > nohup334.out &
-nohup python -u kals_model.py 4 1 4 > nohup414.out &
-nohup python -u kals_model.py 4 3 4 > nohup434.out &
-nohup python -u kals_model.py 5 1 4 > nohup514.out &
-nohup python -u kals_model.py 5 3 4 > nohup534.out &
-nohup python -u kals_model.py 6 1 4 > nohup614.out &
-nohup python -u kals_model.py 6 3 4 > nohup634.out &
-nohup python -u kals_model.py 7 1 4 > nohup714.out &
-nohup python -u kals_model.py 7 3 4 > nohup734.out &
-nohup python -u kals_model.py 8 1 4 > nohup814.out &
-nohup python -u kals_model.py 8 3 4 > nohup834.out &
-nohup python -u kals_model.py 9 1 4 > nohup914.out &
-nohup python -u kals_model.py 9 3 4 > nohup934.out &
-nohup python -u kals_model.py 10 1 4 > nohup1014.out &
-nohup python -u kals_model.py 10 3 4 > nohup1034.out &
-nohup python -u kals_model.py 11 1 4 > nohup1114.out &
-nohup python -u kals_model.py 11 3 4 > nohup1134.out &
-nohup python -u kals_model.py 12 1 4 > nohup1214.out &
-nohup python -u kals_model.py 12 3 4 > nohup1234.out &
-nohup python -u kals_model.py 13 1 4 > nohup1314.out &
-nohup python -u kals_model.py 13 3 4 > nohup1334.out &
-nohup python -u kals_model.py 14 1 4 > nohup1414.out &
-nohup python -u kals_model.py 14 3 4 > nohup1434.out &
+nohup python -u kals_model.py eva > nohup_eva.out &
+nohup python -u kals_model.py sno > nohup_sno.out &
+nohup python -u kals_model.py sub > nohup_sub.out &
+nohup python -u kals_model.py sne > nohup_sne.out &
+nohup python -u kals_model.py sue > nohup_sue.out &
+nohup python -u kals_model.py sus > nohup_sus.out &
+nohup python -u kals_model.py thr > nohup_thr.out &
+nohup python -u kals_model.py xva > nohup_xva.out &
+nohup python -u kals_model.py xno > nohup_xno.out &
+nohup python -u kals_model.py xub > nohup_xub.out &
+nohup python -u kals_model.py xne > nohup_xne.out &
+nohup python -u kals_model.py xue > nohup_xue.out &
+nohup python -u kals_model.py xus > nohup_xus.out &
+nohup python -u kals_model.py xhr > nohup_xhr.out &

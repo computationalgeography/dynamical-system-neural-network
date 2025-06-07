@@ -13,12 +13,13 @@ import os
 import sys
 import string
 
+
 #######################
 # main configurations #
 #######################
 
 # Run in batch by providing inputs on command line
-run_in_batch = False
+run_in_batch = True
 
 # max number of epochs to run (will run for this number of epochs
 # if validation (stopping) does not make it stop
@@ -36,8 +37,6 @@ addErrorToArtificialStreamFlow = False
 
 input_data_directory = "../data/inputData/"
 output_directory = "../data/results/"
-output_data_directory = output_directory
-
 
 ########################
 # other configurations #
@@ -52,16 +51,18 @@ linearArtForNotFitOnObservations = False
 print_parameters = True
 
 # inputs for running in batch mode.
+#if run_in_batch:
+#    # ranges from 1 up to and including the number of fitting scenarios (e.g. fitting scenario can be
+#    # training only subsurface outflow) used
+#    first = sys.argv[1]
+#    # is 1 or 3 (training scenarios, 1 represents 1 and 2, 3 represents 3 and 4), i.e. the folds for training
+#    # and stopping
+#    second = sys.argv[2]
+#    # is 1 or 1,2 or 1,2,3 etc, splitted at , (rerun scenario, i.e. repeating same fitting and training scenario
+#    # but with different seed)
+#    third = sys.argv[3]
 if run_in_batch:
-    # ranges from 1 up to and including the number of fitting scenarios (e.g. fitting scenario can be
-    # training only subsurface outflow) used
-    first = sys.argv[1]
-    # is 1 or 3 (training scenarios, 1 represents 1 and 2, 3 represents 3 and 4), i.e. the folds for training
-    # and stopping
-    second = sys.argv[2]
-    # is 1 or 1,2 or 1,2,3 etc, splitted at , (rerun scenario, i.e. repeating same fitting and training scenario
-    # but with different seed)
-    third = sys.argv[3]
+    batch_scenario = sys.argv[1]
 
 
 ####################
@@ -73,7 +74,8 @@ deep_layer = (True)
 
 m = torch.nn.ReLU()
 
-seedAll = 4
+#seedAll = 4
+seedAll = 5
 torch.manual_seed(seedAll)
 numpy.random.seed(seedAll)
 
@@ -221,9 +223,9 @@ class EarlyStopper:
 ###############
 
 
-def createMeteoData(input_data_directory, output_data_directory, startDate, endDate):
-    precipitation_file = open(output_data_directory + "precipitation.txt", "w")
-    temperatureFile = open(output_data_directory + "temperature.txt", "w")
+def createMeteoData(input_data_directory, output_directory, startDate, endDate):
+    precipitation_file = open(output_directory + "precipitation.txt", "w")
+    temperatureFile = open(output_directory + "temperature.txt", "w")
     date = datetime.date(1979, 1, 1)
     timestep = datetime.timedelta(days=1)
 
@@ -266,8 +268,8 @@ def createMeteoData(input_data_directory, output_data_directory, startDate, endD
     return temperature_time_series, precipitation_time_series
 
 
-def create_streamflow_data(input_data_directory, output_data_directory, start, end):
-    streamflow_file = open(output_data_directory + "streamflow.txt", "w")
+def create_streamflow_data(input_data_directory, output_directory, start, end):
+    streamflow_file = open(output_directory + "streamflow.txt", "w")
     date = datetime.date(1951, 1, 1)
     timestep = datetime.timedelta(days=1)
 
@@ -1475,10 +1477,10 @@ else:
 startOne = datetime.date(1979, 10, 1)
 endOne = datetime.date(1996, 9, 26)
 temperature_time_series, precipitation_time_series = createMeteoData(
-    input_data_directory, output_data_directory, startOne, endOne
+    input_data_directory, output_directory, startOne, endOne
 )
 streamFlowTimeSeries, date_time_series = create_streamflow_data(
-    input_data_directory, output_data_directory, startOne, endOne
+    input_data_directory, output_directory, startOne, endOne
 )
 sno_s_ts, sub_s_ts, sno_f_ts, sub_f_ts, eva_f_ts, \
     sno_s_ts_areas, sub_s_ts_areas, sno_f_ts_areas, sub_f_ts_areas, eva_f_ts_areas = (
@@ -1491,10 +1493,10 @@ sno_s_ts, sub_s_ts, sno_f_ts, sub_f_ts, eva_f_ts, \
 startVal = datetime.date(1995, 10, 1)
 endVal = datetime.date(2012, 9, 26)
 temperature_time_series_val, precipitation_time_series_val = createMeteoData(
-    input_data_directory, output_data_directory, startVal, endVal
+    input_data_directory, output_directory, startVal, endVal
 )
 streamflow_time_series_val, date_time_series_val = create_streamflow_data(
-    input_data_directory, output_data_directory, startVal, endVal
+    input_data_directory, output_directory, startVal, endVal
 )
 # note that no error is added to artificial streamflow in any case as it is used for validation only
 sno_s_tsVal, sub_s_tsVal, sno_f_tsVal, sub_f_tsVal, eva_f_tsVal, \
@@ -1660,6 +1662,36 @@ else:
     fitting_scenarios = [eva, sno, sub, sne, sue, sus, thr, \
                          xva, xno, xub, xne, xue, xus, xhr] 
 
+if run_in_batch:
+    if batch_scenario == 'eva':
+        fitting_scenarios == [eva]
+    if batch_scenario == 'sno':
+        fitting_scenarios == [sno]
+    if batch_scenario == 'sub':
+        fitting_scenarios == [sub]
+    if batch_scenario == 'sne':
+        fitting_scenarios == [sne]
+    if batch_scenario == 'sue':
+        fitting_scenarios == [sue]
+    if batch_scenario == 'sus':
+        fitting_scenarios == [sus]
+    if batch_scenario == 'thr':
+        fitting_scenarios == [thr]
+    if batch_scenario == 'xva':
+        fitting_scenarios == [xva]
+    if batch_scenario == 'xno':
+        fitting_scenarios == [xno]
+    if batch_scenario == 'xub':
+        fitting_scenarios == [xub]
+    if batch_scenario == 'xne':
+        fitting_scenarios == [xne]
+    if batch_scenario == 'xue':
+        fitting_scenarios == [xue]
+    if batch_scenario == 'xus':
+        fitting_scenarios == [xus]
+    if batch_scenario == 'xhr':
+        fitting_scenarios == [xhr]
+
 outOne, outTwo, outThree, outFour = createTrainingIndices()
 
 # training scenarios
@@ -1700,10 +1732,10 @@ re_run_scenarios = []
 for s in aRange:
     re_run_scenarios.append(str(s))
 
-if run_in_batch:
-    fitting_scenarios = [fitting_scenarios[int(first) - 1]]
-    training_scenarios = training_scenarios[int(second) - 1 : int(second) + 1]
-    re_run_scenarios = str.split(third, ",")
+#if run_in_batch:
+#    fitting_scenarios = [fitting_scenarios[int(first) - 1]]
+#    training_scenarios = training_scenarios[int(second) - 1 : int(second) + 1]
+#    re_run_scenarios = str.split(third, ",")
 
 for fs in fitting_scenarios:
     for ts in training_scenarios:
