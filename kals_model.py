@@ -388,30 +388,30 @@ class Net(nn.Module):
             if linearArt:
                 melting = temp > 0.0
                 if melting:
-                    potentialMelt = temp * self.sno_parameter_obs_creation
+                    potential_melt = temp * self.sno_parameter_obs_creation
                 else:
-                    potentialMelt = torch.tensor(0.0)
+                    potential_melt = torch.tensor(0.0)
             else:
                 melting = temp > 0.0
                 if melting:
-                    potentialMelt = (
+                    potential_melt = (
                         (torch.sin((torch.tensor([temp]) * 0.6 - 0.5 * torch.pi)) + 1)
                         / 200
                     ) + 0.0004 * torch.tensor([temp])
                 else:
-                    potentialMelt = torch.tensor(0.0)
+                    potential_melt = torch.tensor(0.0)
         if modeSno == "fit":
             out_sno_f = m(self.sno_f_d((torch.tensor([temp]))))
             if deep_layer:
                 out_sno_f = m(self.sno_f_dd(out_sno_f))
-            potentialMelt = torch.sigmoid(self.sno_f_c(out_sno_f)) / 50.0
+            potential_melt = torch.sigmoid(self.sno_f_c(out_sno_f)) / 50.0
         if modeSno == "fitExpert":
             melting = temp > 0.0
             if melting:
-                potentialMelt = temp * self.sno_parameter
+                potential_melt = temp * self.sno_parameter
             else:
-                potentialMelt = torch.tensor(0.0)
-        return potentialMelt
+                potential_melt = torch.tensor(0.0)
+        return potential_melt
 
     def sub_f_calculate(self, sub_s, modeSub, deep_layer, linearArt):
         if modeSub == "obsCreation":
@@ -472,7 +472,7 @@ class Net(nn.Module):
     def forward(
         self,
         linearArt,  # linear obs creation model
-        firstEpochs,  # start of training or not
+        first_epochs,  # start of training or not
         sno_s_initial,  # initial snow storage
         sub_s_initial,  # initial subsurface storage
         temperature,  # temperature time series
@@ -565,19 +565,19 @@ class Net(nn.Module):
                 sno_s_ts[i] = sno_s
 
                 # snow melt
-                potentialMelt = self.sno_f_calculate(
+                potential_melt = self.sno_f_calculate(
                     temp, modeSno, deep_layer, linearArt
                 )
 
-                if firstEpochs:  # hard cap to prevent zero snow cover
+                if first_epochs:  # hard cap to prevent zero snow cover
                     if temp < -5.0:
-                        potentialMelt = torch.tensor(0.0)
+                        potential_melt = torch.tensor(0.0)
 
-                sno_f = potentialMelt
+                sno_f = potential_melt
                 sno_f_ts[i] = sno_f
 
-                potentialMelt = torch.max(potentialMelt, torch.tensor(0))
-                actualMelt = torch.min(sno_s, potentialMelt)
+                potential_melt = torch.max(potential_melt, torch.tensor(0))
+                actualMelt = torch.min(sno_s, potential_melt)
                 sno_s = sno_s - actualMelt
 
                 # sublimation
@@ -735,7 +735,7 @@ def training_loop(
     sno_f_tsVal,
     sub_f_tsVal,
     eva_f_tsVal,
-    trainingData,
+    training_data,
     fitOnObservations,
     mode_eva_train,
     modeSnoTrain,
@@ -777,11 +777,11 @@ def training_loop(
 
     time = datetime.datetime.now()
 
-    firstEpochs = True
+    first_epochs = True
     for epoch in range(1, n_epochs + 1):
         if epoch > 100:
-            firstEpochs = False
-        firstEpochs = True
+            first_epochs = False
+        first_epochs = True
         newTime = datetime.datetime.now()
         duration = newTime - time
         time = datetime.datetime.now()
@@ -794,7 +794,7 @@ def training_loop(
             tr_eva_f_ts_areas,
         ) = hydromodel(
             linearArt,
-            firstEpochs,
+            first_epochs,
             torch.tensor(sno_s_initial),
             torch.tensor(sub_s_initial),
             torch.tensor(temperature_time_series),
@@ -824,15 +824,15 @@ def training_loop(
                     training,
                 )
         else:
-            if trainingData == "trainingSub":
+            if training_data == "trainingSub":
                 loss_train = loss_fn(tr_sub_f_ts, sub_f_ts, training)
-            if trainingData == "trainingEva":
+            if training_data == "trainingEva":
                 loss_train = loss_fn(tr_eva_f_ts, eva_f_ts, training)
-            if trainingData == "trainingSno":
+            if training_data == "trainingSno":
                 loss_train = loss_fn(tr_sno_f_ts, sno_f_ts, training)
-            if trainingData == "trainingSubAndSnow":
-                modifiedSnow = sno_s_ts / 2.0
-                loss_train_sno = loss_fn(tr_sno_s_ts, modifiedSnow)
+            if training_data == "trainingSubAndSnow":
+                modified_snow = sno_s_ts / 2.0
+                loss_train_sno = loss_fn(tr_sno_s_ts, modified_snow)
                 loss_train_sub = loss_fn(tr_sub_s_ts, sub_s_ts)
                 loss_train = (
                     loss_train_sno / 4.0 + loss_train_sub
@@ -1420,7 +1420,7 @@ linearArtForNotFitOnObservations = False
 addErrorToArtificialStreamFlow = False
 
 # training data to calculate loss over (typical sub, i.e. outflow)
-trainingData = "trainingSub"
+training_data = "trainingSub"
 
 # folder to store output data, note the / at the end
 output_directory = "../data/results/"
@@ -1656,8 +1656,8 @@ training_scenarios = [one, two, three, four]
 # training_scenarios = [three, four]
 
 # rerun scenarios
-numberOfScenarios = 4
-aRange = numpy.arange(1, numberOfScenarios + 1)
+number_of_scenarios = 4
+aRange = numpy.arange(1, number_of_scenarios + 1)
 re_run_scenarios = []
 for s in aRange:
     re_run_scenarios.append(str(s))
@@ -1732,7 +1732,7 @@ for fs in fitting_scenarios:
                 sno_f_tsVal,
                 sub_f_tsVal,
                 eva_f_tsVal,
-                trainingData,
+                training_data,
                 fitOnObservations,
                 fs["modeEvaTrain"],
                 fs["modeSnoTrain"],
