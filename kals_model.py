@@ -13,21 +13,43 @@ import os
 import sys
 import string
 
-# run in batch by providing inputs on command line
+#######################
+# main configurations #
+#######################
+
+# Run in batch by providing inputs on command line
 run_in_batch = False
 
 # max number of epochs to run (will run for this number of epochs
 # if validation (stopping) does not make it stop
 #nr_epochs = 5000
-nr_epochs = 5
+nr_epochs = 2
 
 # run one area or else two
 one_area = True
 
-print_parameters = True
+# fit model on observations or on artificial data
+fitOnObservations = False
+
+# add error to artificial data
+addErrorToArtificialStreamFlow = False
 
 input_data_directory = "../data/inputData/"
-output_data_directory = "../data/outputData/"
+output_directory = "../data/results/"
+output_data_directory = output_directory
+
+
+########################
+# other configurations #
+########################
+
+# training data to calculate loss over (typical sub, i.e. outflow)
+training_data = "trainingSub"
+
+# if fitting on artificial data, use linear model or non-linear one
+linearArtForNotFitOnObservations = False
+
+print_parameters = True
 
 # inputs for running in batch mode.
 if run_in_batch:
@@ -40,6 +62,11 @@ if run_in_batch:
     # is 1 or 1,2 or 1,2,3 etc, splitted at , (rerun scenario, i.e. repeating same fitting and training scenario
     # but with different seed)
     third = sys.argv[3]
+
+
+####################
+# some definitions #
+####################
 
 # note that for true, it may need to be in the parameter list of the optimizer
 deep_layer = (True)
@@ -201,7 +228,7 @@ def createMeteoData(input_data_directory, output_data_directory, startDate, endD
     timestep = datetime.timedelta(days=1)
 
     temperature_time_series = []
-    precipitationTimeSeries = []
+    precipitation_time_series = []
 
     with open(input_data_directory + "weatherdata-470125_corrected.csv") as csv_file:
         csv_reader = csv.reader(csv_file, dialect="excel")
@@ -225,7 +252,7 @@ def createMeteoData(input_data_directory, output_data_directory, startDate, endD
                 # if (date >= start) and (date <= end):
                 if (date >= startDate) and (date <= endDate):
                     precipitation_file.write(str(line_out_count) + " " + precip + "\n")
-                    precipitationTimeSeries.append(float(precip))
+                    precipitation_time_series.append(float(precip))
                     temperatureFile.write(
                         str(line_out_count) + " " + str(temperature) + "\n"
                     )
@@ -236,7 +263,7 @@ def createMeteoData(input_data_directory, output_data_directory, startDate, endD
 
     precipitation_file.close()
     temperatureFile.close()
-    return temperature_time_series, precipitationTimeSeries
+    return temperature_time_series, precipitation_time_series
 
 
 def create_streamflow_data(input_data_directory, output_data_directory, start, end):
@@ -663,7 +690,7 @@ class Net(nn.Module):
 
 def create_artificial_observations(
     temperature_time_series,
-    precipitationTimeSeries,
+    precipitation_time_series,
     addErrorToArtificialStreamFlow,
     linearArt,
 ):
@@ -677,7 +704,7 @@ def create_artificial_observations(
             torch.tensor(sno_s_initial),
             torch.tensor(sub_s_initial),
             torch.tensor(temperature_time_series),
-            torch.tensor(precipitationTimeSeries),
+            torch.tensor(precipitation_time_series),
             mode_eva="obsCreation",
             modeSno="obsCreation",
             modeSub="obsCreation",
@@ -701,7 +728,7 @@ def create_artificial_observations(
         )
         # sub_f_ts = torch.max(sub_f_ts * errorMultiplier, torch.tensor(0.0))[0]
         sub_f_ts = torch.max(sub_f_ts * errorMultiplier, torch.tensor(0.0))
-    return sno_s_ts, sub_s_ts, sno_f_ts, sub_f_ts, eva_f_ts
+    return sno_s_ts, sub_s_ts, sno_f_ts, sub_f_ts, eva_f_ts, sno_s_ts_areas, sub_s_ts_areas, sno_f_ts_areas, sub_f_ts_areas, eva_f_ts_areas
 
 
 ############
@@ -718,7 +745,7 @@ def training_loop(
     sno_s_initial,
     sub_s_initial,
     temperature_time_series,
-    precipitationTimeSeries,
+    precipitation_time_series,
     streamFlowTimeSeries,
     date_time_series,
     temperature_time_series_val,
@@ -735,6 +762,11 @@ def training_loop(
     sno_f_tsVal,
     sub_f_tsVal,
     eva_f_tsVal,
+    sno_s_ts_areasVal,
+    sub_s_ts_areasVal,
+    sno_f_ts_areasVal,
+    sub_f_ts_areasVal,
+    eva_f_ts_areasVal,
     training_data,
     fitOnObservations,
     mode_eva_train,
@@ -760,12 +792,17 @@ def training_loop(
     numpy.save(sfdAr + "train_art_ts_sno_f.npy", sno_f_ts)
     numpy.save(sfdAr + "train_art_ts_sub_f.npy", sub_f_ts)
     numpy.save(sfdAr + "train_art_ts_eva_f.npy", eva_f_ts)
-    # write artificial data to disk, validation
+    # write artificial data to disk, validation, total of catchment and areas
     numpy.save(sfdAr + "val_art_ts_sno_s.npy", sno_s_tsVal)
     numpy.save(sfdAr + "val_art_ts_sub_s.npy", sub_s_tsVal)
     numpy.save(sfdAr + "val_art_ts_sno_f.npy", sno_f_tsVal)
     numpy.save(sfdAr + "val_art_ts_sub_f.npy", sub_f_tsVal)
     numpy.save(sfdAr + "val_art_ts_eva_f.npy", eva_f_tsVal)
+    numpy.save(sfdAr + "val_art_ts_sno_s_areas.npy", sno_s_ts_areasVal)
+    numpy.save(sfdAr + "val_art_ts_sub_s_areas.npy", sub_s_ts_areasVal)
+    numpy.save(sfdAr + "val_art_ts_sno_f_areas.npy", sno_f_ts_areasVal)
+    numpy.save(sfdAr + "val_art_ts_sub_f_areas.npy", sub_f_ts_areasVal)
+    numpy.save(sfdAr + "val_art_ts_eva_f_areas.npy", eva_f_ts_areasVal)
 
     loss_training_series = []
     loss_validation_series = []
@@ -798,7 +835,7 @@ def training_loop(
             torch.tensor(sno_s_initial),
             torch.tensor(sub_s_initial),
             torch.tensor(temperature_time_series),
-            torch.tensor(precipitationTimeSeries),
+            torch.tensor(precipitation_time_series),
             mode_eva=mode_eva_train,
             modeSno=modeSnoTrain,
             modeSub=modeSubTrain,
@@ -1132,7 +1169,7 @@ def training_loop(
             )
             numpy.save(sfdAr + "train_date.npy", numpy.array(date_time_series))
             numpy.save(sfdAr + "train_ts_temperature.npy", numpy.array(temperature_time_series))
-            numpy.save(sfdAr + "train_ts_precipitation.npy", numpy.array(precipitationTimeSeries))
+            numpy.save(sfdAr + "train_ts_precipitation.npy", numpy.array(precipitation_time_series))
             # validation
             timeSeriesPlot_rich(
                 sfd,
@@ -1412,18 +1449,19 @@ def loss_fn(t_p, t_c, period):
 # scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', factor=0.9, eps = 1e-8, patience = 50)
 
 
-# fit model on observations or on artificial data
-fitOnObservations = True
-# if fitting on artificial data, use linear model or non-linear one
-linearArtForNotFitOnObservations = False
-# add error to artificial data
-addErrorToArtificialStreamFlow = False
-
-# training data to calculate loss over (typical sub, i.e. outflow)
-training_data = "trainingSub"
-
-# folder to store output data, note the / at the end
-output_directory = "../data/results/"
+## fit model on observations or on artificial data
+#fitOnObservations = True
+#
+## if fitting on artificial data, use linear model or non-linear one
+#linearArtForNotFitOnObservations = False
+## add error to artificial data
+#addErrorToArtificialStreamFlow = False
+#
+## training data to calculate loss over (typical sub, i.e. outflow)
+#training_data = "trainingSub"
+#
+## folder to store output data, note the / at the end
+#output_directory = "../data/results/"
 
 
 # if fitting on real data, linear models for components not represented as NN are assumed
@@ -1436,17 +1474,17 @@ else:
 # data for training or stopping ie validation
 startOne = datetime.date(1979, 10, 1)
 endOne = datetime.date(1996, 9, 26)
-temperature_time_series, precipitationTimeSeries = createMeteoData(
+temperature_time_series, precipitation_time_series = createMeteoData(
     input_data_directory, output_data_directory, startOne, endOne
 )
 streamFlowTimeSeries, date_time_series = create_streamflow_data(
     input_data_directory, output_data_directory, startOne, endOne
 )
-sno_s_ts, sub_s_ts, sno_f_ts, sub_f_ts, eva_f_ts = create_artificial_observations(
-    temperature_time_series,
-    precipitationTimeSeries,
-    addErrorToArtificialStreamFlow,
-    linearArt,
+sno_s_ts, sub_s_ts, sno_f_ts, sub_f_ts, eva_f_ts, \
+    sno_s_ts_areas, sub_s_ts_areas, sno_f_ts_areas, sub_f_ts_areas, eva_f_ts_areas = (
+    create_artificial_observations(
+    temperature_time_series, precipitation_time_series, addErrorToArtificialStreamFlow, linearArt
+    )
 )
 
 # data for validation, ie testing
@@ -1459,7 +1497,8 @@ streamflow_time_series_val, date_time_series_val = create_streamflow_data(
     input_data_directory, output_data_directory, startVal, endVal
 )
 # note that no error is added to artificial streamflow in any case as it is used for validation only
-sno_s_tsVal, sub_s_tsVal, sno_f_tsVal, sub_f_tsVal, eva_f_tsVal = (
+sno_s_tsVal, sub_s_tsVal, sno_f_tsVal, sub_f_tsVal, eva_f_tsVal, \
+    sno_s_ts_areasVal, sub_s_ts_areasVal, sno_f_ts_areasVal, sub_f_ts_areasVal, eva_f_ts_areasVal = (
     create_artificial_observations(
         temperature_time_series_val, precipitation_time_series_val, False, linearArt
     )
@@ -1610,17 +1649,16 @@ thr = {
 
 # fitting_scenarios define what components are fitted and what aren't
 # fitting_scenarios = [xva, xno, xub, xne, xue, xus, xhr]            # expert models, code is x plus second and third letter of corresponding ML scenario
-fitting_scenarios = [eva, sno, sub, sne, sue, sus, thr]              # ML models
-#fitting_scenarios = [
-#    xva,
-#    xno,
-#    xub,
-#    xne,
-#    xue,
-#    xus,
-#    xhr,
-#    eva,
-#]
+# fitting_scenarios = [eva, sno, sub, sne, sue, sus, thr]              # ML models
+
+# 8 scenarios: 7 ML scenarios and 1 expert model scenario for reference
+if fitOnObservations:
+    fitting_scenarios = [eva, sno, sub, sne, sue, sus, thr, \
+                                                       xhr] 
+# 14 scenarios: 7 ML scenarios and 7 expert scenarios
+else:
+    fitting_scenarios = [eva, sno, sub, sne, sue, sus, thr, \
+                         xva, xno, xub, xne, xue, xus, xhr] 
 
 outOne, outTwo, outThree, outFour = createTrainingIndices()
 
@@ -1629,7 +1667,7 @@ one = {
     "name": "1",
     "stopping": outOne,
     "temperature": temperature_time_series,
-    "precipitation": precipitationTimeSeries,
+    "precipitation": precipitation_time_series,
     "streamFlow": streamFlowTimeSeries,
     "date": date_time_series,
     "sno_s_ts": sno_s_ts,
@@ -1732,6 +1770,11 @@ for fs in fitting_scenarios:
                 sno_f_tsVal,
                 sub_f_tsVal,
                 eva_f_tsVal,
+                sno_s_ts_areasVal,
+                sub_s_ts_areasVal,
+                sno_f_ts_areasVal,
+                sub_f_ts_areasVal,
+                eva_f_ts_areasVal,
                 training_data,
                 fitOnObservations,
                 fs["modeEvaTrain"],
