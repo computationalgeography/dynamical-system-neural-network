@@ -36,7 +36,7 @@ fitOnObservations = False
 addErrorToArtificialStreamFlow = True
 
 input_data_directory = "../data/inputData/"
-output_directory = "../data/results/2507_oneArea_arti_withError"
+output_directory = "../data/results/2507_oneArea_arti_withError/"
 
 ########################
 # other configurations #
