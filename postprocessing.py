@@ -14,7 +14,9 @@ dpi_figures = 600
 
 EGU = False
 
-observed_scenario = True
+observed_scenario = False
+
+one_area = False
 
 actual_snow_flux = True
 
@@ -23,8 +25,8 @@ if EGU:
 else:
     font_size_axes = 8 
 
-create_scatter = True
-create_timeseries = True
+create_scatter = False
+create_timeseries = False
 
 number_of_fits_to_plot = 4
 
@@ -47,16 +49,20 @@ labels_variables_tight = ['evapotranspiration',
 
 
 if observed_scenario:
-    scenario_directory = data_dir + \
-                        'kals_model_fit_on_observations/results/'
-                        # 'kals_model_two_areas_fit_on_observations/results/'
-                        # 'kals_model_two_areas_fit_on_artificial_data_with_error/results/'
-                        #'kals_model_fit_on_observations/results/'
+    if one_area:
+        results_folder = 'kals_model_fit_on_observations/results/'
+    else:
+        results_folder = 'kals_model_two_areas_fit_on_observations/results/'
+    scenario_directory = data_dir + results_folder 
 else:
     # No error in streamflow (replaced) and precipitation and temperature
     # copied into the results folder
-    scenario_directory = data_dir + \
-                        'kals_model_fit_on_arti_data_with_error_subf_val_noerror/results/'
+    if one_area:
+        results_folder = 'kals_model_fit_on_arti_data_with_error_subf_val_noerror/results/'
+    else:
+        results_folder = 'kals_model_two_areas_fit_on_artificial_data_with_error/results/'
+        #results_folder = 'kals_model_two_areas_fit_on_artificial_data/results/'
+    scenario_directory = data_dir + results_folder
     # Note that the streamflow for validation is with error
     #scenario_directory = data_dir + "kals_model_fit_on_arti_data_with_error/results/"
 
@@ -77,8 +83,11 @@ scenarios = [
 
 if observed_scenario:
     # all scenarios
-    scenarios = ['fit_eva', 'fit_sno', 'fit_sub', 'fit_sne', 'fit_sue', 'fit_sus', 'fit_thr', \
-             'fit_xva', 'fit_xno', 'fit_xub', 'fit_xne', 'fit_xue', 'fit_xus', 'fit_xhr']
+    if one_area:
+        scenarios = ['fit_eva', 'fit_sno', 'fit_sub', 'fit_sne', 'fit_sue', 'fit_sus', 'fit_thr', \
+                 'fit_xva', 'fit_xno', 'fit_xub', 'fit_xne', 'fit_xue', 'fit_xus', 'fit_xhr']
+    else:
+        scenarios = ['fit_eva', 'fit_sno', 'fit_sub', 'fit_sne', 'fit_sue', 'fit_sus', 'fit_thr']
 
     ## only nn scenarios
     scenarios_to_plot = [
