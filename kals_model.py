@@ -23,8 +23,8 @@ run_in_batch = True
 
 # max number of epochs to run (will run for this number of epochs
 # if validation (stopping) does not make it stop
-#nr_epochs = 5000
-nr_epochs = 2
+nr_epochs = 5000
+#nr_epochs = 2
 
 # run one area or else two
 one_area = True
@@ -33,10 +33,10 @@ one_area = True
 fitOnObservations = False
 
 # add error to artificial data
-addErrorToArtificialStreamFlow = False
+addErrorToArtificialStreamFlow = True
 
 input_data_directory = "../data/inputData/"
-output_directory = "../data/results/"
+output_directory = "../data/results/2507_oneArea_arti_withError"
 
 ########################
 # other configurations #
@@ -63,6 +63,7 @@ print_parameters = True
 #    third = sys.argv[3]
 if run_in_batch:
     batch_scenario = sys.argv[1]
+
 
 
 ####################
@@ -1664,33 +1665,33 @@ else:
 
 if run_in_batch:
     if batch_scenario == 'eva':
-        fitting_scenarios == [eva]
+        fitting_scenarios = [eva]
     if batch_scenario == 'sno':
-        fitting_scenarios == [sno]
+        fitting_scenarios = [sno]
     if batch_scenario == 'sub':
-        fitting_scenarios == [sub]
+        fitting_scenarios = [sub]
     if batch_scenario == 'sne':
-        fitting_scenarios == [sne]
+        fitting_scenarios = [sne]
     if batch_scenario == 'sue':
-        fitting_scenarios == [sue]
+        fitting_scenarios = [sue]
     if batch_scenario == 'sus':
-        fitting_scenarios == [sus]
+        fitting_scenarios = [sus]
     if batch_scenario == 'thr':
-        fitting_scenarios == [thr]
+        fitting_scenarios = [thr]
     if batch_scenario == 'xva':
-        fitting_scenarios == [xva]
+        fitting_scenarios = [xva]
     if batch_scenario == 'xno':
-        fitting_scenarios == [xno]
+        fitting_scenarios = [xno]
     if batch_scenario == 'xub':
-        fitting_scenarios == [xub]
+        fitting_scenarios = [xub]
     if batch_scenario == 'xne':
-        fitting_scenarios == [xne]
+        fitting_scenarios = [xne]
     if batch_scenario == 'xue':
-        fitting_scenarios == [xue]
+        fitting_scenarios = [xue]
     if batch_scenario == 'xus':
-        fitting_scenarios == [xus]
+        fitting_scenarios = [xus]
     if batch_scenario == 'xhr':
-        fitting_scenarios == [xhr]
+        fitting_scenarios = [xhr]
 
 outOne, outTwo, outThree, outFour = createTrainingIndices()
 
