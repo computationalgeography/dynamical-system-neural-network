@@ -7,16 +7,31 @@ from itertools import product
 from matplotlib.transforms import Bbox
 from matplotlib.lines import Line2D
 
+#######################
+# main configurations #
+#######################
+
+observed_scenario = True
+one_area = False
+
+create_scatter = True
+create_timeseries = True
+create_nse = True
+
+data_dir = '../data/scenarios/runs_from_sonic_velocity/'
+number_of_rerun_scenarios = 4
+
+
+##################
+# other settings #
+##################
+
 plt.rcParams["font.size"] = 8
 plt.rcParams.update({'figure.max_open_warning': 0})
 
 dpi_figures = 600
 
 EGU = False
-
-observed_scenario = True
-
-one_area = True
 
 actual_snow_flux = True
 
@@ -25,12 +40,7 @@ if EGU:
 else:
     font_size_axes = 8 
 
-create_scatter = True
-create_timeseries = True
-
 number_of_fits_to_plot = 4
-
-data_dir = '../data/scenarios/runs_from_sonic_velocity/'
 
 labels_variables = ['evapotranspiration',
                     'snow melt',
@@ -161,8 +171,8 @@ def full_extent(ax, pad=0.0):
 training_scenarios = ["1", "2", "3", "4"]
 
 # rerun scenarios
-numberOfScenarios = 2
-aRange = numpy.arange(1, numberOfScenarios + 1)
+#number_of_rerun_scenarios = 2
+aRange = numpy.arange(1, number_of_rerun_scenarios + 1)
 rerun_scenarios = []
 for s in aRange:
     rerun_scenarios.append(str(s))
@@ -891,8 +901,9 @@ def nsePlot(black):
     fig.savefig(figure_directory + "nse.pdf")
     plt.close(fig)
 
-if observed_scenario:
-    nsePlot(False)
+if create_nse:
+    if observed_scenario:
+        nsePlot(False)
 
 
 
