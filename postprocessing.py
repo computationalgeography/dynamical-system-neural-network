@@ -25,8 +25,8 @@ if EGU:
 else:
     font_size_axes = 8 
 
-create_scatter = False
-create_timeseries = False
+create_scatter = True
+create_timeseries = True
 
 number_of_fits_to_plot = 4
 

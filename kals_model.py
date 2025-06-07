@@ -13,16 +13,32 @@ import os
 import sys
 import string
 
-
+# run in batch by providing inputs on command line
 run_in_batch = False
+
+# max number of epochs to run (will run for this number of epochs
+# if validation (stopping) does not make it stop
+#nr_epochs = 5000
+nr_epochs = 5
+
+# run one area or else two
+one_area = True
+
+print_parameters = True
+
+input_data_directory = "../data/inputData/"
+output_data_directory = "../data/outputData/"
 
 # inputs for running in batch mode.
 if run_in_batch:
-    # ranges from 1 up to and including the number of fitting scenarios used
+    # ranges from 1 up to and including the number of fitting scenarios (e.g. fitting scenario can be
+    # training only subsurface outflow) used
     first = sys.argv[1]
-    # is 1 or 3 (training scenarios, 1 represents 1 and 2, 3 represents 3 and 4)
+    # is 1 or 3 (training scenarios, 1 represents 1 and 2, 3 represents 3 and 4), i.e. the folds for training
+    # and stopping
     second = sys.argv[2]
-    # is 1 or 1,2 or 1,2,3 etc, splitted at , (rerun scenario)
+    # is 1 or 1,2 or 1,2,3 etc, splitted at , (rerun scenario, i.e. repeating same fitting and training scenario
+    # but with different seed)
     third = sys.argv[3]
 
 # note that for true, it may need to be in the parameter list of the optimizer
@@ -39,14 +55,9 @@ if deep_layer:
 else:
     nodes = 1000
 
-one_area = True
-print_parameters = True
 # https://github.com/christianversloot/machine-learning-articles/
 # blob/main/how-to-use-l1-l2-and-elastic-net-regularization-with-pytorch.md
 l1_regularization = False
-
-input_data_directory = "../data/inputData/"
-output_data_directory = "../data/outputData/"
 
 conversion_fluxes = 549.3
 
@@ -229,7 +240,7 @@ def createMeteoData(input_data_directory, output_data_directory, startDate, endD
 
 
 def create_streamflow_data(input_data_directory, output_data_directory, start, end):
-    streamFlowFile = open(output_data_directory + "streamflow.txt", "w")
+    streamflow_file = open(output_data_directory + "streamflow.txt", "w")
     date = datetime.date(1951, 1, 1)
     timestep = datetime.timedelta(days=1)
 
@@ -244,7 +255,7 @@ def create_streamflow_data(input_data_directory, output_data_directory, start, e
         splitted = str.split(dischargeFileContent[i])
         discharge = splitted[1]
         if (date >= start) and (date <= end):
-            streamFlowFile.write(str(line_out_count) + " " + discharge + "\n")
+            streamflow_file.write(str(line_out_count) + " " + discharge + "\n")
             streamFlowTimeSeries.append(float(discharge))
             date_time_series.append(date)
             line_out_count += 1
@@ -252,40 +263,6 @@ def create_streamflow_data(input_data_directory, output_data_directory, start, e
 
     dischargeFile.close()
     return streamFlowTimeSeries, date_time_series
-
-
-## data for training
-# temperature_time_series, precipitationTimeSeries = createMeteoData(input_data_directory, output_data_directory, start, end)
-# streamFlowTimeSeries, date_time_series = create_streamflow_data(input_data_directory, output_data_directory, start, end)
-#
-## data for validation
-# startVal = datetime.date(1997, 10 , 1)
-# endVal = datetime.date(2013, 10, 1)
-# temperature_time_series_val, precipitation_time_series_val = createMeteoData(input_data_directory, output_data_directory, startVal, endVal)
-# streamflow_time_series_val, date_time_series_val = create_streamflow_data(input_data_directory, output_data_directory, startVal, endVal)
-#
-#
-# aRange = range(1,len(streamFlowTimeSeries)+1,1)
-# f = plt.figure()
-# f, axs = plt.subplots(2, 2)
-# axs[0,0].scatter(temperature_time_series, streamFlowTimeSeries, s = 1 )
-# axs[0,0].set_ylabel('streamflow')
-# axs[0,0].set_xlabel('temperature')
-#
-# width=0.25
-# axs[0,1].plot(date_time_series, numpy.asarray(temperature_time_series), linewidth=width)
-# axs[0,1].set_ylabel('temperature')
-# axs[1,0].plot(date_time_series, numpy.asarray(streamFlowTimeSeries), linewidth=width)
-# axs[1,0].set_ylabel('streamflow')
-# axs[1,1].plot(date_time_series, numpy.asarray(precipitationTimeSeries), linewidth=width)
-# axs[1,1].set_ylabel('precipitation')
-#
-# axs[1,0].xaxis.set_major_locator(plt.MaxNLocator(3))
-# axs[0,1].xaxis.set_major_locator(plt.MaxNLocator(3))
-# axs[1,1].xaxis.set_major_locator(plt.MaxNLocator(3))
-#
-# plt.tight_layout()
-# f.savefig(output_data_directory + "inputTimeseries.pdf")
 
 
 class Net(nn.Module):
@@ -424,7 +401,7 @@ class Net(nn.Module):
                 else:
                     potentialMelt = torch.tensor(0.0)
         if modeSno == "fit":
-            out_sno_f = m(self.sno_f_d((t.tensor([temp]))))
+            out_sno_f = m(self.sno_f_d((torch.tensor([temp]))))
             if deep_layer:
                 out_sno_f = m(self.sno_f_dd(out_sno_f))
             potentialMelt = torch.sigmoid(self.sno_f_c(out_sno_f)) / 50.0
@@ -684,7 +661,7 @@ class Net(nn.Module):
 #############################
 
 
-def createArtificialObservations(
+def create_artificial_observations(
     temperature_time_series,
     precipitationTimeSeries,
     addErrorToArtificialStreamFlow,
@@ -727,6 +704,11 @@ def createArtificialObservations(
     return sno_s_ts, sub_s_ts, sno_f_ts, sub_f_ts, eva_f_ts
 
 
+############
+# training #
+############
+
+
 def training_loop(
     n_epochs,
     stopping,
@@ -739,10 +721,6 @@ def training_loop(
     precipitationTimeSeries,
     streamFlowTimeSeries,
     date_time_series,
-    temperatureTimeSeriesSto,
-    precipitationTimeSeriesSto,
-    streamFlowTimeSeriesSto,
-    dateTimeSeriesSto,
     temperature_time_series_val,
     precipitation_time_series_val,
     streamflow_time_series_val,
@@ -752,11 +730,6 @@ def training_loop(
     sno_f_ts,
     sub_f_ts,
     eva_f_ts,
-    sno_s_tsSto,
-    sub_s_tsSto,
-    sno_f_tsSto,
-    sub_f_tsSto,
-    eva_f_tsSto,
     sno_s_tsVal,
     sub_s_tsVal,
     sno_f_tsVal,
@@ -781,24 +754,24 @@ def training_loop(
     if not os.path.exists(sfdAr):
         os.makedirs(sfdAr)
 
-    # write artificial data to disk, validation
-    numpy.save(sfdAr + "val_art_ts_sno_s.npy", sno_s_tsVal)
-    numpy.save(sfdAr + "val_art_ts_sub_s.npy", sub_s_tsVal)
-    numpy.save(sfdAr + "val_art_ts_sno_f.npy", sno_f_tsVal)
-    numpy.save(sfdAr + "val_art_ts_sub_f.npy", sub_f_tsVal)
-    numpy.save(sfdAr + "val_art_ts_eva_f.npy", eva_f_tsVal)
     # write artificial data to disk, training
     numpy.save(sfdAr + "train_art_ts_sno_s.npy", sno_s_ts)
     numpy.save(sfdAr + "train_art_ts_sub_s.npy", sub_s_ts)
     numpy.save(sfdAr + "train_art_ts_sno_f.npy", sno_f_ts)
     numpy.save(sfdAr + "train_art_ts_sub_f.npy", sub_f_ts)
     numpy.save(sfdAr + "train_art_ts_eva_f.npy", eva_f_ts)
+    # write artificial data to disk, validation
+    numpy.save(sfdAr + "val_art_ts_sno_s.npy", sno_s_tsVal)
+    numpy.save(sfdAr + "val_art_ts_sub_s.npy", sub_s_tsVal)
+    numpy.save(sfdAr + "val_art_ts_sno_f.npy", sno_f_tsVal)
+    numpy.save(sfdAr + "val_art_ts_sub_f.npy", sub_f_tsVal)
+    numpy.save(sfdAr + "val_art_ts_eva_f.npy", eva_f_tsVal)
 
-    lossTrainingSeries = []
-    lossValidationSeries = []
-    lossStoppingSeries = []
-    epochSeries = []
-    stopperCounterSeries = []
+    loss_training_series = []
+    loss_validation_series = []
+    loss_stopping_series = []
+    epoch_series = []
+    stopper_counter_series = []
 
     early_stopper = EarlyStopper(patience=200, min_delta_proportion=1e-2)
 
@@ -865,29 +838,11 @@ def training_loop(
                     loss_train_sno / 4.0 + loss_train_sub
                 ) / 2.0  # /4.0 to standardize snow
 
-        lossTrainingSeries.append(loss_train.item())
-        epochSeries.append(epoch)
+        loss_training_series.append(loss_train.item())
+        epoch_series.append(epoch)
 
         # STOPPING, ie VALIDATION
         if epoch == 1 or epoch % 1 == 0:
-            #            tr_sno_s_ts_areasSto, tr_sub_s_ts_areasSto, tr_sno_f_ts_areasSto, tr_sub_f_ts_areasSto, tr_eva_f_ts_areasSto = hydromodel(
-            #                   linearArt,
-            #                   True,
-            #                   torch.tensor(sno_s_initial),
-            #                   torch.tensor(sub_s_initial),
-            #                   torch.tensor(temperatureTimeSeriesSto),
-            #                   torch.tensor(precipitationTimeSeriesSto),
-            #                   mode_eva = mode_eva_train,
-            #                   modeSno = modeSnoTrain,
-            #                   modeSub = modeSubTrain,
-            #                   modeTem = modeTemTrain,
-            #                   modeEvP = modeEvPTrain
-            #                   )
-            #            tr_sno_s_tsSto = tr_sno_s_ts_areasSto.mean(dim = 0)
-            #            tr_sub_s_tsSto = tr_sub_s_ts_areasSto.mean(dim = 0)
-            #            tr_sno_f_tsSto = tr_sno_f_ts_areasSto.mean(dim = 0)
-            #            tr_sub_f_tsSto = tr_sub_f_ts_areasSto.mean(dim = 0)
-            #            tr_eva_f_tsSto = tr_eva_f_ts_areasSto.mean(dim = 0)
             if fitOnObservations:
                 loss_trainSto = loss_fn(
                     tr_sub_f_ts,
@@ -897,9 +852,9 @@ def training_loop(
             else:
                 loss_trainSto = loss_fn(tr_sub_f_ts, sub_f_ts, stopping)
 
-        lossStoppingSeries.append(loss_trainSto.item())
+        loss_stopping_series.append(loss_trainSto.item())
         counter, stop = early_stopper.early_stop(loss_trainSto)
-        stopperCounterSeries.append(counter)
+        stopper_counter_series.append(counter)
 
         # VALIDATION, ie TESTING
         if epoch == 1 or epoch % 50 == 0 or stop:
@@ -937,7 +892,7 @@ def training_loop(
             else:
                 loss_trainVal = loss_fn(tr_sub_f_tsVal, sub_f_tsVal, validation)
 
-        lossValidationSeries.append(loss_trainVal.item())
+        loss_validation_series.append(loss_trainVal.item())
 
         if l1_regularization:
             # Compute L1 loss component
@@ -1079,15 +1034,14 @@ def training_loop(
             numpy.save(sfdAr + "response_eva_x.npy", numpy.array(a))
             numpy.save(sfdAr + "response_eva_y.npy", numpy.array(b))
 
-            # blauw, oranje, groen
             timeSeriesPlot_rich(
                 sfd,
                 "loss",
-                epochSeries,
+                epoch_series,
                 [
-                    torch.min(torch.tensor(lossTrainingSeries), torch.tensor(1e-5)),
-                    torch.min(torch.tensor(lossStoppingSeries), torch.tensor(1e-5)),
-                    torch.min(torch.tensor(lossValidationSeries), torch.tensor(1e-5)),
+                    torch.min(torch.tensor(loss_training_series), torch.tensor(1e-5)),
+                    torch.min(torch.tensor(loss_stopping_series), torch.tensor(1e-5)),
+                    torch.min(torch.tensor(loss_validation_series), torch.tensor(1e-5)),
                 ],
                 "epoch",
                 "loss",
@@ -1095,15 +1049,15 @@ def training_loop(
             timeSeriesPlot_rich(
                 sfd,
                 "stopCounter",
-                epochSeries,
-                [stopperCounterSeries],
+                epoch_series,
+                [stopper_counter_series],
                 "epoch",
                 "counter",
             )
-            numpy.save(sfdAr + "epochs.npy", numpy.array(epochSeries))
-            numpy.save(sfdAr + "lossTraining.npy", numpy.array(lossTrainingSeries))
-            numpy.save(sfdAr + "lossStopping.npy", numpy.array(lossStoppingSeries))
-            numpy.save(sfdAr + "lossValidation.npy", numpy.array(lossValidationSeries))
+            numpy.save(sfdAr + "epochs.npy", numpy.array(epoch_series))
+            numpy.save(sfdAr + "lossTraining.npy", numpy.array(loss_training_series))
+            numpy.save(sfdAr + "lossStopping.npy", numpy.array(loss_stopping_series))
+            numpy.save(sfdAr + "lossValidation.npy", numpy.array(loss_validation_series))
             # mean over area only
             # training
             timeSeriesPlot_rich(
@@ -1480,7 +1434,6 @@ else:
     linearArt = linearArtForNotFitOnObservations
 
 # data for training or stopping ie validation
-# training period 1
 startOne = datetime.date(1979, 10, 1)
 endOne = datetime.date(1996, 9, 26)
 temperature_time_series, precipitationTimeSeries = createMeteoData(
@@ -1489,30 +1442,11 @@ temperature_time_series, precipitationTimeSeries = createMeteoData(
 streamFlowTimeSeries, date_time_series = create_streamflow_data(
     input_data_directory, output_data_directory, startOne, endOne
 )
-sno_s_ts, sub_s_ts, sno_f_ts, sub_f_ts, eva_f_ts = createArtificialObservations(
+sno_s_ts, sub_s_ts, sno_f_ts, sub_f_ts, eva_f_ts = create_artificial_observations(
     temperature_time_series,
     precipitationTimeSeries,
     addErrorToArtificialStreamFlow,
     linearArt,
-)
-
-# training period 2 NOT USED ANYMORE
-startTwo = datetime.date(1990, 10, 1)
-# startTwo = datetime.date(1996, 10, 1)
-endTwo = datetime.date(2001, 9, 1)
-temperatureTimeSeriesTwo, precipitationTimeSeriesTwo = createMeteoData(
-    input_data_directory, output_data_directory, startTwo, endTwo
-)
-streamFlowTimeSeriesTwo, dateTimeSeriesTwo = create_streamflow_data(
-    input_data_directory, output_data_directory, startTwo, endTwo
-)
-sno_s_tsTwo, sub_s_tsTwo, sno_f_tsTwo, sub_f_tsTwo, eva_f_tsTwo = (
-    createArtificialObservations(
-        temperatureTimeSeriesTwo,
-        precipitationTimeSeriesTwo,
-        addErrorToArtificialStreamFlow,
-        linearArt,
-    )
 )
 
 # data for validation, ie testing
@@ -1526,7 +1460,7 @@ streamflow_time_series_val, date_time_series_val = create_streamflow_data(
 )
 # note that no error is added to artificial streamflow in any case as it is used for validation only
 sno_s_tsVal, sub_s_tsVal, sno_f_tsVal, sub_f_tsVal, eva_f_tsVal = (
-    createArtificialObservations(
+    create_artificial_observations(
         temperature_time_series_val, precipitation_time_series_val, False, linearArt
     )
 )
@@ -1539,7 +1473,7 @@ sub_s_initial = 0.0
 # fitting scenarios #
 #####################
 
-nr_epochs = 5000
+#nr_epochs = 5000
 
 # expert models (n = 7)
 
@@ -1676,17 +1610,17 @@ thr = {
 
 # fitting_scenarios define what components are fitted and what aren't
 # fitting_scenarios = [xva, xno, xub, xne, xue, xus, xhr]            # expert models, code is x plus second and third letter of corresponding ML scenario
-# fitting_scenarios = [eva, sno, sub, sne, sue, sus, thr]            # ML models
-fitting_scenarios = [
-    xva,
-    xno,
-    xub,
-    xne,
-    xue,
-    xus,
-    xhr,
-    eva,
-]  # expert models and eva added for testing
+fitting_scenarios = [eva, sno, sub, sne, sue, sus, thr]              # ML models
+#fitting_scenarios = [
+#    xva,
+#    xno,
+#    xub,
+#    xne,
+#    xue,
+#    xus,
+#    xhr,
+#    eva,
+#]
 
 outOne, outTwo, outThree, outFour = createTrainingIndices()
 
@@ -1698,20 +1632,11 @@ one = {
     "precipitation": precipitationTimeSeries,
     "streamFlow": streamFlowTimeSeries,
     "date": date_time_series,
-    "temperatureSto": temperatureTimeSeriesTwo,
-    "precipitationSto": precipitationTimeSeriesTwo,
-    "streamFlowSto": streamFlowTimeSeriesTwo,
-    "dateSto": dateTimeSeriesTwo,
     "sno_s_ts": sno_s_ts,
     "sub_s_ts": sub_s_ts,
     "sno_f_ts": sno_f_ts,
     "sub_f_ts": sub_f_ts,
     "eva_f_ts": eva_f_ts,
-    "sno_s_tsSto": sno_s_tsTwo,
-    "sub_s_tsSto": sub_s_tsTwo,
-    "sno_f_tsSto": sno_f_tsTwo,
-    "sub_f_tsSto": sub_f_tsTwo,
-    "eva_f_tsSto": eva_f_tsTwo,
 }
 
 two = one.copy()
@@ -1793,10 +1718,6 @@ for fs in fitting_scenarios:
                 ts["precipitation"],
                 ts["streamFlow"],
                 ts["date"],
-                ts["temperatureSto"],
-                ts["precipitationSto"],
-                ts["streamFlowSto"],
-                ts["dateSto"],
                 temperature_time_series_val,
                 precipitation_time_series_val,
                 streamflow_time_series_val,
@@ -1806,11 +1727,6 @@ for fs in fitting_scenarios:
                 ts["sno_f_ts"],
                 ts["sub_f_ts"],
                 ts["eva_f_ts"],
-                ts["sno_s_tsSto"],
-                ts["sub_s_tsSto"],
-                ts["sno_f_tsSto"],
-                ts["sub_f_tsSto"],
-                ts["eva_f_tsSto"],
                 sno_s_tsVal,
                 sub_s_tsVal,
                 sno_f_tsVal,
