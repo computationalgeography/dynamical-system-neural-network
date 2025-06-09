@@ -11,15 +11,15 @@ from matplotlib.lines import Line2D
 # main configurations #
 #######################
 
-observed_scenario = True
-one_area = False
+observed_scenario = False
+one_area = True
 
 create_scatter = True
 create_timeseries = True
-create_nse = True
+create_nse = False
 
 data_dir = '../data/scenarios/runs_from_sonic_velocity/'
-number_of_rerun_scenarios = 4
+number_of_rerun_scenarios = 2  # 2 for all except fitting on observations for one area (where one can use 4)
 
 
 ##################
@@ -100,16 +100,27 @@ if observed_scenario:
         scenarios = ['fit_eva', 'fit_sno', 'fit_sub', 'fit_sne', 'fit_sue', 'fit_sus', 'fit_thr']
 
     ## only nn scenarios
-    scenarios_to_plot = [
-        "fit_eva",
-        "fit_sno",
-        "fit_sub",
-        "fit_sne",
-        "fit_sue",
-        "fit_sus",
-        "fit_thr",
-        "fit_xhr"  
-    ]
+    if one_area:
+        scenarios_to_plot = [
+            "fit_eva",
+            "fit_sno",
+            "fit_sub",
+            "fit_sne",
+            "fit_sue",
+            "fit_sus",
+            "fit_thr",
+            "fit_xhr"  
+        ]
+    else:
+        scenarios_to_plot = [
+            "fit_eva",
+            "fit_sno",
+            "fit_sub",
+            "fit_sne",
+            "fit_sue",
+            "fit_sus",
+            "fit_thr",
+        ]
 
 else:
     # only nn scenarios
