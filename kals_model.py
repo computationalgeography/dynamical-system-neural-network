@@ -1727,13 +1727,13 @@ four["stopping"] = outFour
 training_scenarios = [one, two, three, four]
 
 if run_in_batch:
-    if training_scenario = '1':
+    if training_scenario == '1':
         training_scenarios = [one]
-    if training_scenario = '2':
+    if training_scenario == '2':
         training_scenarios = [two]
-    if training_scenario = '3':
+    if training_scenario == '3':
         training_scenarios = [three]
-    if training_scenario = '4':
+    if training_scenario == '4':
         training_scenarios = [four]
 
 # rerun scenarios
