@@ -1,14 +1,20 @@
-nohup python -u kals_model.py eva > nohup_eva.out &
-nohup python -u kals_model.py sno > nohup_sno.out &
-nohup python -u kals_model.py sub > nohup_sub.out &
-nohup python -u kals_model.py sne > nohup_sne.out &
-nohup python -u kals_model.py sue > nohup_sue.out &
-nohup python -u kals_model.py sus > nohup_sus.out &
-nohup python -u kals_model.py thr > nohup_thr.out &
-nohup python -u kals_model.py xva > nohup_xva.out &
-nohup python -u kals_model.py xno > nohup_xno.out &
-nohup python -u kals_model.py xub > nohup_xub.out &
-nohup python -u kals_model.py xne > nohup_xne.out &
-nohup python -u kals_model.py xue > nohup_xue.out &
-nohup python -u kals_model.py xus > nohup_xus.out &
-nohup python -u kals_model.py xhr > nohup_xhr.out &
+# training scenario, 1, 2, 3, or 4 (folds)
+training_scenario="1"
+# re-run scenario, 1, 2, 3, or 4 (reruns, can also be more than 4, eg 5)
+re_run_scenario="3"
+nohup python -u kals_model.py eva $training_scenario $re_run_scenario > nohup_eva_training_sc_$training_scenario.rerun_sc_$re_run_scenario.out &
+nohup python -u kals_model.py sno $training_scenario $re_run_scenario > nohup_sno_training_sc_$training_scenario.rerun_sc_$re_run_scenario.out &
+nohup python -u kals_model.py sub $training_scenario $re_run_scenario > nohup_sno_training_sc_$training_scenario.rerun_sc_$re_run_scenario.out &
+nohup python -u kals_model.py sne $training_scenario $re_run_scenario > nohup_sno_training_sc_$training_scenario.rerun_sc_$re_run_scenario.out &
+nohup python -u kals_model.py sue $training_scenario $re_run_scenario > nohup_sno_training_sc_$training_scenario.rerun_sc_$re_run_scenario.out &
+nohup python -u kals_model.py sus $training_scenario $re_run_scenario > nohup_sno_training_sc_$training_scenario.rerun_sc_$re_run_scenario.out &
+nohup python -u kals_model.py thr $training_scenario $re_run_scenario > nohup_sno_training_sc_$training_scenario.rerun_sc_$re_run_scenario.out &
+
+nohup python -u kals_model.py xhr $training_scenario $re_run_scenario > nohup_sno_training_sc_$training_scenario.rerun_sc_$re_run_scenario.out &
+
+#nohup python -u kals_model.py xva $training_scenario $re_run_scenario > nohup_sno_training_sc_$training_scenario.rerun_sc_$re_run_scenario.out &
+#nohup python -u kals_model.py xno $training_scenario $re_run_scenario > nohup_sno_training_sc_$training_scenario.rerun_sc_$re_run_scenario.out &
+#nohup python -u kals_model.py xub $training_scenario $re_run_scenario > nohup_sno_training_sc_$training_scenario.rerun_sc_$re_run_scenario.out &
+#nohup python -u kals_model.py xne $training_scenario $re_run_scenario > nohup_sno_training_sc_$training_scenario.rerun_sc_$re_run_scenario.out &
+#nohup python -u kals_model.py xue $training_scenario $re_run_scenario > nohup_sno_training_sc_$training_scenario.rerun_sc_$re_run_scenario.out &
+#nohup python -u kals_model.py xus $training_scenario $re_run_scenario > nohup_sno_training_sc_$training_scenario.rerun_sc_$re_run_scenario.out &

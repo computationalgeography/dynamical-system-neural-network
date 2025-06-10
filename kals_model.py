@@ -63,6 +63,8 @@ print_parameters = True
 #    third = sys.argv[3]
 if run_in_batch:
     batch_scenario = sys.argv[1]
+    training_scenario = sys.argv[2] 
+    re_run_scenario = sys.argv[3]
 
 
 
@@ -1723,8 +1725,16 @@ three["stopping"] = outThree
 four["stopping"] = outFour
 
 training_scenarios = [one, two, three, four]
-# training_scenarios = [one, two]
-# training_scenarios = [three, four]
+
+if run_in_batch:
+    if training_scenario = '1':
+        training_scenarios = [one]
+    if training_scenario = '2':
+        training_scenarios = [two]
+    if training_scenario = '3':
+        training_scenarios = [three]
+    if training_scenario = '4':
+        training_scenarios = [four]
 
 # rerun scenarios
 number_of_scenarios = 4
@@ -1732,6 +1742,9 @@ aRange = numpy.arange(1, number_of_scenarios + 1)
 re_run_scenarios = []
 for s in aRange:
     re_run_scenarios.append(str(s))
+
+if run_in_batch:
+    re_run_scenarios = [re_run_scenario]
 
 #if run_in_batch:
 #    fitting_scenarios = [fitting_scenarios[int(first) - 1]]
