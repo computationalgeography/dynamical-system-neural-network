@@ -27,16 +27,16 @@ nr_epochs = 5000
 #nr_epochs = 2
 
 # run one area or else two
-one_area = True
+one_area = False
 
 # fit model on observations or on artificial data
-fitOnObservations = False
+fitOnObservations = True
 
 # add error to artificial data
-addErrorToArtificialStreamFlow = True
+addErrorToArtificialStreamFlow = False
 
 input_data_directory = "../data/inputData/"
-output_directory = "../data/results/2507_oneArea_arti_withError/"
+output_directory = "../data/results/2507_twoArea_observations/"
 
 ########################
 # other configurations #
