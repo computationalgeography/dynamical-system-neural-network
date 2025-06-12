@@ -14,9 +14,10 @@ from matplotlib.lines import Line2D
 observed_scenario = False
 one_area = True
 
-create_scatter = True
-create_timeseries = True
+create_scatter = False
+create_timeseries = False
 create_nse = False
+print_stats = False
 
 data_dir = '../data/scenarios/runs_from_sonic_velocity/'
 number_of_rerun_scenarios = 2  # 2 for all except fitting on observations for one area (where one can use 4)
@@ -97,7 +98,8 @@ if observed_scenario:
         scenarios = ['fit_eva', 'fit_sno', 'fit_sub', 'fit_sne', 'fit_sue', 'fit_sus', 'fit_thr', \
                  'fit_xva', 'fit_xno', 'fit_xub', 'fit_xne', 'fit_xue', 'fit_xus', 'fit_xhr']
     else:
-        scenarios = ['fit_eva', 'fit_sno', 'fit_sub', 'fit_sne', 'fit_sue', 'fit_sus', 'fit_thr']
+        scenarios = ['fit_eva', 'fit_sno', 'fit_sub', 'fit_sne', 'fit_sue', 'fit_sus', 'fit_thr', \
+                 'fit_xva', 'fit_xno', 'fit_xub', 'fit_xne', 'fit_xue', 'fit_xus', 'fit_xhr']
 
     ## only nn scenarios
     if one_area:
@@ -120,6 +122,7 @@ if observed_scenario:
             "fit_sue",
             "fit_sus",
             "fit_thr",
+            "fit_xhr"  
         ]
 
 else:
@@ -234,6 +237,14 @@ for array in arrays:
 df["lossTrainingValue"] = df["lossTraining"].apply(lambda x: x[-1])
 df["lossValidationValue"] = df["lossValidation"].apply(lambda x: x[-1])
 df["lossStoppingValue"] = df["lossStopping"].apply(lambda x: x[-1])
+
+#df["minLossValidationValue"] = df["lossValidation"].apply(lambda x: x.min())
+#df["lossRatioValidationValue"] = df["minLossValidationValue"]/df["lossValidationValue"]
+#
+#for scen in scenarios:
+#    #print(df[df["sc"] == scen].sort_values(by="lossTrainingValue").loc[:, variables])
+#    a = df[df["sc"] == scen]
+#    print(scen, a["lossRatioValidationValue"].mean())
 
 # Replace potential snow melt by actual snow melt both for synthetic data
 # and for ML modelled data
@@ -415,7 +426,7 @@ else:
     legend_text = ['model, best (all colours)', 'model, 2nd-4th best (all colours)', 'synthetic']
 axs[7,0].legend(custom_lines, legend_text, loc = 'upper center', bbox_to_anchor = (1.5, -0.5), ncol = 3)
 
-axs[0, 0].set_ylim(0, 0.015)
+axs[0, 0].set_ylim(0, 0.020)
 
 axs[0, 0].set_xlim(-10, 15)
 axs[0, 1].set_xlim(-2, 8)
@@ -813,21 +824,33 @@ if create_scatter:
 ##
 # scenarios = ['fit_eva', 'fit_sno', 'fit_sub', 'fit_sne', 'fit_sue', 'fit_sus', 'fit_thr', 'fit_exp']
 
-#print("#########################################################")
+if print_stats:
+    # overfitting
+    df["minLossValidationValue"] = df["lossValidation"].apply(lambda x: x.min())
+    df["lossRatioValidationValue"] = df["minLossValidationValue"]/df["lossValidationValue"]
+    print('overall mean overfit metric is ', df["lossRatioValidationValue"].mean())
+    print('and by scenario: ')
+    for scen in scenarios:
+        a = df[df["sc"] == scen]
+        print(scen, a["lossRatioValidationValue"].mean())
+    df["minNSEVal"] = 1.0 - (df["minLossValidationValue"] / valid_ss_q_mean)
 
-variables = [
-    "sc",
-    "ts",
-    "rs",
-    "lossTrainingValue",
-    "lossStoppingValue",
-    "lossValidationValue",
-    "NSEVal",
-]
-# print(df[df['sc'] == 'fit_eva'].sort_values(by="lossTrainingValue").loc[:,['sc','ts','rs','lossTrainingValue', 'lossStoppingValue','lossValidationValue', 'NSEVal']])
-for scen in scenarios:
-    print(df[df["sc"] == scen].sort_values(by="lossTrainingValue").loc[:, variables])
-
+    # performance metrics
+    variables = [
+        "sc",
+        "ts",
+        "rs",
+        "lossTrainingValue",
+        "lossStoppingValue",
+        "lossValidationValue",
+        "lossRatioValidationValue",
+        "minNSEVal",
+        "NSEVal",
+    ]
+    # print(df[df['sc'] == 'fit_eva'].sort_values(by="lossTrainingValue").loc[:,['sc','ts','rs','lossTrainingValue', 'lossStoppingValue','lossValidationValue', 'NSEVal']])
+    for scen in scenarios:
+        print(df[df["sc"] == scen].sort_values(by="lossTrainingValue").loc[:, variables])
+    
 def nsePlot(black):
     fig = plt.figure(dpi=dpi_figures, figsize = [2.5,2], tight_layout = {'pad': 1})
 
