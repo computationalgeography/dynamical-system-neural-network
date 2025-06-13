@@ -37,6 +37,7 @@ addErrorToArtificialStreamFlow = False
 
 input_data_directory = "../data/inputData/"
 output_directory = "../data/results/2507_twoArea_observations/"
+#output_directory = "/Users/karss101/tmp/"
 
 ########################
 # other configurations #
@@ -901,24 +902,24 @@ def training_loop(
         # VALIDATION, ie TESTING
         if epoch == 1 or epoch % 50 == 0 or stop:
             (
-                tr_sno_s_ts_areasVal,
-                tr_sub_s_ts_areasVal,
-                tr_sno_f_ts_areasVal,
-                tr_sub_f_ts_areasVal,
-                tr_eva_f_ts_areasVal,
-            ) = hydromodel(
-                linearArt,
-                True,
-                torch.tensor(sno_s_initial),
-                torch.tensor(sub_s_initial),
-                torch.tensor(temperature_time_series_val),
-                torch.tensor(precipitation_time_series_val),
-                mode_eva=mode_eva_train,
-                modeSno=modeSnoTrain,
-                modeSub=modeSubTrain,
-                modeTem=modeTemTrain,
-                modeEvP=modeEvPTrain,
-            )
+                    tr_sno_s_ts_areasVal,
+                    tr_sub_s_ts_areasVal,
+                    tr_sno_f_ts_areasVal,
+                    tr_sub_f_ts_areasVal,
+                    tr_eva_f_ts_areasVal,
+                ) = hydromodel(
+                    linearArt,
+                    True,
+                    torch.tensor(sno_s_initial),
+                    torch.tensor(sub_s_initial),
+                    torch.tensor(temperature_time_series_val),
+                    torch.tensor(precipitation_time_series_val),
+                    mode_eva=mode_eva_train,
+                    modeSno=modeSnoTrain,
+                    modeSub=modeSubTrain,
+                    modeTem=modeTemTrain,
+                    modeEvP=modeEvPTrain,
+                )
             tr_sno_s_tsVal = tr_sno_s_ts_areasVal.mean(dim=0)
             tr_sub_s_tsVal = tr_sub_s_ts_areasVal.mean(dim=0)
             tr_sno_f_tsVal = tr_sno_f_ts_areasVal.mean(dim=0)
