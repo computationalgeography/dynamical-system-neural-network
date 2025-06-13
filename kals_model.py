@@ -566,7 +566,6 @@ class Net(nn.Module):
             sub_s = sub_s_initial
 
             for i in range(0, nr_timesteps):
-                print(i)
                 # get drivers for timestep
                 temp = temperature[i] + temperatureOffset + areaTemperatureOffsets[area]
 
