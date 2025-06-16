@@ -16,6 +16,7 @@ one_area = True
 
 create_scatter = False
 create_timeseries = False
+create_r2_by_variable = True
 create_nse = False
 print_stats = False
 
@@ -688,13 +689,16 @@ if create_timeseries:
 
 # scatterplots
 
-def rSquaredFormatted(x, y):
+def rSquared(x, y):
     rM = numpy.corrcoef(x, y)
     r = rM[0][1]
     rSq = r * r
+    return rSq
+
+def rSquaredFormatted(x, y):
+    rSq = rSquared(x, y)
     r_sq_for = "{:.3f}".format(rSq)
     return r_sq_for
-
 
 def scatter_plot_by_variable(scenarios, modelled_tss, observed_tss, start, end):
     fig = plt.figure(dpi=dpi_figures)
@@ -814,6 +818,39 @@ if create_scatter:
         name = names[i]
         scatter_plot_by_scenario(modelled_tss_list, observed_tss_list, scenario, name, startTimeTss, endTimeTss)
         i = i + 1
+
+def r2_by_variable(scenarios, tss_variables, start, end):
+    fig, axen = plt.subplots(2, 3)
+    axs = [axen[0,0], axen[0,1], axen[0,2],
+           axen[1,0], axen[1,1], axen[1,2],
+           ]
+    fig.set_size_inches(8.27, 4.69)
+    i = 0
+    while i < tss_variables:
+        modelled_tss = modelled_tss_list[i]
+        observed_tss = observed_tss_list[i]
+        xVal = []
+        yVal = []
+        rij = 0
+        for sc in scenarios[:-1]:
+            a = (df[df["sc"] == sc].sort_values(by="lossTrainingValue")).iloc[0]
+            x = a[observed_tss][start:end]
+            y = a[modelled_tss][start:end]
+            r_sq_for = rSquared(x, y)
+            xVal.append(names[rij])
+            yVal.append(r_sq_for)
+            rij += 1
+        axs[i].plot(xVal,yVal, '.', markersize=12)
+        axs[i].text(.05, .95, labels_variables_tight[i], ha='left', va='top', \
+                      transform=axs[i].transAxes, size = font_size_axes)
+        i = i + 1
+    axs[5].remove()
+    plt.tight_layout()
+    fig.savefig(figure_directory + "r2_by_variable.pdf")
+    plt.close(fig)
+
+if create_r2_by_variable:
+    r2_by_variable(scenarios_to_plot, tss_variables, startTimeTss, endTimeTss)
 
 
 # df['lossStop'] = lossStopList
