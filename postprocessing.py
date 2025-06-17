@@ -12,13 +12,13 @@ from matplotlib.lines import Line2D
 #######################
 
 observed_scenario = False
-one_area = True
+one_area = False
 
 create_scatter = False
-create_timeseries = False
+create_timeseries = True
 create_r2_by_variable = True
-create_nse = False
-print_stats = False
+create_nse = True
+print_stats = True
 
 data_dir = '../data/scenarios/runs_from_sonic_velocity/'
 number_of_rerun_scenarios = 2  # 2 for all except fitting on observations for one area (where one can use 4)
