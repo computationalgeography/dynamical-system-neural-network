@@ -11,7 +11,7 @@ from matplotlib.lines import Line2D
 # main configurations #
 #######################
 
-observed_scenario = False
+observed_scenario = True
 one_area = False
 
 create_scatter = False
@@ -21,7 +21,7 @@ create_nse = True
 print_stats = True
 
 data_dir = '../data/scenarios/runs_from_sonic_velocity/'
-number_of_rerun_scenarios = 2  # 2 for all except fitting on observations for one area (where one can use 4)
+number_of_rerun_scenarios = 4  # 2 for all except fitting on observations (where one can use 4)
 
 
 ##################
@@ -64,7 +64,8 @@ if observed_scenario:
     if one_area:
         results_folder = 'kals_model_fit_on_observations/results/'
     else:
-        results_folder = 'kals_model_two_areas_fit_on_observations/results/'
+        #results_folder = 'kals_model_two_areas_fit_on_observations/results/'
+        results_folder = '2507_twoArea_observations/'
     scenario_directory = data_dir + results_folder 
 else:
     # No error in streamflow (replaced) and precipitation and temperature
