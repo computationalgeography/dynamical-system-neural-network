@@ -21,7 +21,7 @@ create_nse = True
 print_stats = True
 
 data_dir = '../data/scenarios/runs_from_sonic_velocity/'
-number_of_rerun_scenarios = 4  # 2 for all except fitting on observations (where one can use 4)
+number_of_rerun_scenarios = 2  # 2 for all except fitting on observations (where one can use 4)
 
 
 ##################
