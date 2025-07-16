@@ -12,16 +12,17 @@ from matplotlib.lines import Line2D
 #######################
 
 observed_scenario = True
-one_area = False
+one_area = True
 
-create_scatter = False
+create_scatter = True
 create_timeseries = True
 create_r2_by_variable = True
 create_nse = True
 print_stats = True
+modelSelectionWithTraining = True  # use training set or combination of training and stopping
 
 data_dir = '../data/scenarios/runs_from_sonic_velocity/'
-number_of_rerun_scenarios = 2  # 2 for all except fitting on observations (where one can use 4)
+number_of_rerun_scenarios = 2  # 2 for all except fitting on observations (where one can use 7 for twoAreas)
 
 
 ##################
@@ -65,7 +66,9 @@ if observed_scenario:
         results_folder = 'kals_model_fit_on_observations/results/'
     else:
         #results_folder = 'kals_model_two_areas_fit_on_observations/results/'
-        results_folder = '2507_twoArea_observations/'
+        #results_folder = '2507_twoArea_observations/'
+        #results_folder = '2507_twoArea_observations_merged_with/' # change input reader to folder 5 
+        results_folder = '2507_twoArea_observations_7reruns/'
     scenario_directory = data_dir + results_folder 
 else:
     # No error in streamflow (replaced) and precipitation and temperature
@@ -201,6 +204,7 @@ folderWithArrays = (
     + training_scenarios[0]
     + "/"
     + rerun_scenarios[0]
+    #+ rerun_scenarios[5]
     + "/arrays"
 )
 arrayFiles = os.listdir(folderWithArrays)
@@ -239,6 +243,12 @@ for array in arrays:
 df["lossTrainingValue"] = df["lossTraining"].apply(lambda x: x[-1])
 df["lossValidationValue"] = df["lossValidation"].apply(lambda x: x[-1])
 df["lossStoppingValue"] = df["lossStopping"].apply(lambda x: x[-1])
+
+if modelSelectionWithTraining:
+    df["lossModelSelection"] = df["lossTrainingValue"]
+else:
+    df["lossModelSelection"] = df["lossTrainingValue"] * 0.75 + df["lossStoppingValue"] * 0.25
+
 
 #df["minLossValidationValue"] = df["lossValidation"].apply(lambda x: x.min())
 #df["lossRatioValidationValue"] = df["minLossValidationValue"]/df["lossValidationValue"]
@@ -326,7 +336,7 @@ line_width_other = 0.7
 rij = 0
 for sc in scenarios_to_plot:
     #a = df[(df["sc"] == sc)]
-    a = (df[df["sc"] == sc].sort_values(by="lossTrainingValue"))
+    a = (df[df["sc"] == sc].sort_values(by="lossModelSelection"))
     i = 0
     for index, row in a.iterrows():
         if i < number_of_fits_to_plot:
@@ -528,7 +538,7 @@ def timeseries_plot_by_variable(scenarios, modelled_tss, observed_tss, start, en
     #axs[1]._shared_axes['y'].remove(axs[0])
     # print rest in remaining rows
     for sc in scenarios:
-        a = (df[df["sc"] == sc].sort_values(by="lossTrainingValue")).iloc[0]
+        a = (df[df["sc"] == sc].sort_values(by="lossModelSelection")).iloc[0]
         axs[rij].plot(
             a["valid_date"][start:end],
             a[observed_tss][start:end],
@@ -605,7 +615,7 @@ def timeseries_plot_by_scenario(modelled_tss_es, observed_tss_es, scenario, star
     tssNumber = 0
     for tss in modelled_tss_es:
         for i in range(0,number_of_fits_to_plot):
-            a = (df[df["sc"] == scenario].sort_values(by="lossTrainingValue")).iloc[i]
+            a = (df[df["sc"] == scenario].sort_values(by="lossModelSelection")).iloc[i]
             # Plot observed timeseries either from artificial data or from observations.
             observed_tss = observed_tss_es[tssNumber]
             if not(observed_scenario) or (observed_tss == 'valid_ts_OBS'):
@@ -717,7 +727,7 @@ def scatter_plot_by_variable(scenarios, modelled_tss, observed_tss, start, end):
     # fig.set_size_inches(8.27/3.0,11.69)
     rij = 0
     for sc in scenarios:
-        a = (df[df["sc"] == sc].sort_values(by="lossTrainingValue")).iloc[0]
+        a = (df[df["sc"] == sc].sort_values(by="lossModelSelection")).iloc[0]
         x = a[observed_tss][start:end]
         y = a[modelled_tss][start:end]
         hb = axs[rij].hexbin(
@@ -760,7 +770,7 @@ def scatter_plot_by_scenario(modelled_tss_es, observed_tss_es, scenario, name, s
     rij = 0
     tssNumber = 0
     for tss in modelled_tss_es:
-        a = (df[df["sc"] == scenario].sort_values(by="lossTrainingValue")).iloc[0]
+        a = (df[df["sc"] == scenario].sort_values(by="lossModelSelection")).iloc[0]
         observed_tss = observed_tss_es[tssNumber]
         x = a[observed_tss][start:end]
         y = a[tss][start:end]
@@ -834,7 +844,7 @@ def r2_by_variable(scenarios, tss_variables, start, end):
         yVal = []
         rij = 0
         for sc in scenarios[:-1]:
-            a = (df[df["sc"] == sc].sort_values(by="lossTrainingValue")).iloc[0]
+            a = (df[df["sc"] == sc].sort_values(by="lossModelSelection")).iloc[0]
             x = a[observed_tss][start:end]
             y = a[modelled_tss][start:end]
             r_sq_for = rSquared(x, y)
@@ -878,16 +888,16 @@ if print_stats:
         "sc",
         "ts",
         "rs",
-        "lossTrainingValue",
+        "lossModelSelection",
         "lossStoppingValue",
         "lossValidationValue",
         "lossRatioValidationValue",
         "minNSEVal",
         "NSEVal",
     ]
-    # print(df[df['sc'] == 'fit_eva'].sort_values(by="lossTrainingValue").loc[:,['sc','ts','rs','lossTrainingValue', 'lossStoppingValue','lossValidationValue', 'NSEVal']])
+    # print(df[df['sc'] == 'fit_eva'].sort_values(by="lossModelSelection").loc[:,['sc','ts','rs','lossModelSelection', 'lossStoppingValue','lossValidationValue', 'NSEVal']])
     for scen in scenarios:
-        print(df[df["sc"] == scen].sort_values(by="lossTrainingValue").loc[:, variables])
+        print(df[df["sc"] == scen].sort_values(by="lossModelSelection").loc[:, variables])
     
 def nsePlot(black):
     fig = plt.figure(dpi=dpi_figures, figsize = [2.5,2], tight_layout = {'pad': 1})
@@ -935,11 +945,11 @@ def nsePlot(black):
                 label = "neural network"
             else:
                 label = ""
-            nse = (df[df["sc"] == scen].sort_values(by="lossTrainingValue")).iloc[fit]["NSEVal"]
+            nse = (df[df["sc"] == scen].sort_values(by="lossModelSelection")).iloc[fit]["NSEVal"]
             if black:
                 color = "black"
             else:
-                color = (df[df["sc"] == scen].sort_values(by="lossTrainingValue")).iloc[fit]["color"]
+                color = (df[df["sc"] == scen].sort_values(by="lossModelSelection")).iloc[fit]["color"]
             if fit == 0:
                 plt.plot(names[i], nse, '.', color=color, label = label, markersize = 12)
             else:
@@ -957,11 +967,11 @@ def nsePlot(black):
                 label = "conceptual model"
             else:
                 label = ""
-            nse = (df[df["sc"] == scen].sort_values(by="lossTrainingValue")).iloc[fit]["NSEVal"]
+            nse = (df[df["sc"] == scen].sort_values(by="lossModelSelection")).iloc[fit]["NSEVal"]
             if black:
                 color = "black"
             else:
-                color = (df[df["sc"] == scen].sort_values(by="lossTrainingValue")).iloc[fit]["color"]
+                color = (df[df["sc"] == scen].sort_values(by="lossModelSelection")).iloc[fit]["color"]
             if fit == 0:
                 plt.plot(names[i], nse, '_', color=color, label = label, markersize = 10)
             else:

@@ -16,8 +16,8 @@ nohup python -u kals_model.py sus $training_scenario $re_run_scenario > nohup_su
 sleep 20
 nohup python -u kals_model.py thr $training_scenario $re_run_scenario > nohup_thr_training_sc_$training_scenario.rerun_sc_$re_run_scenario.out &
 sleep 20
+nohup python -u kals_model.py xhr $training_scenario $re_run_scenario > nohup_xhr_training_sc_$training_scenario.rerun_sc_$re_run_scenario.out &
 
-#nohup python -u kals_model.py xhr $training_scenario $re_run_scenario > nohup_xhr_training_sc_$training_scenario.rerun_sc_$re_run_scenario.out &
 #sleep 20
 #nohup python -u kals_model.py xva $training_scenario $re_run_scenario > nohup_xva_training_sc_$training_scenario.rerun_sc_$re_run_scenario.out &
 #sleep 20
