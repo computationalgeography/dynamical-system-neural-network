@@ -18,11 +18,11 @@ create_scatter = True
 create_timeseries = True
 create_r2_by_variable = True
 create_nse = True
-print_stats = True
-modelSelectionWithTraining = True  # use training set or combination of training and stopping
+print_stats = False
+modelSelectionWithTraining = False  # use training set or combination of training and stopping
 
 data_dir = '../data/scenarios/runs_from_sonic_velocity/'
-number_of_rerun_scenarios = 2  # 2 for all except fitting on observations (where one can use 7 for twoAreas)
+number_of_rerun_scenarios = 4  # 2 for all except fitting on observations (where one can use 7 for twoAreas and 4 for one area)
 
 
 ##################
@@ -980,6 +980,7 @@ def nsePlot(black):
         fit += 1
     plt.legend(fontsize = font_size_axes * 0.8)
     plt.ylabel("NSE")
+    plt.ylim(0.61, 0.76)
     fig.savefig(figure_directory + "nse.pdf")
     plt.close(fig)
 
