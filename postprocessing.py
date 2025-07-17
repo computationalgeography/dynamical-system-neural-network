@@ -12,7 +12,7 @@ from matplotlib.lines import Line2D
 #######################
 
 observed_scenario = True
-one_area = True
+one_area = False
 
 create_scatter = True
 create_timeseries = True
@@ -22,7 +22,7 @@ print_stats = False
 modelSelectionWithTraining = False  # use training set or combination of training and stopping
 
 data_dir = '../data/scenarios/runs_from_sonic_velocity/'
-number_of_rerun_scenarios = 4  # 2 for all except fitting on observations (where one can use 7 for twoAreas and 4 for one area)
+number_of_rerun_scenarios = 7  # 2 for all except fitting on observations (where one can use 7)
 
 
 ##################
@@ -63,7 +63,8 @@ labels_variables_tight = ['evapotranspiration',
 
 if observed_scenario:
     if one_area:
-        results_folder = 'kals_model_fit_on_observations/results/'
+        #results_folder = 'kals_model_fit_on_observations/results/'
+        results_folder = '2507_oneArea_observations_7reruns/results/'
     else:
         #results_folder = 'kals_model_two_areas_fit_on_observations/results/'
         #results_folder = '2507_twoArea_observations/'
@@ -980,7 +981,7 @@ def nsePlot(black):
         fit += 1
     plt.legend(fontsize = font_size_axes * 0.8)
     plt.ylabel("NSE")
-    plt.ylim(0.61, 0.76)
+    plt.ylim(0.67, 0.76)
     fig.savefig(figure_directory + "nse.pdf")
     plt.close(fig)
 
