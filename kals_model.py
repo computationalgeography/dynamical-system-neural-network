@@ -23,8 +23,8 @@ run_in_batch = True
 
 # max number of epochs to run (will run for this number of epochs
 # if validation (stopping) does not make it stop
-#nr_epochs = 5000
-nr_epochs = 20
+nr_epochs = 5000
+#nr_epochs = 20
 
 # run one area or else two
 one_area = True
