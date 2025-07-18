@@ -23,11 +23,14 @@ run_in_batch = True
 
 # max number of epochs to run (will run for this number of epochs
 # if validation (stopping) does not make it stop
-nr_epochs = 5000
-#nr_epochs = 2
+#nr_epochs = 5000
+nr_epochs = 20
 
 # run one area or else two
 one_area = True
+
+# multiply learning rate for quick tests (use 1.0 for real runs)
+learning_rate_multiplier_value = 1.0  # 5.0 is possible for expert model fit
 
 # fit model on observations or on artificial data
 fitOnObservations = True
@@ -44,6 +47,8 @@ output_directory = "../data/results/test/"
 # other configurations #
 ########################
 
+# use weather data, if True GFS, else ECMWF Land
+GFS = False 
 # training data to calculate loss over (typical sub, i.e. outflow)
 training_data = "trainingSub"
 
@@ -171,7 +176,11 @@ def scatterplot_rich(
 def createTrainingIndices():
     a = [1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4]
     out = []
-    for p in range(0, 366):  # add one year spin up
+    if GFS:
+        spin_up_duration = 366
+    else:
+        spin_up_duration = 365
+    for p in range(0, spin_up_duration):  # add one year spin up
         out.append(1)
     for i in a:
         for j in range(0, 365):
@@ -231,31 +240,42 @@ class EarlyStopper:
 def createMeteoData(input_data_directory, output_directory, startDate, endDate):
     precipitation_file = open(output_directory + "precipitation.txt", "w")
     temperatureFile = open(output_directory + "temperature.txt", "w")
-    date = datetime.date(1979, 1, 1)
+    if GFS:
+        date = datetime.date(1979, 1, 1)
+    else:
+        date = datetime.date(1981, 1, 1)
+
     timestep = datetime.timedelta(days=1)
 
     temperature_time_series = []
     precipitation_time_series = []
 
-    with open(input_data_directory + "weatherdata-470125_corrected.csv") as csv_file:
-        csv_reader = csv.reader(csv_file, dialect="excel")
+    if GFS:
+        weatherDataCSV = "weatherdata-470125_corrected.csv"
+    else:
+        weatherDataCSV = "ID_535.csv"
+
+    with open(input_data_directory + weatherDataCSV) as csv_file:
+        if GFS:
+            csv_reader = csv.reader(csv_file, dialect="excel")
+        else:
+            csv_reader = csv.reader(csv_file, dialect="excel", delimiter=";")
         line_count = 0
         line_out_count = 1
         for row in csv_reader:
             if line_count == 0:
-                # print(f'Column names are {", ".join(row)}')
+                #print(f'Column names are {", ".join(row)}')
+                #print(row[22])
                 line_count += 1
             else:
-                dateFromFileStr = str.split(row[0], "/")
-                monthFromFileStr = int(dateFromFileStr[0])
-                dayFromFileStr = int(dateFromFileStr[1])
-                yearFromFileStr = int(dateFromFileStr[2])
-                dateFromFile = datetime.date(
-                    yearFromFileStr, monthFromFileStr, dayFromFileStr
-                )
-                # print(date, 'from file ', dateFromFile)
-                temperature = (float(row[4]) + float(row[5])) / 2.0
-                precip = row[6]
+                if GFS:
+                    temperature = (float(row[4]) + float(row[5])) / 2.0
+                else:
+                    temperature = float(row[5])
+                if GFS:
+                    precip = row[6]
+                else:
+                    precip = row[22]
                 # if (date >= start) and (date <= end):
                 if (date >= startDate) and (date <= endDate):
                     precipitation_file.write(str(line_out_count) + " " + precip + "\n")
@@ -318,18 +338,32 @@ class Net(nn.Module):
             self.sno_f_dd = nn.Linear(nodes, nodes)
             self.sub_f_dd = nn.Linear(nodes, nodes)
 
-        if one_area:
-            eva_par = 0.8715501
-            sub_par = 0.0297130
-            sno_par = 0.0021341
-            tem_par = -0.8557543000000001
-            evp_par = 3.52035805  # note input to sigmoid (evp [0,1])
+        if GFS:
+            if one_area:
+                eva_par = 0.8715501
+                sub_par = 0.0297130
+                sno_par = 0.0021341
+                tem_par = -0.8557543000000001
+                evp_par = 3.52035805  # note input to sigmoid (evp [0,1])
+            else:
+                eva_par = 0.7017500
+                sub_par = 0.0625746
+                sno_par = 0.0007901
+                tem_par = -0.9351652
+                evp_par = 3.4553902
         else:
-            eva_par = 0.7017500
-            sub_par = 0.0625746
-            sno_par = 0.0007901
-            tem_par = -0.9351652
-            evp_par = 3.4553902
+            if one_area:
+                eva_par = 0.105
+                sub_par = 0.033 
+                sno_par = 0.00263
+                tem_par = 0.0
+                evp_par = 3.52035805  # note input to sigmoid (evp [0,1])
+            else:
+                eva_par = 0.7017500
+                sub_par = 0.0625746
+                sno_par = 0.0007901
+                tem_par = 0.0
+                evp_par = 3.4553902
 
         self.eva_parameter_obs_creation = eva_par
         self.sub_parameter_obs_creation = sub_par
@@ -1065,6 +1099,10 @@ def training_loop(
             numpy.save(sfdAr + "response_sno_y.npy", numpy.array(b))
 
             a, b = hydromodel.com_f_response(mode_eva_train, deep_layer, "eva", linearArt)
+            if GFS:
+                y_max = 0.02
+            else:
+                y_max = 0.005
             scatterplot_rich(
                 sfd,
                 "response_eva",
@@ -1073,7 +1111,7 @@ def training_loop(
                 "temperature (C)",
                 "potential flux (m/day)",
                 "-",
-                (0, 0.02),
+                (0, y_max),
             )
             numpy.save(sfdAr + "response_eva_x.npy", numpy.array(a))
             numpy.save(sfdAr + "response_eva_y.npy", numpy.array(b))
@@ -1428,6 +1466,7 @@ def training_loop(
                 numpy.save(sfdAr + "valid_ts_eva_f_areas.npy", a)
 
         if stop:
+            print("\n")
             print("break")
             break
 
@@ -1479,8 +1518,12 @@ else:
     linearArt = linearArtForNotFitOnObservations
 
 # data for training or stopping ie validation
-startOne = datetime.date(1979, 10, 1)
-endOne = datetime.date(1996, 9, 26)
+if GFS:
+    yearIncrease = 0
+else:
+    yearIncrease = 2
+startOne = datetime.date(1979 + yearIncrease, 10, 1)
+endOne = datetime.date(1996 + yearIncrease, 9, 26)
 temperature_time_series, precipitation_time_series = createMeteoData(
     input_data_directory, output_directory, startOne, endOne
 )
@@ -1495,8 +1538,8 @@ sno_s_ts, sub_s_ts, sno_f_ts, sub_f_ts, eva_f_ts, \
 )
 
 # data for validation, ie testing
-startVal = datetime.date(1995, 10, 1)
-endVal = datetime.date(2012, 9, 26)
+startVal = datetime.date(1995 + yearIncrease, 10, 1)
+endVal = datetime.date(2012 + yearIncrease, 9, 26)
 temperature_time_series_val, precipitation_time_series_val = createMeteoData(
     input_data_directory, output_directory, startVal, endVal
 )
@@ -1762,26 +1805,27 @@ for fs in fitting_scenarios:
             print("seed is", seed)
             torch.manual_seed(seed)
             hydromodel = Net()
+            learning_rate_multiplier = learning_rate_multiplier_value
             optimizer = optim.RMSprop(
                 [
                     {
                         "params": hydromodel.params.sub.parameters(),
-                        "lr": 0.00001,
+                        "lr": 0.00001 * learning_rate_multiplier,
                         "momentum": 0.9,
                     },
                     {
                         "params": hydromodel.params.sno.parameters(),
-                        "lr": 0.00001,
+                        "lr": 0.00001 * learning_rate_multiplier,
                         "momentum": 0.9,
                     },
                     {
                         "params": hydromodel.params.eva.parameters(),
-                        "lr": 0.00001,
+                        "lr": 0.00001 * learning_rate_multiplier,
                         "momentum": 0.9,
                     },
                     {
                         "params": hydromodel.params.exp.parameters(),
-                        "lr": 0.00001,
+                        "lr": 0.00001 * learning_rate_multiplier,
                         "momentum": 0.9,
                     },
                 ]
@@ -1835,3 +1879,6 @@ for fs in fitting_scenarios:
                 linearArt,
             )
 
+print("\n")
+print("was running all epochs")
+print("break")
