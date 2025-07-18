@@ -4,6 +4,7 @@ for training_scenario in $training_scenarios
 do
     for rerun_scenario in $rerun_scenarios
     do
-	    nohup bash run_runall_one_by_one.sh $training_scenario $rerun_scenario &
+	    nohup bash runall_one_by_one.sh $training_scenario $rerun_scenario &
+	    sleep 10
     done
 done

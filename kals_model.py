@@ -39,9 +39,7 @@ fitOnObservations = True
 addErrorToArtificialStreamFlow = False
 
 input_data_directory = "../data/inputData/"
-output_directory = "../data/results/test/"
-#output_directory = "../data/results/2507_twoArea_observations/"
-#output_directory = "/Users/karss101/tmp/"
+output_directory = "../data/results/land_onearea_observations/"
 
 ########################
 # other configurations #
@@ -357,13 +355,13 @@ class Net(nn.Module):
                 sub_par = 0.033 
                 sno_par = 0.00263
                 tem_par = 0.0
-                evp_par = 3.52035805  # note input to sigmoid (evp [0,1])
+                evp_par = 3.5  # note input to sigmoid (evp [0,1])
             else:
-                eva_par = 0.7017500
-                sub_par = 0.0625746
-                sno_par = 0.0007901
+                eva_par = 0.117
+                sub_par = 0.06
+                sno_par = 0.00178
                 tem_par = 0.0
-                evp_par = 3.4553902
+                evp_par = 3.5
 
         self.eva_parameter_obs_creation = eva_par
         self.sub_parameter_obs_creation = sub_par
@@ -1880,5 +1878,4 @@ for fs in fitting_scenarios:
             )
 
 print("\n")
-print("was running all epochs")
-print("break")
+print("end of script")
