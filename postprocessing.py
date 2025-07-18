@@ -12,13 +12,13 @@ from matplotlib.lines import Line2D
 #######################
 
 observed_scenario = True
-one_area = False
+one_area = True
 
-create_scatter = True
-create_timeseries = True
-create_r2_by_variable = True
-create_nse = True
-print_stats = False
+create_scatter = False
+create_timeseries = False
+create_r2_by_variable = False
+create_nse = False
+print_stats = True
 modelSelectionWithTraining = False  # use training set or combination of training and stopping
 
 data_dir = '../data/scenarios/runs_from_sonic_velocity/'
@@ -309,6 +309,33 @@ def set_share_axes(axs, target=None, sharex=False, sharey=False):
         for ax in axs[:,1:].flat:
             ax.yaxis.set_tick_params(which='both', labelleft=False, labelright=False)
             ax.yaxis.offsetText.set_visible(False)
+
+if print_stats:
+    # overfitting
+    df["minLossValidationValue"] = df["lossValidation"].apply(lambda x: x.min())
+    df["lossRatioValidationValue"] = df["minLossValidationValue"]/df["lossValidationValue"]
+    print('overall mean overfit metric is ', df["lossRatioValidationValue"].mean())
+    print('and by scenario: ')
+    for scen in scenarios:
+        a = df[df["sc"] == scen]
+        print(scen, a["lossRatioValidationValue"].mean())
+    df["minNSEVal"] = 1.0 - (df["minLossValidationValue"] / valid_ss_q_mean)
+
+    # performance metrics
+    variables = [
+        "sc",
+        "ts",
+        "rs",
+        "lossModelSelection",
+        "lossStoppingValue",
+        "lossValidationValue",
+        "lossRatioValidationValue",
+        "minNSEVal",
+        "NSEVal",
+    ]
+    # print(df[df['sc'] == 'fit_eva'].sort_values(by="lossModelSelection").loc[:,['sc','ts','rs','lossModelSelection', 'lossStoppingValue','lossValidationValue', 'NSEVal']])
+    for scen in scenarios:
+        print(df[df["sc"] == scen].sort_values(by="lossModelSelection").loc[:, variables])
 
 
 ###################
@@ -873,32 +900,33 @@ if create_r2_by_variable:
 ##
 # scenarios = ['fit_eva', 'fit_sno', 'fit_sub', 'fit_sne', 'fit_sue', 'fit_sus', 'fit_thr', 'fit_exp']
 
-if print_stats:
-    # overfitting
-    df["minLossValidationValue"] = df["lossValidation"].apply(lambda x: x.min())
-    df["lossRatioValidationValue"] = df["minLossValidationValue"]/df["lossValidationValue"]
-    print('overall mean overfit metric is ', df["lossRatioValidationValue"].mean())
-    print('and by scenario: ')
-    for scen in scenarios:
-        a = df[df["sc"] == scen]
-        print(scen, a["lossRatioValidationValue"].mean())
-    df["minNSEVal"] = 1.0 - (df["minLossValidationValue"] / valid_ss_q_mean)
-
-    # performance metrics
-    variables = [
-        "sc",
-        "ts",
-        "rs",
-        "lossModelSelection",
-        "lossStoppingValue",
-        "lossValidationValue",
-        "lossRatioValidationValue",
-        "minNSEVal",
-        "NSEVal",
-    ]
-    # print(df[df['sc'] == 'fit_eva'].sort_values(by="lossModelSelection").loc[:,['sc','ts','rs','lossModelSelection', 'lossStoppingValue','lossValidationValue', 'NSEVal']])
-    for scen in scenarios:
-        print(df[df["sc"] == scen].sort_values(by="lossModelSelection").loc[:, variables])
+# this has been moved up a bit can be deleted later on
+#if print_stats:
+#    # overfitting
+#    df["minLossValidationValue"] = df["lossValidation"].apply(lambda x: x.min())
+#    df["lossRatioValidationValue"] = df["minLossValidationValue"]/df["lossValidationValue"]
+#    print('overall mean overfit metric is ', df["lossRatioValidationValue"].mean())
+#    print('and by scenario: ')
+#    for scen in scenarios:
+#        a = df[df["sc"] == scen]
+#        print(scen, a["lossRatioValidationValue"].mean())
+#    df["minNSEVal"] = 1.0 - (df["minLossValidationValue"] / valid_ss_q_mean)
+#
+#    # performance metrics
+#    variables = [
+#        "sc",
+#        "ts",
+#        "rs",
+#        "lossModelSelection",
+#        "lossStoppingValue",
+#        "lossValidationValue",
+#        "lossRatioValidationValue",
+#        "minNSEVal",
+#        "NSEVal",
+#    ]
+#    # print(df[df['sc'] == 'fit_eva'].sort_values(by="lossModelSelection").loc[:,['sc','ts','rs','lossModelSelection', 'lossStoppingValue','lossValidationValue', 'NSEVal']])
+#    for scen in scenarios:
+#        print(df[df["sc"] == scen].sort_values(by="lossModelSelection").loc[:, variables])
     
 def nsePlot(black):
     fig = plt.figure(dpi=dpi_figures, figsize = [2.5,2], tight_layout = {'pad': 1})
