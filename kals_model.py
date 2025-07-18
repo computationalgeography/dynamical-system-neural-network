@@ -23,8 +23,8 @@ run_in_batch = True
 
 # max number of epochs to run (will run for this number of epochs
 # if validation (stopping) does not make it stop
-nr_epochs = 5000
-#nr_epochs = 20
+#nr_epochs = 5000
+nr_epochs = 20
 
 # run one area or else two
 one_area = True
@@ -38,8 +38,11 @@ fitOnObservations = True
 # add error to artificial data
 addErrorToArtificialStreamFlow = False
 
+# input directory
 input_data_directory = "../data/inputData/"
-output_directory = "../data/results/land_onearea_observations/"
+# output directory
+out_folder = "../data/results/"
+scen_directory = "testje"
 
 ########################
 # other configurations #
@@ -55,22 +58,52 @@ linearArtForNotFitOnObservations = False
 
 print_parameters = True
 
-# inputs for running in batch mode.
-#if run_in_batch:
-#    # ranges from 1 up to and including the number of fitting scenarios (e.g. fitting scenario can be
-#    # training only subsurface outflow) used
-#    first = sys.argv[1]
-#    # is 1 or 3 (training scenarios, 1 represents 1 and 2, 3 represents 3 and 4), i.e. the folds for training
-#    # and stopping
-#    second = sys.argv[2]
-#    # is 1 or 1,2 or 1,2,3 etc, splitted at , (rerun scenario, i.e. repeating same fitting and training scenario
-#    # but with different seed)
-#    third = sys.argv[3]
+# for instance
+#                      scenario
+#                          training fold (1-4)
+#                            rerun scenario (1, 2, 3,...)
+#                              observations or something else 
+#                                   one or two areas
+#                                       output folder
+# python kals_model.py sub 1 1 True one test
 if run_in_batch:
     batch_scenario = sys.argv[1]
     training_scenario = sys.argv[2] 
     re_run_scenario = sys.argv[3]
+    fitOnObservationsOne = sys.argv[4]
+    oneArea = sys.argv[5]
+    scen_directory = sys.argv[6]
+    if fitOnObservationsOne == 'observations':
+        fitOnObservations = True
+    else:
+        fitOnObservations = False
+    if oneArea == 'one':
+        one_area == True
+    else:
+        one_area == False
 
+output_directory = out_folder + scen_directory  + "/"
+
+print('##### RUN INFO ######')
+print('running scenario: ', batch_scenario)
+print('running training fold: ', training_scenario)
+print('running rerun scenario: ', re_run_scenario)
+print('fitting on observations: ', fitOnObservations)
+print('running one area: ', one_area)
+print('results written to: ', output_directory)
+print('#### END RUN INFO ######')
+
+
+# Create the directory
+try:
+    os.mkdir(output_directory)
+    print(f"Directory '{output_directory}' created successfully.")
+except FileExistsError:
+    print(f"Directory '{output_directory}' already exists.")
+except PermissionError:
+    print(f"Permission denied: Unable to create '{output_directory}'.")
+except Exception as e:
+    print(f"An error occurred: {e}")
 
 
 ####################
@@ -247,6 +280,8 @@ def createMeteoData(input_data_directory, output_directory, startDate, endDate):
 
     temperature_time_series = []
     precipitation_time_series = []
+    land_sno_time_series = []
+    land_eva_time_series = []
 
     if GFS:
         weatherDataCSV = "weatherdata-470125_corrected.csv"
@@ -263,7 +298,9 @@ def createMeteoData(input_data_directory, output_directory, startDate, endDate):
         for row in csv_reader:
             if line_count == 0:
                 #print(f'Column names are {", ".join(row)}')
-                #print(row[22])
+                #print(row[15])
+                #print(row[21])
+                #exit()
                 line_count += 1
             else:
                 if GFS:
@@ -274,6 +311,12 @@ def createMeteoData(input_data_directory, output_directory, startDate, endDate):
                     precip = row[6]
                 else:
                     precip = row[22]
+                if GFS:
+                    land_sno = -9.0
+                    land_eva = -9.0
+                else:
+                    land_sno = float(row[15])/1000.0
+                    land_eva = float(row[21])/1000.0
                 # if (date >= start) and (date <= end):
                 if (date >= startDate) and (date <= endDate):
                     precipitation_file.write(str(line_out_count) + " " + precip + "\n")
@@ -282,13 +325,15 @@ def createMeteoData(input_data_directory, output_directory, startDate, endDate):
                         str(line_out_count) + " " + str(temperature) + "\n"
                     )
                     temperature_time_series.append(temperature)
+                    land_sno_time_series.append(land_sno)
+                    land_eva_time_series.append(land_eva)
                     line_out_count += 1
                 line_count += 1
                 date = date + timestep
 
     precipitation_file.close()
     temperatureFile.close()
-    return temperature_time_series, precipitation_time_series
+    return temperature_time_series, precipitation_time_series, land_sno_time_series, land_eva_time_series
 
 
 def create_streamflow_data(input_data_directory, output_directory, start, end):
@@ -786,10 +831,14 @@ def training_loop(
     temperature_time_series,
     precipitation_time_series,
     streamFlowTimeSeries,
+    land_sno_time_series,
+    land_eva_time_series,
     date_time_series,
     temperature_time_series_val,
     precipitation_time_series_val,
     streamflow_time_series_val,
+    land_sno_time_series_val,
+    land_eva_time_series_val,
     date_time_series_val,
     sno_s_ts,
     sub_s_ts,
@@ -842,6 +891,13 @@ def training_loop(
     numpy.save(sfdAr + "val_art_ts_sno_f_areas.npy", sno_f_ts_areasVal)
     numpy.save(sfdAr + "val_art_ts_sub_f_areas.npy", sub_f_ts_areasVal)
     numpy.save(sfdAr + "val_art_ts_eva_f_areas.npy", eva_f_ts_areasVal)
+    # write internal observed variables to disk, validation
+    numpy.save(sfdAr + "val_lan_ts_sno_s.npy", land_sno_time_series_val)
+    numpy.save(sfdAr + "val_lan_ts_eva_f.npy", land_eva_time_series_val)
+    # write internal observed variables to disk, validation
+    numpy.save(sfdAr + "train_lan_ts_sno_s.npy", land_sno_time_series)
+    numpy.save(sfdAr + "train_lan_ts_eva_f.npy", land_eva_time_series)
+
 
     loss_training_series = []
     loss_validation_series = []
@@ -1263,7 +1319,29 @@ def training_loop(
                     torch.tensor(streamflow_time_series_val) / conversion_fluxes,
                 ],
                 "time",
-                "flux (m/day",
+                "flux (m/day)",
+            )
+            timeSeriesPlot_rich(
+                sfd,
+                "valid_ts_lan_sno",
+                date_time_series_val,
+                [
+                    tr_sno_s_tsVal.detach().numpy(),
+                    land_sno_time_series_val
+                ],
+                "time",
+                "storage (m)",
+            )
+            timeSeriesPlot_rich(
+                sfd,
+                "valid_ts_lan_eva",
+                date_time_series_val,
+                [
+                    tr_eva_f_tsVal.detach().numpy(),
+                    land_eva_time_series_val
+                ],
+                "time",
+                "flux (m/day)",
             )
             numpy.save(
                 sfdAr + "valid_ts_eva_f.npy",
@@ -1522,7 +1600,7 @@ else:
     yearIncrease = 2
 startOne = datetime.date(1979 + yearIncrease, 10, 1)
 endOne = datetime.date(1996 + yearIncrease, 9, 26)
-temperature_time_series, precipitation_time_series = createMeteoData(
+temperature_time_series, precipitation_time_series, land_sno_time_series, land_eva_time_series = createMeteoData(
     input_data_directory, output_directory, startOne, endOne
 )
 streamFlowTimeSeries, date_time_series = create_streamflow_data(
@@ -1538,7 +1616,7 @@ sno_s_ts, sub_s_ts, sno_f_ts, sub_f_ts, eva_f_ts, \
 # data for validation, ie testing
 startVal = datetime.date(1995 + yearIncrease, 10, 1)
 endVal = datetime.date(2012 + yearIncrease, 9, 26)
-temperature_time_series_val, precipitation_time_series_val = createMeteoData(
+temperature_time_series_val, precipitation_time_series_val, land_sno_time_series_val, land_eva_time_series_val = createMeteoData(
     input_data_directory, output_directory, startVal, endVal
 )
 streamflow_time_series_val, date_time_series_val = create_streamflow_data(
@@ -1747,6 +1825,8 @@ one = {
     "temperature": temperature_time_series,
     "precipitation": precipitation_time_series,
     "streamFlow": streamFlowTimeSeries,
+    "land_sno": land_sno_time_series,
+    "land_eva": land_eva_time_series,
     "date": date_time_series,
     "sno_s_ts": sno_s_ts,
     "sub_s_ts": sub_s_ts,
@@ -1845,10 +1925,14 @@ for fs in fitting_scenarios:
                 ts["temperature"],
                 ts["precipitation"],
                 ts["streamFlow"],
+                ts["land_sno"],
+                ts["land_eva"],
                 ts["date"],
                 temperature_time_series_val,
                 precipitation_time_series_val,
                 streamflow_time_series_val,
+                land_sno_time_series_val,
+                land_eva_time_series_val,
                 date_time_series_val,
                 ts["sno_s_ts"],
                 ts["sub_s_ts"],

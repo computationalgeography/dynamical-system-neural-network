@@ -1,26 +1,80 @@
 # training scenario, 1, 2, 3, or 4 (folds)
-training_scenario=$1
+t_s=$1
 # re-run scenario, 1, 2, 3, or 4 (reruns, can also be more than 4, eg 5)
-re_run_scenario=$2
-nohup python -u kals_model.py eva $training_scenario $re_run_scenario > nohup_eva_training_sc_$training_scenario.rerun_sc_$re_run_scenario.out 
-nohup python -u kals_model.py sno $training_scenario $re_run_scenario > nohup_sno_training_sc_$training_scenario.rerun_sc_$re_run_scenario.out 
-nohup python -u kals_model.py sub $training_scenario $re_run_scenario > nohup_sub_training_sc_$training_scenario.rerun_sc_$re_run_scenario.out 
-nohup python -u kals_model.py sne $training_scenario $re_run_scenario > nohup_sne_training_sc_$training_scenario.rerun_sc_$re_run_scenario.out 
-nohup python -u kals_model.py sue $training_scenario $re_run_scenario > nohup_sue_training_sc_$training_scenario.rerun_sc_$re_run_scenario.out 
-nohup python -u kals_model.py sus $training_scenario $re_run_scenario > nohup_sus_training_sc_$training_scenario.rerun_sc_$re_run_scenario.out 
-nohup python -u kals_model.py thr $training_scenario $re_run_scenario > nohup_thr_training_sc_$training_scenario.rerun_sc_$re_run_scenario.out 
-nohup python -u kals_model.py xhr $training_scenario $re_run_scenario > nohup_xhr_training_sc_$training_scenario.rerun_sc_$re_run_scenario.out 
+re_run_s=$2
 
-#sleep 20
-#nohup python -u kals_model.py xva $training_scenario $re_run_scenario > nohup_xva_training_sc_$training_scenario.rerun_sc_$re_run_scenario.out &
-#sleep 20
-#nohup python -u kals_model.py xno $training_scenario $re_run_scenario > nohup_xno_training_sc_$training_scenario.rerun_sc_$re_run_scenario.out &
-#sleep 20
-#nohup python -u kals_model.py xub $training_scenario $re_run_scenario > nohup_xub_training_sc_$training_scenario.rerun_sc_$re_run_scenario.out &
-#sleep 20
-#nohup python -u kals_model.py xne $training_scenario $re_run_scenario > nohup_xne_training_sc_$training_scenario.rerun_sc_$re_run_scenario.out &
-#sleep 20
-#nohup python -u kals_model.py xue $training_scenario $re_run_scenario > nohup_xue_training_sc_$training_scenario.rerun_sc_$re_run_scenario.out &
-#sleep 20
-#nohup python -u kals_model.py xus $training_scenario $re_run_scenario > nohup_xus_training_sc_$training_scenario.rerun_sc_$re_run_scenario.out &
-#sleep 20
+##############################
+# observational data fitting #
+##############################
+
+
+# one area
+
+batch_scenarios='eva sno sub sne sue sus thr xhr'
+observations='observations'
+areas='one'
+directory='land_obs_one'
+
+for b_s in $batch_scenarios
+do
+    nohup python -u kals_model.py $b_s $t_s $re_run_s $observations $areas $directory > nohup_bat_sc_$b_s.tr_sc_$t_s.rr_sc_$re_run_s.obs_$observations.area_$areas.folder_$directory.out 
+done
+
+
+# two areas
+
+observations='observations'
+areas='two'
+directory='land_obs_two'
+
+for b_s in $batch_scenarios
+do
+    nohup python -u kals_model.py $b_s $t_s $re_run_s $observations $areas $directory > nohup_bat_sc_$b_s.tr_sc_$t_s.rr_sc_$re_run_s.obs_$observations.area_$areas.folder_$directory.out 
+done
+
+
+##############################
+# artificial data fitting #
+##############################
+
+
+# one area
+
+batch_scenarios='eva sno sub sne sue sus thr xhr'
+observations='arti'
+areas='one'
+directory='land_art_one'
+
+for b_s in $batch_scenarios
+do
+    nohup python -u kals_model.py $b_s $t_s $re_run_s $observations $areas $directory > nohup_bat_sc_$b_s.tr_sc_$t_s.rr_sc_$re_run_s.obs_$observations.area_$areas.folder_$directory.out 
+done
+
+
+# two areas
+
+observations='arti'
+areas='two'
+directory='land_art_two'
+
+for b_s in $batch_scenarios
+do
+    nohup python -u kals_model.py $b_s $t_s $re_run_s $observations $areas $directory > nohup_bat_sc_$b_s.tr_sc_$t_s.rr_sc_$re_run_s.obs_$observations.area_$areas.folder_$directory.out 
+done
+
+
+#nohup python -u kals_model.py eva $t_s $re_run_s observations > nohup_eva_tr_sc_$t_s.rr_sc_$re_run_s.out 
+#nohup python -u kals_model.py sno $t_s $re_run_s observations > nohup_sno_tr_sc_$t_s.rr_sc_$re_run_s.out 
+#nohup python -u kals_model.py sub $t_s $re_run_s observations > nohup_sub_tr_sc_$t_s.rr_sc_$re_run_s.out 
+#nohup python -u kals_model.py sne $t_s $re_run_s observations > nohup_sne_tr_sc_$t_s.rr_sc_$re_run_s.out 
+#nohup python -u kals_model.py sue $t_s $re_run_s observations > nohup_sue_tr_sc_$t_s.rr_sc_$re_run_s.out 
+#nohup python -u kals_model.py sus $t_s $re_run_s observations > nohup_sus_tr_sc_$t_s.rr_sc_$re_run_s.out 
+#nohup python -u kals_model.py thr $t_s $re_run_s observations > nohup_thr_tr_sc_$t_s.rr_sc_$re_run_s.out 
+#nohup python -u kals_model.py xhr $t_s $re_run_s observations > nohup_xhr_tr_sc_$t_s.rr_sc_$re_run_s.out 
+
+#nohup python -u kals_model.py xva $t_s $re_run_s > nohup_xva_tr_sc_$t_s.rr_sc_$re_run_s.out &
+#nohup python -u kals_model.py xno $t_s $re_run_s > nohup_xno_tr_sc_$t_s.rr_sc_$re_run_s.out &
+#nohup python -u kals_model.py xub $t_s $re_run_s > nohup_xub_tr_sc_$t_s.rr_sc_$re_run_s.out &
+#nohup python -u kals_model.py xne $t_s $re_run_s > nohup_xne_tr_sc_$t_s.rr_sc_$re_run_s.out &
+#nohup python -u kals_model.py xue $t_s $re_run_s > nohup_xue_tr_sc_$t_s.rr_sc_$re_run_s.out &
+#nohup python -u kals_model.py xus $t_s $re_run_s > nohup_xus_tr_sc_$t_s.rr_sc_$re_run_s.out &
