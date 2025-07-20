@@ -396,15 +396,15 @@ class Net(nn.Module):
                 evp_par = 3.4553902
         else:
             if one_area:
-                eva_par = 0.105
-                sub_par = 0.033 
-                sno_par = 0.00263
+                eva_par = 0.014076318 
+                sub_par = 0.03213018
+                sno_par = 0.0029198169 
                 tem_par = 0.0
                 evp_par = 3.5  # note input to sigmoid (evp [0,1])
             else:
-                eva_par = 0.117
-                sub_par = 0.06
-                sno_par = 0.00178
+                eva_par = 0.072542064 
+                sub_par = 0.113195494 
+                sno_par = 0.0012788665 
                 tem_par = 0.0
                 evp_par = 3.5
 

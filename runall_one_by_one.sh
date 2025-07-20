@@ -3,6 +3,25 @@ t_s=$1
 # re-run scenario, 1, 2, 3, or 4 (reruns, can also be more than 4, eg 5)
 re_run_s=$2
 
+#batch_scenarios='eva sno sub sne sue sus thr xhr'
+
+# SURF -> two areas
+#batch_scenarios='eva'
+#batch_scenarios='sno'
+#batch_scenarios='sub'
+#batch_scenarios='sne'
+#batch_scenarios='sue'
+#batch_scenarios='sus'
+#batch_scenarios='thr'
+#batch_scenarios='xhr'
+
+# VELOCITY -> one area
+#batch_scenarios='eva sno'
+#batch_scenarios='sub sne'
+#batch_scenarios='sue sus'
+#batch_scenarios='thr'
+#batch_scenarios='xhr'
+
 ##############################
 # observational data fitting #
 ##############################
@@ -10,7 +29,6 @@ re_run_s=$2
 
 # one area
 
-batch_scenarios='eva sno sub sne sue sus thr xhr'
 observations='observations'
 areas='one'
 directory='land_obs_one'
@@ -40,7 +58,6 @@ done
 
 # one area
 
-batch_scenarios='eva sno sub sne sue sus thr xhr'
 observations='arti'
 areas='one'
 directory='land_art_one'

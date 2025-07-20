@@ -1,4 +1,4 @@
-training_scenarios='1 2'
+training_scenarios='1 2 3 4'
 rerun_scenarios='1 2'
 # number of runs at the same time is number of training scenarios
 # multiplied by number of rerun scenarios defined above
@@ -12,6 +12,5 @@ do
     for rerun_scenario in $rerun_scenarios
     do
 	    nohup bash runall_one_by_one.sh $training_scenario $rerun_scenario &
-	    sleep 10
     done
 done

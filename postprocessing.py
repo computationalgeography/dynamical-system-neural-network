@@ -12,7 +12,7 @@ from matplotlib.lines import Line2D
 #######################
 
 observed_scenario = True
-one_area = True
+one_area = False
 
 create_scatter = False
 create_timeseries = False
@@ -21,8 +21,9 @@ create_nse = False
 print_stats = True
 modelSelectionWithTraining = False  # use training set or combination of training and stopping
 
-data_dir = '../data/scenarios/runs_from_sonic_velocity/'
-number_of_rerun_scenarios = 7  # 2 for all except fitting on observations (where one can use 7)
+#data_dir = '../data/scenarios/runs_from_sonic_velocity/'
+data_dir = '../data/scenarios/LAND/'
+number_of_rerun_scenarios = 6  # 2 for all except fitting on observations (where one can use 7)
 
 
 ##################
@@ -63,13 +64,11 @@ labels_variables_tight = ['evapotranspiration',
 
 if observed_scenario:
     if one_area:
-        #results_folder = 'kals_model_fit_on_observations/results/'
-        results_folder = '2507_oneArea_observations_7reruns/results/'
+        #results_folder = '2507_oneArea_observations_7reruns/results/'
+        results_folder = 'land_onearea_observations_cali_xhr/'
     else:
-        #results_folder = 'kals_model_two_areas_fit_on_observations/results/'
-        #results_folder = '2507_twoArea_observations/'
-        #results_folder = '2507_twoArea_observations_merged_with/' # change input reader to folder 5 
-        results_folder = '2507_twoArea_observations_7reruns/'
+        #results_folder = '2507_twoArea_observations_7reruns/'
+        results_folder = 'land_twoareas_observations_cali_xhr/'
     scenario_directory = data_dir + results_folder 
 else:
     # No error in streamflow (replaced) and precipitation and temperature
@@ -101,11 +100,13 @@ scenarios = [
 if observed_scenario:
     # all scenarios
     if one_area:
-        scenarios = ['fit_eva', 'fit_sno', 'fit_sub', 'fit_sne', 'fit_sue', 'fit_sus', 'fit_thr', \
-                 'fit_xva', 'fit_xno', 'fit_xub', 'fit_xne', 'fit_xue', 'fit_xus', 'fit_xhr']
+        scenarios = ['fit_xhr']
+        #scenarios = ['fit_eva', 'fit_sno', 'fit_sub', 'fit_sne', 'fit_sue', 'fit_sus', 'fit_thr', \
+        #         'fit_xva', 'fit_xno', 'fit_xub', 'fit_xne', 'fit_xue', 'fit_xus', 'fit_xhr']
     else:
-        scenarios = ['fit_eva', 'fit_sno', 'fit_sub', 'fit_sne', 'fit_sue', 'fit_sus', 'fit_thr', \
-                 'fit_xva', 'fit_xno', 'fit_xub', 'fit_xne', 'fit_xue', 'fit_xus', 'fit_xhr']
+        scenarios = ['fit_xhr']
+        #scenarios = ['fit_eva', 'fit_sno', 'fit_sub', 'fit_sne', 'fit_sue', 'fit_sus', 'fit_thr', \
+        #         'fit_xva', 'fit_xno', 'fit_xub', 'fit_xne', 'fit_xue', 'fit_xus', 'fit_xhr']
 
     ## only nn scenarios
     if one_area:
@@ -251,6 +252,7 @@ else:
     df["lossModelSelection"] = df["lossTrainingValue"] * 0.75 + df["lossStoppingValue"] * 0.25
 
 
+
 #df["minLossValidationValue"] = df["lossValidation"].apply(lambda x: x.min())
 #df["lossRatioValidationValue"] = df["minLossValidationValue"]/df["lossValidationValue"]
 #
@@ -332,6 +334,10 @@ if print_stats:
         "lossRatioValidationValue",
         "minNSEVal",
         "NSEVal",
+        "eva_parameter",
+        "sub_parameter",
+        "sno_parameter",
+
     ]
     # print(df[df['sc'] == 'fit_eva'].sort_values(by="lossModelSelection").loc[:,['sc','ts','rs','lossModelSelection', 'lossStoppingValue','lossValidationValue', 'NSEVal']])
     for scen in scenarios:
