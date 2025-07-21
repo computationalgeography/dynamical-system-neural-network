@@ -65,7 +65,7 @@ print_parameters = True
 #                              observations or something else 
 #                                   one or two areas
 #                                       output folder
-# python kals_model.py sub 1 1 True one test
+# python kals_model.py sub 1 1 observations one test
 if run_in_batch:
     batch_scenario = sys.argv[1]
     training_scenario = sys.argv[2] 
@@ -78,9 +78,9 @@ if run_in_batch:
     else:
         fitOnObservations = False
     if oneArea == 'one':
-        one_area == True
+        one_area = True
     else:
-        one_area == False
+        one_area = False
 
 output_directory = out_folder + scen_directory  + "/"
 

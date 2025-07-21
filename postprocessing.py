@@ -12,18 +12,20 @@ from matplotlib.lines import Line2D
 #######################
 
 observed_scenario = True
-one_area = False
+one_area = True
 
-create_scatter = False
-create_timeseries = False
-create_r2_by_variable = False
-create_nse = False
+create_scatter = True
+create_timeseries = True
+create_r2_by_variable = True
+create_nse = True
 print_stats = True
 modelSelectionWithTraining = False  # use training set or combination of training and stopping
 
+GFS = False
+
 #data_dir = '../data/scenarios/runs_from_sonic_velocity/'
 data_dir = '../data/scenarios/LAND/'
-number_of_rerun_scenarios = 6  # 2 for all except fitting on observations (where one can use 7)
+number_of_rerun_scenarios = 2  # 2 for all except fitting on observations (where one can use 7)
 
 
 ##################
@@ -65,19 +67,23 @@ labels_variables_tight = ['evapotranspiration',
 if observed_scenario:
     if one_area:
         #results_folder = '2507_oneArea_observations_7reruns/results/'
-        results_folder = 'land_onearea_observations_cali_xhr/'
+        #results_folder = 'land_onearea_observations_cali_xhr/'
+        results_folder = 'land_obs_one/'
     else:
         #results_folder = '2507_twoArea_observations_7reruns/'
-        results_folder = 'land_twoareas_observations_cali_xhr/'
+        #results_folder = 'land_twoareas_observations_cali_xhr/'
+        results_folder = 'land_obs_two/'
     scenario_directory = data_dir + results_folder 
 else:
     # No error in streamflow (replaced) and precipitation and temperature
     # copied into the results folder
     if one_area:
-        results_folder = 'kals_model_fit_on_arti_data_with_error_subf_val_noerror/results/'
+        #results_folder = 'kals_model_fit_on_arti_data_with_error_subf_val_noerror/results/'
+        results_folder = 'land_art_one/'
     else:
-        results_folder = 'kals_model_two_areas_fit_on_artificial_data_with_error/results/'
+        #results_folder = 'kals_model_two_areas_fit_on_artificial_data_with_error/results/'
         #results_folder = 'kals_model_two_areas_fit_on_artificial_data/results/'
+        results_folder = 'land_art_two/'
     scenario_directory = data_dir + results_folder
     # Note that the streamflow for validation is with error
     #scenario_directory = data_dir + "kals_model_fit_on_arti_data_with_error/results/"
@@ -94,19 +100,27 @@ scenarios = [
     "fit_sue",
     "fit_sus",
     "fit_thr",
-    "fit_exp",
+    "fit_xhr",
 ]
 
 if observed_scenario:
     # all scenarios
     if one_area:
-        scenarios = ['fit_xhr']
-        #scenarios = ['fit_eva', 'fit_sno', 'fit_sub', 'fit_sne', 'fit_sue', 'fit_sus', 'fit_thr', \
-        #         'fit_xva', 'fit_xno', 'fit_xub', 'fit_xne', 'fit_xue', 'fit_xus', 'fit_xhr']
+        if GFS:
+            #scenarios = ['fit_xhr']
+            scenarios = ['fit_eva', 'fit_sno', 'fit_sub', 'fit_sne', 'fit_sue', 'fit_sus', 'fit_thr', \
+                     'fit_xva', 'fit_xno', 'fit_xub', 'fit_xne', 'fit_xue', 'fit_xus', 'fit_xhr']
+        else:
+            scenarios = ['fit_eva', 'fit_sno', 'fit_sub', 'fit_sne', 'fit_sue', 'fit_sus', 'fit_thr', \
+                     'fit_xhr']
     else:
-        scenarios = ['fit_xhr']
-        #scenarios = ['fit_eva', 'fit_sno', 'fit_sub', 'fit_sne', 'fit_sue', 'fit_sus', 'fit_thr', \
-        #         'fit_xva', 'fit_xno', 'fit_xub', 'fit_xne', 'fit_xue', 'fit_xus', 'fit_xhr']
+        if GFS:
+            #scenarios = ['fit_xhr']
+            scenarios = ['fit_eva', 'fit_sno', 'fit_sub', 'fit_sne', 'fit_sue', 'fit_sus', 'fit_thr', \
+                     'fit_xva', 'fit_xno', 'fit_xub', 'fit_xne', 'fit_xue', 'fit_xus', 'fit_xhr']
+        else:
+            scenarios = ['fit_eva', 'fit_sno', 'fit_sub', 'fit_sne', 'fit_sue', 'fit_sus', 'fit_thr', \
+                     'fit_xhr']
 
     ## only nn scenarios
     if one_area:
@@ -142,7 +156,7 @@ else:
         "fit_sue",
         "fit_sus",
         "fit_thr",
-        "fit_exp",
+        "fit_xhr",
     ]
 
     ## only nn scenarios
@@ -154,7 +168,7 @@ else:
         "fit_sue",
         "fit_sus",
         "fit_thr",
-        "fit_exp"     # or xhr for observational data
+        "fit_xhr"     # or xhr for observational data
     ]
 
 names = [
@@ -334,9 +348,9 @@ if print_stats:
         "lossRatioValidationValue",
         "minNSEVal",
         "NSEVal",
-        "eva_parameter",
-        "sub_parameter",
-        "sno_parameter",
+        #"eva_parameter",
+        #"sub_parameter",
+        #"sno_parameter",
 
     ]
     # print(df[df['sc'] == 'fit_eva'].sort_values(by="lossModelSelection").loc[:,['sc','ts','rs','lossModelSelection', 'lossStoppingValue','lossValidationValue', 'NSEVal']])
@@ -515,9 +529,11 @@ modelled_tss_list = [
 
 if observed_scenario:
     observed_tss_list = [
-        "val_art_ts_eva_f",
+        #"val_art_ts_eva_f",
+        "train_lan_ts_eva_f",
         "val_art_ts_sno_f",
-        "val_art_ts_sno_s",
+        #"val_art_ts_sno_s",
+        "train_lan_ts_sno_s",
         "valid_ts_OBS",
         "val_art_ts_sub_s"
     ]
@@ -713,7 +729,8 @@ def timeseries_plot_by_scenario(modelled_tss_es, observed_tss_es, scenario, star
 
 
 startTimeTss = 2 * 365
-endTimeTss = 4 * 365
+#endTimeTss = 4 * 365
+endTimeTss = 6 * 365
 
 
 if create_timeseries:
@@ -947,15 +964,26 @@ def nsePlot(black):
         "fit_thr"
         ]
 
-    scenariosToPlotExp = [
-        'fit_xva',
-        'fit_xno',
-        'fit_xub',
-        'fit_xne',
-        'fit_xue',
-        'fit_xus',
-        'fit_xhr'
-        ]
+    if GFS:
+        scenariosToPlotExp = [
+            'fit_xva',
+            'fit_xno',
+            'fit_xub',
+            'fit_xne',
+            'fit_xue',
+            'fit_xus',
+            'fit_xhr'
+            ]
+    else:
+        scenariosToPlotExp = [
+            'fit_xhr',
+            'fit_xhr',
+            'fit_xhr',
+            'fit_xhr',
+            'fit_xhr',
+            'fit_xhr',
+            'fit_xhr'
+            ]
 
     names = [
            "E",
@@ -1015,7 +1043,7 @@ def nsePlot(black):
         fit += 1
     plt.legend(fontsize = font_size_axes * 0.8)
     plt.ylabel("NSE")
-    plt.ylim(0.67, 0.76)
+    #plt.ylim(0.67, 0.76)
     fig.savefig(figure_directory + "nse.pdf")
     plt.close(fig)
 

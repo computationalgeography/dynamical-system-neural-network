@@ -1,5 +1,5 @@
-training_scenarios='1 2 3 4'
-rerun_scenarios='1 2'
+training_scenarios='1'
+rerun_scenarios='1'
 # number of runs at the same time is number of training scenarios
 # multiplied by number of rerun scenarios defined above
 # all combinations of training and rerun scenario
