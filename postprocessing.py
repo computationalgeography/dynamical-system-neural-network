@@ -1011,7 +1011,7 @@ def r2_by_scenario(scenarios, tss_variables, start, end):
            ]
     fig.set_size_inches(8.27, 1.5 * 4.69)
 
-    x_labels = ['eva_f', 'sno_f', 'sno_s', 'sub_f', 'sub_s']
+    x_labels = ['E_f', 'S_f', 'S_s', 'G_f', 'G_s']
     rij = 0
     for sc in scenarios[:-1]:
         a = (df[df["sc"] == sc].sort_values(by="lossModelSelection")).iloc[0]
