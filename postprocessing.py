@@ -11,14 +11,16 @@ from matplotlib.lines import Line2D
 # main configurations #
 #######################
 
-observed_scenario = True
+observed_scenario = False
 one_area = True
 
 create_scatter = True
 create_timeseries = True
-create_r2_by_variable = True
+create_r2_by_variable = False
+create_r2_by_scenario = True
 create_nse = True
 print_stats = True
+create_histogram = False
 modelSelectionWithTraining = False  # use training set or combination of training and stopping
 
 GFS = False
@@ -291,10 +293,27 @@ if actual_snow_flux:
 # for calculation of nash sutcliffe
 # remove first year (366) which was also not used for training
 # assumes observed q for validation is the same across scenarios of course
-valid_mean_q = (df["valid_ts_OBS"].apply(lambda x: x[366:].mean()))[0]
-valid_q = df["valid_ts_OBS"][0][366:]
-valid_ss_q_mean = ((valid_q - valid_mean_q) ** 2.0).mean()
+# valid_ts_OBS is observed streamflow (not artificial, not in any case)
+if observed_scenario:
+    valid_mean_q = (df["valid_ts_OBS"].apply(lambda x: x[366:].mean()))[0]
+    valid_q = df["valid_ts_OBS"][0][366:]
+    valid_ss_q_mean = ((valid_q - valid_mean_q) ** 2.0).mean()
+else:
+    valid_mean_q = (df["val_art_ts_sub_f"].apply(lambda x: x[366:].mean()))[0]
+    valid_q = df["val_art_ts_sub_f"][0][366:]
+    valid_ss_q_mean = ((valid_q - valid_mean_q) ** 2.0).mean()
 df["NSEVal"] = 1.0 - (df["lossValidationValue"] / valid_ss_q_mean)
+
+
+## check op NSE berekening
+#observed = (df["valid_ts_OBS"].apply(lambda x: x[366:]))
+#modelled = (df["val_art_ts_sub_f"].apply(lambda x: x[366:]))
+#print(observed)
+#print(modelled)
+#exit()
+
+#noemer = valid_ss_q_mean
+#df["nsec"] = 1.0 - (teller/noemer)
 
 # colors
 green = "#4daf4a"
@@ -486,11 +505,21 @@ else:
     legend_text = ['model, best (all colours)', 'model, 2nd-4th best (all colours)', 'synthetic']
 axs[7,0].legend(custom_lines, legend_text, loc = 'upper center', bbox_to_anchor = (1.5, -0.5), ncol = 3)
 
-axs[0, 0].set_ylim(0, 0.020)
+if observed_scenario:
+    axs[0, 0].set_ylim(0, 0.0205)
+else:
+    axs[0, 0].set_ylim(0, 0.013)
 
+# x axis 
 axs[0, 0].set_xlim(-10, 15)
 axs[0, 1].set_xlim(-2, 8)
-axs[0, 2].set_xlim(0, 0.4)
+if observed_scenario:
+    if one_area:
+        axs[0, 2].set_xlim(0, 0.4)
+    else:
+        axs[0, 2].set_xlim(0, 0.12)
+else:
+    axs[0, 2].set_xlim(0, 0.18)
 
 axs[7, 0].set_xticks([-10, -5, 0, 5, 10])
 axs[7, 0].set_xticklabels([-10, -5, 0, 5, 10], size=font_size_axes)
@@ -515,9 +544,9 @@ if not EGU:
 fig.savefig(figure_directory + "response.pdf")
 plt.close(fig)
 
-##########################
-# modelled vs artificial #
-##########################
+##################################################
+# modelled vs artificial (or measured benchmark) #
+##################################################
 
 modelled_tss_list = [
     "valid_ts_eva_f",
@@ -529,11 +558,11 @@ modelled_tss_list = [
 
 if observed_scenario:
     observed_tss_list = [
-        #"val_art_ts_eva_f",
-        "train_lan_ts_eva_f",
+        #"train_lan_ts_eva_f",
+        "val_lan_ts_eva_f",
         "val_art_ts_sno_f",
-        #"val_art_ts_sno_s",
-        "train_lan_ts_sno_s",
+        #"train_lan_ts_sno_s",
+        "val_lan_ts_sno_s",
         "valid_ts_OBS",
         "val_art_ts_sub_s"
     ]
@@ -751,6 +780,21 @@ if create_timeseries:
 
 # scatterplots
 
+def ns(x, y):
+    # nash sutcliffe
+    # x is observed
+    # y is modelled
+    return 1 - (((x - y) ** 2.0).mean() / ((x - x.mean()) ** 2.0).mean())
+
+def rmse_calc(x, y):
+    # normalized RMSE or coefficient of variation
+    return numpy.sqrt(((x - y) ** 2.0).mean())/y.mean()
+
+def rmseFormatted(x, y):
+    rmse = rmse_calc(x, y)
+    rmse_for = "{:.4f}".format(rmse)
+    return rmse_for
+
 def rSquared(x, y):
     rM = numpy.corrcoef(x, y)
     r = rM[0][1]
@@ -787,9 +831,11 @@ def scatter_plot_by_variable(scenarios, modelled_tss, observed_tss, start, end):
         ##fig.colorbar(hb, ax=axs[rij], pad=0.01)
         cbar = fig.colorbar(hb, ax=axs[rij], fraction=0.046, pad=0.04)
         axs[rij].plot([0, 10], [0, 10], color="black", linewidth=0.5)
-        r_sq_for = rSquaredFormatted(x, y)
+        #r_sq_for = rSquaredFormatted(x, y)
+        rmse_for = rmseFormatted(x, y)
         axs[rij].text(
-            0.99, 0.01, r_sq_for, ha="right", va="bottom", transform=axs[rij].transAxes
+            #0.99, 0.01, r_sq_for, ha="right", va="bottom", transform=axs[rij].transAxes
+            0.99, 0.01, rmse_for, ha="right", va="bottom", transform=axs[rij].transAxes
         )
         # axs[rij].scatter(a[observed_tss][start:end], a[modelled_tss][start:end], s = 0.5)
         axs[rij].set_ylim(0, max(a[observed_tss][start:end]))
@@ -833,9 +879,11 @@ def scatter_plot_by_scenario(modelled_tss_es, observed_tss_es, scenario, name, s
         cbar = fig.colorbar(hb, ax=axs[rij], fraction=0.046, pad=0.04)
         cbar.ax.tick_params(labelsize=font_size_axes)
         axs[rij].plot([0, 10], [0, 10], color="black", linewidth=1.0, linestyle = 'dashed')
-        r_sq_for = rSquaredFormatted(x, y)
+        #r_sq_for = rSquaredFormatted(x, y)
+        rmse_for = rmseFormatted(x, y)
         axs[rij].text(
-            0.99, 0.01, '$r^2$ = ' + r_sq_for, ha="right", va="bottom", transform=axs[rij].transAxes, size = font_size_axes
+            #0.99, 0.01, '$r^2$ = ' + r_sq_for, ha="right", va="bottom", transform=axs[rij].transAxes, size = font_size_axes
+            0.99, 0.01, '$r^2$ = ' + rmse_for, ha="right", va="bottom", transform=axs[rij].transAxes, size = font_size_axes
         )
         #if rij < len(scenarios) - 1:
         #    axs[rij].set(xticklabels=[])
@@ -881,6 +929,47 @@ if create_scatter:
         scatter_plot_by_scenario(modelled_tss_list, observed_tss_list, scenario, name, startTimeTss, endTimeTss)
         i = i + 1
 
+def histogram_by_scenario(hist_tss, scenario, name, start, end):
+    plt.close('all')
+    fig = plt.figure(dpi=dpi_figures)
+    fig, axen = plt.subplots(2, 3)
+    axs = [axen[0,0], axen[0,1], axen[0,2], axen[1,0], axen[1,1], axen[1,2]]
+    fig.set_size_inches(8.27, 5.0)
+    a = (df[df["sc"] == scenario].sort_values(by="lossModelSelection")).iloc[0]
+    snow = (a["valid_ts_sno_s"][start:end] > 0.0001)
+    temperature = (a["valid_ts_temperature"][start:end])
+    temp_with_snow = temperature[snow]
+    label = ['temp', 'temp with snow', 'sub_s', 'sno_s']
+    rij = 0
+    tssNumber = 0
+    for tss in hist_tss:
+        y = a[tss][start:end]
+        if tssNumber == 1:
+            hb = axs[rij].hist(temp_with_snow, bins = 20)
+        else:
+            hb = axs[rij].hist(y, bins = 20)
+        axs[rij].set_xlabel(label[tssNumber], size=font_size_axes)
+        rij += 1
+        tssNumber += 1
+    axs[5].remove()
+    fig.savefig(figure_directory + "hist_modartcomp_" + scenario + ".pdf")
+    plt.close(fig)
+
+hist_tss = [
+    "valid_ts_temperature",
+    "valid_ts_temperature",
+    "valid_ts_sub_s",
+    "valid_ts_sno_s"
+]
+
+if create_histogram:
+    # Plot for each scenario all variables
+    i = 0
+    for scenario in scenarios_to_plot:
+        name = names[i]
+        histogram_by_scenario(hist_tss, scenario, name, startTimeTss, endTimeTss)
+        i = i + 1
+
 def r2_by_variable(scenarios, tss_variables, start, end):
     fig, axen = plt.subplots(2, 3)
     axs = [axen[0,0], axen[0,1], axen[0,2],
@@ -907,12 +996,53 @@ def r2_by_variable(scenarios, tss_variables, start, end):
                       transform=axs[i].transAxes, size = font_size_axes)
         i = i + 1
     axs[5].remove()
-    plt.tight_layout()
+    #plt.tight_layout()
     fig.savefig(figure_directory + "r2_by_variable.pdf")
     plt.close(fig)
 
 if create_r2_by_variable:
     r2_by_variable(scenarios_to_plot, tss_variables, startTimeTss, endTimeTss)
+
+def r2_by_scenario(scenarios, tss_variables, start, end):
+    fig, axen = plt.subplots(3, 3)
+    axs = [axen[0,0], axen[0,1], axen[0,2],
+           axen[1,0], axen[1,1], axen[1,2],
+           axen[2,0], axen[2,1], axen[2,2]
+           ]
+    fig.set_size_inches(8.27, 1.5 * 4.69)
+
+    x_labels = ['eva_f', 'sno_f', 'sno_s', 'sub_f', 'sub_s']
+    rij = 0
+    for sc in scenarios[:-1]:
+        a = (df[df["sc"] == sc].sort_values(by="lossModelSelection")).iloc[0]
+        #xVal = []
+        yVal = []
+        i = 0
+        while i < tss_variables:
+            modelled_tss = modelled_tss_list[i]
+            observed_tss = observed_tss_list[i]
+            x = a[observed_tss][start:end]
+            y = a[modelled_tss][start:end]
+            #r_sq_for = rSquared(x, y)
+            r_sq_for = ns(x, y)
+            #xVal.append(names[i])
+            yVal.append(r_sq_for)
+            i = i + 1
+        axs[rij].plot(x_labels,yVal, '.', markersize=12)
+        #axs[rij].set_ylim(0.88, 1.005)
+        #axs[rij].set_ylim(0.875, 1.02)
+        axs[rij].set_ylim(0.77, 1.02)
+        axs[rij].text(.05, .95, names[rij], ha='left', va='top', \
+                          transform=axs[rij].transAxes, size = font_size_axes)
+        rij += 1
+    axs[7].remove()
+    axs[8].remove()
+    #plt.tight_layout()
+    fig.savefig(figure_directory + "r2_by_scenario.pdf")
+    plt.close(fig)
+
+if create_r2_by_scenario:
+    r2_by_scenario(scenarios_to_plot, tss_variables, startTimeTss, endTimeTss)
 
 
 # df['lossStop'] = lossStopList
@@ -1043,7 +1173,7 @@ def nsePlot(black):
         fit += 1
     plt.legend(fontsize = font_size_axes * 0.8)
     plt.ylabel("NSE")
-    #plt.ylim(0.67, 0.76)
+    plt.ylim(0.78, 0.83)
     fig.savefig(figure_directory + "nse.pdf")
     plt.close(fig)
 
