@@ -11,23 +11,25 @@ from matplotlib.lines import Line2D
 # main configurations #
 #######################
 
-observed_scenario = False
-one_area = True
+observed_scenario = True
+one_area = False
 
 create_scatter = True
 create_timeseries = True
 create_r2_by_variable = False
 create_r2_by_scenario = True
-create_nse = False
+create_nse = True
 print_stats = False
 create_histogram = False
+
+#figure_directory = "../figures/"
 
 modelSelectionWithTraining = False  # use training set or combination of training and stopping
 GFS = False
 
 #data_dir = '../data/scenarios/runs_from_sonic_velocity/'
-data_dir = '../data/scenarios/LAND/final_runs/'    # CHANGE THIS FOR FINAL PLOTS AND SCENS!!!!! #######
-number_of_rerun_scenarios = 2  # 2 for all except fitting on observations (where one can use 7)
+data_dir = '../data/scenarios/LAND/final_runs/' 
+number_of_rerun_scenarios = 2  # CHANGE TO 4 FOR FINAL RUNS
 
 
 ##################
@@ -65,7 +67,6 @@ labels_variables_tight = ['evapotranspiration',
                     ]
 
 
-
 if observed_scenario:
     if one_area:
         #results_folder = '2507_oneArea_observations_7reruns/results/'
@@ -90,7 +91,7 @@ else:
     # Note that the streamflow for validation is with error
     #scenario_directory = data_dir + "kals_model_fit_on_arti_data_with_error/results/"
 
-figure_directory = "../figures/"
+figure_directory = "../figures/" + results_folder
 
 
 # only nn scenarios
@@ -292,6 +293,7 @@ if actual_snow_flux:
 
 # for calculation of nash sutcliffe
 # remove first year (366) which was also not used for training
+# For streamflow
 # assumes observed q for validation is the same across scenarios of course
 # valid_ts_OBS is observed streamflow (not artificial, not in any case)
 if observed_scenario:
@@ -303,17 +305,29 @@ else:
     valid_q = df["val_art_ts_sub_f"][0][366:]
     valid_ss_q_mean = ((valid_q - valid_mean_q) ** 2.0).mean()
 df["NSEVal"] = 1.0 - (df["lossValidationValue"] / valid_ss_q_mean)
+# For snow cover
+if observed_scenario:
+    valid_mean_sno_s = (df["val_lan_ts_sno_s"].apply(lambda x: x[366:].mean()))[0]
+    valid_sno_s = df["val_lan_ts_sno_s"][0][366:]
+    valid_ss_sno_s_mean = ((valid_sno_s - valid_mean_sno_s) ** 2.0).mean()
+    df["mss_sno_s"] = df.apply(lambda x: ((valid_sno_s - x["valid_ts_sno_s"][366:]) ** 2.0).mean(), axis = 1)
+else:
+    print('killed by me')
+    exit()
+df["NSEValSnoS"] = 1.0 - (df["mss_sno_s"] / valid_ss_sno_s_mean)
+# For evapotranspiration 
+if observed_scenario:
+    valid_mean_eva_f = (df["val_lan_ts_eva_f"].apply(lambda x: x[366:].mean()))[0]
+    valid_eva_f = df["val_lan_ts_eva_f"][0][366:]
+    valid_ss_eva_f_mean = ((valid_eva_f - valid_mean_eva_f) ** 2.0).mean()
+    df["mss_eva_f"] = df.apply(lambda x: ((valid_eva_f - x["valid_ts_eva_f"][366:]) ** 2.0).mean(), axis = 1)
+else:
+    print('killed by me')
+    exit()
+df["NSEValEvaF"] = 1.0 - (df["mss_eva_f"] / valid_ss_eva_f_mean)
 
 
-## check op NSE berekening
-#observed = (df["valid_ts_OBS"].apply(lambda x: x[366:]))
-#modelled = (df["val_art_ts_sub_f"].apply(lambda x: x[366:]))
-#print(observed)
-#print(modelled)
-#exit()
 
-#noemer = valid_ss_q_mean
-#df["nsec"] = 1.0 - (teller/noemer)
 
 # colors
 green = "#4daf4a"
@@ -558,10 +572,8 @@ modelled_tss_list = [
 
 if observed_scenario:
     observed_tss_list = [
-        #"train_lan_ts_eva_f",
         "val_lan_ts_eva_f",
         "val_art_ts_sno_f",
-        #"train_lan_ts_sno_s",
         "val_lan_ts_sno_s",
         "valid_ts_OBS",
         "val_art_ts_sub_s"
@@ -697,7 +709,9 @@ def timeseries_plot_by_scenario(modelled_tss_es, observed_tss_es, scenario, star
             a = (df[df["sc"] == scenario].sort_values(by="lossModelSelection")).iloc[i]
             # Plot observed timeseries either from artificial data or from observations.
             observed_tss = observed_tss_es[tssNumber]
-            if not(observed_scenario) or (observed_tss == 'valid_ts_OBS'):
+            if not(observed_scenario) or (observed_tss == 'valid_ts_OBS') \
+                                         or (observed_tss == 'val_lan_ts_sno_s') \
+                                         or (observed_tss == 'val_lan_ts_eva_f'):
                 axs[rij].plot(
                     a["valid_date"][start:end],
                     a[observed_tss][start:end],
@@ -837,10 +851,12 @@ def scatter_plot_by_variable(scenarios, modelled_tss, observed_tss, start, end):
         cbar = fig.colorbar(hb, ax=axs[rij], fraction=0.046, pad=0.04)
         axs[rij].plot([0, 10], [0, 10], color="black", linewidth=0.5)
         #r_sq_for = rSquaredFormatted(x, y)
-        rmse_for = rmseFormatted(x, y)
+        #rmse_for = rmseFormatted(x, y)
+        ns_for = nsFormatted(x, y)
         axs[rij].text(
             #0.99, 0.01, r_sq_for, ha="right", va="bottom", transform=axs[rij].transAxes
-            0.99, 0.01, rmse_for, ha="right", va="bottom", transform=axs[rij].transAxes
+            #0.99, 0.01, rmse_for, ha="right", va="bottom", transform=axs[rij].transAxes
+            0.99, 0.01, ns_for, ha="right", va="bottom", transform=axs[rij].transAxes
         )
         # axs[rij].scatter(a[observed_tss][start:end], a[modelled_tss][start:end], s = 0.5)
         axs[rij].set_ylim(0, max(a[observed_tss][start:end]))
@@ -1036,10 +1052,13 @@ def r2_by_scenario(scenarios, tss_variables, start, end):
             #xVal.append(names[i])
             yVal.append(r_sq_for)
             i = i + 1
-        axs[rij].plot(x_labels,yVal, '.', markersize=12)
+        if one_area:
+            axs[rij].plot(x_labels,yVal, '.', markersize=12)
+        else:
+            axs[rij].plot(x_labels,yVal, '+', markersize=12, color="black")
         #axs[rij].set_ylim(0.88, 1.005)
         #axs[rij].set_ylim(0.875, 1.02)
-        axs[rij].set_ylim(0.77, 1.02)
+        axs[rij].set_ylim(0.84, 1.02)
         axs[rij].text(.05, .95, names[rij], ha='left', va='top', \
                           transform=axs[rij].transAxes, size = font_size_axes)
         rij += 1
@@ -1089,7 +1108,7 @@ if create_r2_by_scenario:
 #    for scen in scenarios:
 #        print(df[df["sc"] == scen].sort_values(by="lossModelSelection").loc[:, variables])
     
-def nsePlot(black):
+def nsePlot(black, variable):
     fig = plt.figure(dpi=dpi_figures, figsize = [2.5,2], tight_layout = {'pad': 1})
 
     scenarios_to_plot = [
@@ -1146,7 +1165,12 @@ def nsePlot(black):
                 label = "neural network"
             else:
                 label = ""
-            nse = (df[df["sc"] == scen].sort_values(by="lossModelSelection")).iloc[fit]["NSEVal"]
+            if variable == 'sub_f':
+                nse = (df[df["sc"] == scen].sort_values(by="lossModelSelection")).iloc[fit]["NSEVal"]
+            if variable == 'sno_s':
+                nse = (df[df["sc"] == scen].sort_values(by="lossModelSelection")).iloc[fit]["NSEValSnoS"]
+            if variable == 'eva_f':
+                nse = (df[df["sc"] == scen].sort_values(by="lossModelSelection")).iloc[fit]["NSEValEvaF"]
             if black:
                 color = "black"
             else:
@@ -1168,7 +1192,12 @@ def nsePlot(black):
                 label = "conceptual model"
             else:
                 label = ""
-            nse = (df[df["sc"] == scen].sort_values(by="lossModelSelection")).iloc[fit]["NSEVal"]
+            if variable == 'sub_f':
+                nse = (df[df["sc"] == scen].sort_values(by="lossModelSelection")).iloc[fit]["NSEVal"]
+            if variable == 'sno_s':
+                nse = (df[df["sc"] == scen].sort_values(by="lossModelSelection")).iloc[fit]["NSEValSnoS"]
+            if variable == 'eva_f':
+                nse = (df[df["sc"] == scen].sort_values(by="lossModelSelection")).iloc[fit]["NSEValEvaF"]
             if black:
                 color = "black"
             else:
@@ -1181,13 +1210,21 @@ def nsePlot(black):
         fit += 1
     plt.legend(fontsize = font_size_axes * 0.8)
     plt.ylabel("NSE")
-    plt.ylim(0.78, 0.83)
-    fig.savefig(figure_directory + "nse.pdf")
+    if variable == 'sub_f':
+        plt.ylim(0.78, 0.83)
+        fig.savefig(figure_directory + "nse_sub_f.pdf")
+    if variable == 'sno_s':
+        plt.ylim(0.55, 0.98)
+        fig.savefig(figure_directory + "nse_sno_s.pdf")
+    if variable == 'eva_f':
+        fig.savefig(figure_directory + "nse_eva_f.pdf")
     plt.close(fig)
 
 if create_nse:
     if observed_scenario:
-        nsePlot(False)
+        nsePlot(False, 'sub_f')
+        nsePlot(False, 'sno_s')
+        nsePlot(False, 'eva_f')
 
 
 
