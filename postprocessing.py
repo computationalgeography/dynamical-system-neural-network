@@ -18,15 +18,15 @@ create_scatter = True
 create_timeseries = True
 create_r2_by_variable = False
 create_r2_by_scenario = True
-create_nse = True
-print_stats = True
+create_nse = False
+print_stats = False
 create_histogram = False
-modelSelectionWithTraining = False  # use training set or combination of training and stopping
 
+modelSelectionWithTraining = False  # use training set or combination of training and stopping
 GFS = False
 
 #data_dir = '../data/scenarios/runs_from_sonic_velocity/'
-data_dir = '../data/scenarios/LAND/'
+data_dir = '../data/scenarios/LAND/final_runs/'    # CHANGE THIS FOR FINAL PLOTS AND SCENS!!!!! #######
 number_of_rerun_scenarios = 2  # 2 for all except fitting on observations (where one can use 7)
 
 
@@ -786,6 +786,11 @@ def ns(x, y):
     # y is modelled
     return 1 - (((x - y) ** 2.0).mean() / ((x - x.mean()) ** 2.0).mean())
 
+def nsFormatted(x, y):
+    nsValue = ns(x, y)
+    ns_for = "{:.3f}".format(nsValue)
+    return ns_for
+
 def rmse_calc(x, y):
     # normalized RMSE or coefficient of variation
     return numpy.sqrt(((x - y) ** 2.0).mean())/y.mean()
@@ -856,6 +861,7 @@ def scatter_plot_by_variable(scenarios, modelled_tss, observed_tss, start, end):
     plt.close(fig)
 
 def scatter_plot_by_scenario(modelled_tss_es, observed_tss_es, scenario, name, start, end):
+    # Plot for each scenario all variables
     plt.close('all')
     fig = plt.figure(dpi=dpi_figures)
     # gs = fig.add_gridspec(8, 3, hspace=0, wspace=0)
@@ -880,10 +886,12 @@ def scatter_plot_by_scenario(modelled_tss_es, observed_tss_es, scenario, name, s
         cbar.ax.tick_params(labelsize=font_size_axes)
         axs[rij].plot([0, 10], [0, 10], color="black", linewidth=1.0, linestyle = 'dashed')
         #r_sq_for = rSquaredFormatted(x, y)
-        rmse_for = rmseFormatted(x, y)
+        #rmse_for = rmseFormatted(x, y)
+        ns_for = nsFormatted(x, y)
         axs[rij].text(
             #0.99, 0.01, '$r^2$ = ' + r_sq_for, ha="right", va="bottom", transform=axs[rij].transAxes, size = font_size_axes
-            0.99, 0.01, '$r^2$ = ' + rmse_for, ha="right", va="bottom", transform=axs[rij].transAxes, size = font_size_axes
+            #0.99, 0.01, '$r^2$ = ' + rmse_for, ha="right", va="bottom", transform=axs[rij].transAxes, size = font_size_axes
+            0.99, 0.01, 'NSE = ' + ns_for, ha="right", va="bottom", transform=axs[rij].transAxes, size = font_size_axes
         )
         #if rij < len(scenarios) - 1:
         #    axs[rij].set(xticklabels=[])
@@ -1038,7 +1046,7 @@ def r2_by_scenario(scenarios, tss_variables, start, end):
     axs[7].remove()
     axs[8].remove()
     #plt.tight_layout()
-    fig.savefig(figure_directory + "r2_by_scenario.pdf")
+    fig.savefig(figure_directory + "r2_by_scenario.pdf", transparent=True)
     plt.close(fig)
 
 if create_r2_by_scenario:
