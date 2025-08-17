@@ -335,6 +335,40 @@ def createMeteoData(input_data_directory, output_directory, startDate, endDate):
     temperatureFile.close()
     return temperature_time_series, precipitation_time_series, land_sno_time_series, land_eva_time_series
 
+def create_cosero_data(input_data_directory, output_directory, startDate, endDate):
+    date = datetime.date(1981, 1, 1)
+
+    timestep = datetime.timedelta(days=1)
+
+    cosero_sub_s_soil_time_series = []
+    cosero_sub_s_gw_time_series = []
+
+    coseroDataCSV = "ID_535.csv"
+
+    with open(input_data_directory + coseroDataCSV) as csv_file:
+        csv_reader = csv.reader(csv_file, dialect="excel", delimiter=";")
+        line_count = 0
+        line_out_count = 1
+        for row in csv_reader:
+            if line_count == 0:
+                #print(f'Column names are {", ".join(row)}')
+                #print(row[15])
+                #print(row[21])
+                #exit()
+                line_count += 1
+            else:
+                sub_s_soil = float(row[11])/1000.0
+                sub_s_gw = float(row[13])/1000.0
+                if (date >= startDate) and (date <= endDate):
+                    cosero_sub_s_soil_time_series.append(float(sub_s_soil))
+                    cosero_sub_s_gw_time_series.append(float(sub_s_gw))
+                    line_out_count += 1
+                line_count += 1
+                date = date + timestep
+    numpy.save(output_directory + "cosero_sub_s_soil", cosero_sub_s_soil_time_series)
+    numpy.save(output_directory + "cosero_sub_s_gw", cosero_sub_s_gw_time_series)
+    return cosero_sub_s_soil_time_series, cosero_sub_s_gw_time_series
+
 
 def create_streamflow_data(input_data_directory, output_directory, start, end):
     streamflow_file = open(output_directory + "streamflow.txt", "w")
@@ -1604,6 +1638,9 @@ temperature_time_series, precipitation_time_series, land_sno_time_series, land_e
     input_data_directory, output_directory, startOne, endOne
 )
 streamFlowTimeSeries, date_time_series = create_streamflow_data(
+    input_data_directory, output_directory, startOne, endOne
+)
+cosero_sub_s_soil_time_series, cosero_sub_s_gw_time_series = create_cosero_data(
     input_data_directory, output_directory, startOne, endOne
 )
 sno_s_ts, sub_s_ts, sno_f_ts, sub_f_ts, eva_f_ts, \
