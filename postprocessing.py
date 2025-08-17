@@ -742,6 +742,16 @@ def timeseries_plot_by_scenario(modelled_tss_es, observed_tss_es, scenario, star
             axs[rij].text(.02, .93, labels_variables[rij-1], ha='left', va='top', \
                           transform=axs[rij].transAxes, size = font_size_axes,
                           zorder = 10, backgroundcolor = 'white')
+            if observed_scenario:
+                if rij == 2:
+                    axs[rij].set_ylim(0,0.022)
+                if rij == 3:
+                    axs[rij].set_ylim(0,0.9)
+                if rij == 4:
+                    axs[rij].set_ylim(0,0.025)
+                if rij == 5:
+                    axs[rij].set_ylim(0,0.45)
+
         axs[rij].yaxis.set_tick_params(labelsize=font_size_axes)
         axs[rij].locator_params(axis='y', nbins=3)
         axs[rij].xaxis.set_tick_params(labelsize=font_size_axes, ) #labelrotation = 30)
