@@ -17,9 +17,9 @@ one_area = False
 create_scatter = True
 create_timeseries = True
 create_r2_by_variable = False
-create_r2_by_scenario = True
+create_r2_by_scenario = False
 create_nse = True
-print_stats = True
+print_stats = False
 create_histogram = False
 
 #figure_directory = "../figures/"
@@ -258,6 +258,20 @@ for array in arrays:
         arrayContents.append(arrayContent)
     df[array] = arrayContents
 
+# add additional_validation_data
+# cosero model, sub_s groundwater
+arrayContents = []
+for sc, ts, rs in product(scenarios, training_scenarios, rerun_scenarios):
+    arrayContent = numpy.load(data_dir + "additional_validation_data/" + "val_cosero_sub_s_gw.npy" , allow_pickle=True)
+    arrayContents.append(arrayContent)
+df["val_cosero_sub_s_gw"] = arrayContents
+# cosero model, sub_s soil
+arrayContents = []
+for sc, ts, rs in product(scenarios, training_scenarios, rerun_scenarios):
+    arrayContent = numpy.load(data_dir + "additional_validation_data/" + "val_cosero_sub_s_soil.npy" , allow_pickle=True)
+    arrayContents.append(arrayContent)
+df["val_cosero_sub_s_soil"] = arrayContents
+
 df["lossTrainingValue"] = df["lossTraining"].apply(lambda x: x[-1])
 df["lossValidationValue"] = df["lossValidation"].apply(lambda x: x[-1])
 df["lossStoppingValue"] = df["lossStopping"].apply(lambda x: x[-1])
@@ -288,6 +302,11 @@ if actual_snow_flux:
                            numpy.where(x['val_art_ts_sno_s'] < 0.0001, 0.0, \
                            x['val_art_ts_sno_f']), \
                            axis=1)
+
+# sum cosero sub_s for soil and groundwater
+df["val_cosero_sub_s"] = df["val_cosero_sub_s_gw"] + df["val_cosero_sub_s_soil"]
+min_val_cosero_sub_s = df["val_cosero_sub_s"].apply(lambda x: x.min())
+df["val_cosero_sub_s"] = df["val_cosero_sub_s"] - min_val_cosero_sub_s - 0.03
 
 
 # for calculation of nash sutcliffe
@@ -324,6 +343,16 @@ else:
     xxx = 0
 if observed_scenario:
     df["NSEValEvaF"] = 1.0 - (df["mss_eva_f"] / valid_ss_eva_f_mean)
+# For sub_s 
+if observed_scenario:
+    valid_mean_sub_s = (df["val_cosero_sub_s"].apply(lambda x: x[366:].mean()))[0]
+    valid_sub_s = df["val_cosero_sub_s"][0][366:]
+    valid_ss_sub_s_mean = ((valid_sub_s - valid_mean_sub_s) ** 2.0).mean()
+    df["mss_sub_s"] = df.apply(lambda x: ((valid_sub_s - x["valid_ts_sub_s"][366:]) ** 2.0).mean(), axis = 1)
+else:
+    xxx = 0
+if observed_scenario:
+    df["NSEValSubS"] = 1.0 - (df["mss_sub_s"] / valid_ss_sub_s_mean)
 
 
 
@@ -575,7 +604,7 @@ if observed_scenario:
         "val_art_ts_sno_f",
         "val_lan_ts_sno_s",
         "valid_ts_OBS",
-        "val_art_ts_sub_s"
+        "val_cosero_sub_s"
     ]
 else:
     observed_tss_list = [
@@ -710,7 +739,8 @@ def timeseries_plot_by_scenario(modelled_tss_es, observed_tss_es, scenario, star
             observed_tss = observed_tss_es[tssNumber]
             if not(observed_scenario) or (observed_tss == 'valid_ts_OBS') \
                                          or (observed_tss == 'val_lan_ts_sno_s') \
-                                         or (observed_tss == 'val_lan_ts_eva_f'):
+                                         or (observed_tss == 'val_lan_ts_eva_f') \
+                                         or (observed_tss == 'val_cosero_sub_s'):
                 axs[rij].plot(
                     a["valid_date"][start:end],
                     a[observed_tss][start:end],
@@ -1180,6 +1210,8 @@ def nsePlot(black, variable):
                 nse = (df[df["sc"] == scen].sort_values(by="lossModelSelection")).iloc[fit]["NSEValSnoS"]
             if variable == 'eva_f':
                 nse = (df[df["sc"] == scen].sort_values(by="lossModelSelection")).iloc[fit]["NSEValEvaF"]
+            if variable == 'sub_s':
+                nse = (df[df["sc"] == scen].sort_values(by="lossModelSelection")).iloc[fit]["NSEValSubS"]
             if black:
                 color = "black"
             else:
@@ -1207,6 +1239,8 @@ def nsePlot(black, variable):
                 nse = (df[df["sc"] == scen].sort_values(by="lossModelSelection")).iloc[fit]["NSEValSnoS"]
             if variable == 'eva_f':
                 nse = (df[df["sc"] == scen].sort_values(by="lossModelSelection")).iloc[fit]["NSEValEvaF"]
+            if variable == 'sub_s':
+                nse = (df[df["sc"] == scen].sort_values(by="lossModelSelection")).iloc[fit]["NSEValSubS"]
             if black:
                 color = "black"
             else:
@@ -1227,6 +1261,8 @@ def nsePlot(black, variable):
         fig.savefig(figure_directory + "nse_sno_s.pdf")
     if variable == 'eva_f':
         fig.savefig(figure_directory + "nse_eva_f.pdf")
+    if variable == 'sub_s':
+        fig.savefig(figure_directory + "nse_sub_s.pdf")
     plt.close(fig)
 
 if create_nse:
@@ -1234,6 +1270,7 @@ if create_nse:
         nsePlot(False, 'sub_f')
         nsePlot(False, 'sno_s')
         nsePlot(False, 'eva_f')
+        nsePlot(False, 'sub_s')
 
 
 
