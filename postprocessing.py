@@ -19,7 +19,7 @@ create_timeseries = True
 create_r2_by_variable = False
 create_r2_by_scenario = True
 create_nse = True
-print_stats = False
+print_stats = True
 create_histogram = False
 
 #figure_directory = "../figures/"
@@ -27,14 +27,15 @@ create_histogram = False
 modelSelectionWithTraining = False  # use training set or combination of training and stopping
 GFS = False
 
-#data_dir = '../data/scenarios/runs_from_sonic_velocity/'
 data_dir = '../data/scenarios/LAND/final_runs/' 
-number_of_rerun_scenarios = 2  # CHANGE TO 4 FOR FINAL RUNS
+number_of_rerun_scenarios = 4  # CHANGE TO 4 FOR FINAL RUNS
 
 
 ##################
 # other settings #
 ##################
+
+number_of_fits_to_plot = 4
 
 plt.rcParams["font.size"] = 8
 plt.rcParams.update({'figure.max_open_warning': 0})
@@ -49,8 +50,6 @@ if EGU:
     font_size_axes = 9
 else:
     font_size_axes = 8 
-
-number_of_fits_to_plot = 4
 
 labels_variables = ['evapotranspiration',
                     'snow melt',
@@ -312,9 +311,9 @@ if observed_scenario:
     valid_ss_sno_s_mean = ((valid_sno_s - valid_mean_sno_s) ** 2.0).mean()
     df["mss_sno_s"] = df.apply(lambda x: ((valid_sno_s - x["valid_ts_sno_s"][366:]) ** 2.0).mean(), axis = 1)
 else:
-    print('killed by me')
-    exit()
-df["NSEValSnoS"] = 1.0 - (df["mss_sno_s"] / valid_ss_sno_s_mean)
+    xxx = 0
+if observed_scenario:
+    df["NSEValSnoS"] = 1.0 - (df["mss_sno_s"] / valid_ss_sno_s_mean)
 # For evapotranspiration 
 if observed_scenario:
     valid_mean_eva_f = (df["val_lan_ts_eva_f"].apply(lambda x: x[366:].mean()))[0]
@@ -322,9 +321,9 @@ if observed_scenario:
     valid_ss_eva_f_mean = ((valid_eva_f - valid_mean_eva_f) ** 2.0).mean()
     df["mss_eva_f"] = df.apply(lambda x: ((valid_eva_f - x["valid_ts_eva_f"][366:]) ** 2.0).mean(), axis = 1)
 else:
-    print('killed by me')
-    exit()
-df["NSEValEvaF"] = 1.0 - (df["mss_eva_f"] / valid_ss_eva_f_mean)
+    xxx = 0
+if observed_scenario:
+    df["NSEValEvaF"] = 1.0 - (df["mss_eva_f"] / valid_ss_eva_f_mean)
 
 
 
