@@ -12,7 +12,7 @@ from matplotlib.lines import Line2D
 #######################
 
 observed_scenario = True
-one_area = False
+one_area = True
 
 create_scatter = True
 create_timeseries = True
@@ -306,7 +306,7 @@ if actual_snow_flux:
 # sum cosero sub_s for soil and groundwater
 df["val_cosero_sub_s"] = df["val_cosero_sub_s_gw"] + df["val_cosero_sub_s_soil"]
 min_val_cosero_sub_s = df["val_cosero_sub_s"].apply(lambda x: x.min())
-df["val_cosero_sub_s"] = df["val_cosero_sub_s"] - min_val_cosero_sub_s - 0.03
+df["val_cosero_sub_s"] = df["val_cosero_sub_s"] - min_val_cosero_sub_s #- 0.03
 
 
 # for calculation of nash sutcliffe
@@ -810,9 +810,10 @@ def timeseries_plot_by_scenario(modelled_tss_es, observed_tss_es, scenario, star
     plt.close(fig)
 
 
-startTimeTss = 2 * 365
+startTimeTss = 4 * 365
 #endTimeTss = 4 * 365
-endTimeTss = 6 * 365
+#endTimeTss = 6 * 365
+endTimeTss = 10 * 365
 
 
 if create_timeseries:
