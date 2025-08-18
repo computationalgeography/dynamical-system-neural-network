@@ -342,6 +342,7 @@ def create_cosero_data(input_data_directory, output_directory, startDate, endDat
 
     cosero_sub_s_soil_time_series = []
     cosero_sub_s_gw_time_series = []
+    cosero_eva_f_time_series = []
 
     coseroDataCSV = "ID_535_cosero.csv"
 
@@ -359,15 +360,18 @@ def create_cosero_data(input_data_directory, output_directory, startDate, endDat
             else:
                 sub_s_soil = float(row[11])/1000.0
                 sub_s_gw = float(row[13])/1000.0
+                eva_f = float(row[8])/1000.0
                 if (date >= startDate) and (date <= endDate):
                     cosero_sub_s_soil_time_series.append(sub_s_soil)
                     cosero_sub_s_gw_time_series.append(sub_s_gw)
+                    cosero_eva_f_time_series.append(eva_f)
                     line_out_count += 1
                 line_count += 1
                 date = date + timestep
     numpy.save(output_directory + "cosero_sub_s_soil.npy", cosero_sub_s_soil_time_series)
     numpy.save(output_directory + "cosero_sub_s_gw.npy", cosero_sub_s_gw_time_series)
-    return cosero_sub_s_soil_time_series, cosero_sub_s_gw_time_series
+    numpy.save(output_directory + "cosero_eva_f.npy", cosero_eva_f_time_series)
+    return cosero_sub_s_soil_time_series, cosero_sub_s_gw_time_series, cosero_eva_f_time_series
 
 
 def create_streamflow_data(input_data_directory, output_directory, start, end):
@@ -1640,9 +1644,9 @@ temperature_time_series, precipitation_time_series, land_sno_time_series, land_e
 streamFlowTimeSeries, date_time_series = create_streamflow_data(
     input_data_directory, output_directory, startOne, endOne
 )
-cosero_sub_s_soil_time_series, cosero_sub_s_gw_time_series = create_cosero_data(
-    input_data_directory, output_directory, startOne, endOne
-)
+#cosero_sub_s_soil_time_series, cosero_sub_s_gw_time_series = create_cosero_data(
+#    input_data_directory, output_directory, startOne, endOne
+#)
 sno_s_ts, sub_s_ts, sno_f_ts, sub_f_ts, eva_f_ts, \
     sno_s_ts_areas, sub_s_ts_areas, sno_f_ts_areas, sub_f_ts_areas, eva_f_ts_areas = (
     create_artificial_observations(
@@ -1659,7 +1663,7 @@ temperature_time_series_val, precipitation_time_series_val, land_sno_time_series
 streamflow_time_series_val, date_time_series_val = create_streamflow_data(
     input_data_directory, output_directory, startVal, endVal
 )
-cosero_sub_s_soil_time_series_val, cosero_sub_s_gw_time_series_val = create_cosero_data(
+cosero_sub_s_soil_time_series_val, cosero_sub_s_gw_time_series_val, cosero_eva_f_time_series_val = create_cosero_data(
     input_data_directory, output_directory, startVal, endVal
 )
 # note that no error is added to artificial streamflow in any case as it is used for validation only

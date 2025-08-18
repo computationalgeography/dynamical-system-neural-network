@@ -17,7 +17,7 @@ one_area = True
 create_scatter = True
 create_timeseries = True
 create_r2_by_variable = False
-create_r2_by_scenario = False
+create_r2_by_scenario = True
 create_nse = True
 print_stats = False
 create_histogram = False
@@ -271,7 +271,15 @@ for sc, ts, rs in product(scenarios, training_scenarios, rerun_scenarios):
     arrayContent = numpy.load(data_dir + "additional_validation_data/" + "val_cosero_sub_s_soil.npy" , allow_pickle=True)
     arrayContents.append(arrayContent)
 df["val_cosero_sub_s_soil"] = arrayContents
+# cosero model, eva_f soil
+arrayContents = []
+for sc, ts, rs in product(scenarios, training_scenarios, rerun_scenarios):
+    arrayContent = numpy.load(data_dir + "additional_validation_data/" + "val_cosero_eva_f.npy" , allow_pickle=True)
+    arrayContents.append(arrayContent)
+df["val_cosero_eva_f"] = arrayContents
 
+
+# loss values
 df["lossTrainingValue"] = df["lossTraining"].apply(lambda x: x[-1])
 df["lossValidationValue"] = df["lossValidation"].apply(lambda x: x[-1])
 df["lossStoppingValue"] = df["lossStopping"].apply(lambda x: x[-1])
@@ -334,9 +342,12 @@ else:
 if observed_scenario:
     df["NSEValSnoS"] = 1.0 - (df["mss_sno_s"] / valid_ss_sno_s_mean)
 # For evapotranspiration 
+# eva from LAND (val_lan..) or from cosero (val_cosero..)
+#validation_eva_file_name = "val_lan_ts_eva_f"
+validation_eva_file_name = "val_cosero_eva_f"
 if observed_scenario:
-    valid_mean_eva_f = (df["val_lan_ts_eva_f"].apply(lambda x: x[366:].mean()))[0]
-    valid_eva_f = df["val_lan_ts_eva_f"][0][366:]
+    valid_mean_eva_f = (df[validation_eva_file_name].apply(lambda x: x[366:].mean()))[0]
+    valid_eva_f = df[validation_eva_file_name][0][366:]
     valid_ss_eva_f_mean = ((valid_eva_f - valid_mean_eva_f) ** 2.0).mean()
     df["mss_eva_f"] = df.apply(lambda x: ((valid_eva_f - x["valid_ts_eva_f"][366:]) ** 2.0).mean(), axis = 1)
 else:
@@ -600,7 +611,8 @@ modelled_tss_list = [
 
 if observed_scenario:
     observed_tss_list = [
-        "val_lan_ts_eva_f",
+        #"val_lan_ts_eva_f",
+        "val_cosero_eva_f",
         "val_art_ts_sno_f",
         "val_lan_ts_sno_s",
         "valid_ts_OBS",
@@ -739,7 +751,7 @@ def timeseries_plot_by_scenario(modelled_tss_es, observed_tss_es, scenario, star
             observed_tss = observed_tss_es[tssNumber]
             if not(observed_scenario) or (observed_tss == 'valid_ts_OBS') \
                                          or (observed_tss == 'val_lan_ts_sno_s') \
-                                         or (observed_tss == 'val_lan_ts_eva_f') \
+                                         or (observed_tss == 'val_cosero_eva_f') \
                                          or (observed_tss == 'val_cosero_sub_s'):
                 axs[rij].plot(
                     a["valid_date"][start:end],
@@ -941,13 +953,13 @@ def scatter_plot_by_scenario(modelled_tss_es, observed_tss_es, scenario, name, s
         cbar = fig.colorbar(hb, ax=axs[rij], fraction=0.046, pad=0.04)
         cbar.ax.tick_params(labelsize=font_size_axes)
         axs[rij].plot([0, 10], [0, 10], color="black", linewidth=1.0, linestyle = 'dashed')
-        #r_sq_for = rSquaredFormatted(x, y)
+        r_sq_for = rSquaredFormatted(x, y)
         #rmse_for = rmseFormatted(x, y)
         ns_for = nsFormatted(x, y)
         axs[rij].text(
-            #0.99, 0.01, '$r^2$ = ' + r_sq_for, ha="right", va="bottom", transform=axs[rij].transAxes, size = font_size_axes
+            0.99, 0.01, '$r^2$ = ' + r_sq_for, ha="right", va="bottom", transform=axs[rij].transAxes, size = font_size_axes
             #0.99, 0.01, '$r^2$ = ' + rmse_for, ha="right", va="bottom", transform=axs[rij].transAxes, size = font_size_axes
-            0.99, 0.01, 'NSE = ' + ns_for, ha="right", va="bottom", transform=axs[rij].transAxes, size = font_size_axes
+            #0.99, 0.01, 'NSE = ' + ns_for, ha="right", va="bottom", transform=axs[rij].transAxes, size = font_size_axes
         )
         #if rij < len(scenarios) - 1:
         #    axs[rij].set(xticklabels=[])
@@ -1098,7 +1110,10 @@ def r2_by_scenario(scenarios, tss_variables, start, end):
             axs[rij].plot(x_labels,yVal, '+', markersize=12, color="black")
         #axs[rij].set_ylim(0.88, 1.005)
         #axs[rij].set_ylim(0.875, 1.02)
-        axs[rij].set_ylim(0.84, 1.02)
+        if observed_scenario:
+            axs[rij].set_ylim(-2.0, 1.02)
+        else:
+            axs[rij].set_ylim(0.84, 1.02)
         axs[rij].text(.05, .95, names[rij], ha='left', va='top', \
                           transform=axs[rij].transAxes, size = font_size_axes)
         rij += 1
