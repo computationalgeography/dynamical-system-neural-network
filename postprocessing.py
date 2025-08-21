@@ -14,10 +14,10 @@ from matplotlib.lines import Line2D
 observed_scenario = True
 one_area = True
 
-create_scatter = True
+create_scatter = False
 create_timeseries = True
-create_r2_by_variable = False
-create_r2_by_scenario = True
+create_r2_by_variable = True
+create_r2_by_scenario = False
 create_nse = True
 print_stats = False
 create_histogram = False
@@ -312,9 +312,18 @@ if actual_snow_flux:
                            axis=1)
 
 # sum cosero sub_s for soil and groundwater
+#df["val_cosero_sub_s"] = df["val_cosero_sub_s_gw"] + df["val_cosero_sub_s_soil"]
+#min_val_cosero_sub_s = df["val_cosero_sub_s"].apply(lambda x: x.min())
+#df["val_cosero_sub_s"] = df["val_cosero_sub_s"] - min_val_cosero_sub_s
+
+min_val_cosero_sub_s_soil = df["val_cosero_sub_s_soil"].apply(lambda x: x.min())
+df["val_cosero_sub_s_soil"] = df["val_cosero_sub_s_soil"] - min_val_cosero_sub_s_soil
+
+min_val_cosero_sub_s_gw = df["val_cosero_sub_s_gw"].apply(lambda x: x.min())
+df["val_cosero_sub_s_gw"] = df["val_cosero_sub_s_gw"] - min_val_cosero_sub_s_gw
+
 df["val_cosero_sub_s"] = df["val_cosero_sub_s_gw"] + df["val_cosero_sub_s_soil"]
-min_val_cosero_sub_s = df["val_cosero_sub_s"].apply(lambda x: x.min())
-df["val_cosero_sub_s"] = df["val_cosero_sub_s"] - min_val_cosero_sub_s #- 0.03
+#df["val_cosero_sub_s"] = df["val_cosero_sub_s_soil"]
 
 
 # for calculation of nash sutcliffe
@@ -751,14 +760,29 @@ def timeseries_plot_by_scenario(modelled_tss_es, observed_tss_es, scenario, star
             observed_tss = observed_tss_es[tssNumber]
             if not(observed_scenario) or (observed_tss == 'valid_ts_OBS') \
                                          or (observed_tss == 'val_lan_ts_sno_s') \
-                                         or (observed_tss == 'val_cosero_eva_f') \
-                                         or (observed_tss == 'val_cosero_sub_s'):
+                                         or (observed_tss == 'val_cosero_eva_f'): 
                 axs[rij].plot(
                     a["valid_date"][start:end],
                     a[observed_tss][start:end],
                     linewidth = 0.5,
                     #color=green
                     color='black'
+                )
+            if not(observed_scenario) or (observed_tss == 'val_cosero_sub_s'):
+                axs[rij].plot(
+                    a["valid_date"][start:end],
+                    a["val_cosero_sub_s_soil"][start:end],
+                    linewidth = 0.5,
+                    #color=green
+                    color='black'
+                )
+                axs[rij].plot(
+                    a["valid_date"][start:end],
+                    a["val_cosero_sub_s_gw"][start:end],
+                    linewidth = 0.5,
+                    #color=green
+                    color='black',
+                    linestyle = (0, (1,5))
                 )
             # Plot modelled timeseries.
             if i == 0:
@@ -1047,6 +1071,10 @@ if create_histogram:
         i = i + 1
 
 def r2_by_variable(scenarios, tss_variables, start, end):
+    if one_area:
+        colour = green
+    else:
+        colour = blue
     fig, axen = plt.subplots(2, 3)
     axs = [axen[0,0], axen[0,1], axen[0,2],
            axen[1,0], axen[1,1], axen[1,2],
@@ -1059,21 +1087,62 @@ def r2_by_variable(scenarios, tss_variables, start, end):
         xVal = []
         yVal = []
         rij = 0
+        # nn scenarios
         for sc in scenarios[:-1]:
             a = (df[df["sc"] == sc].sort_values(by="lossModelSelection")).iloc[0]
             x = a[observed_tss][start:end]
             y = a[modelled_tss][start:end]
-            r_sq_for = rSquared(x, y)
+            if (modelled_tss == 'valid_ts_sub_s') and (observed_scenario):
+                r_sq_for = rSquared(x, y)
+            else:
+                r_sq_for = ns(x, y)
             xVal.append(names[rij])
             yVal.append(r_sq_for)
             rij += 1
-        axs[i].plot(xVal,yVal, '.', markersize=12)
+        axs[i].plot(xVal,yVal, '.', markersize=12, color = colour)
+        xValExp = []
+        yValExp = []
+        rij = 0
+        if observed_scenario:
+            # expert scenario
+            for sc in scenarios[:-1]:
+                a = (df[df["sc"] == "fit_xhr"].sort_values(by="lossModelSelection")).iloc[0]
+                x = a[observed_tss][start:end]
+                y = a[modelled_tss][start:end]
+                if (modelled_tss == 'valid_ts_sub_s') and (observed_scenario):
+                    r_sq_for = rSquared(x, y)
+                else:
+                    r_sq_for = ns(x, y)
+                xValExp.append(names[rij])
+                yValExp.append(r_sq_for)
+                rij += 1
+            axs[i].plot(xValExp,yValExp, '_', markersize=10, color = colour)
+                #plt.plot(names[i], nse, '_', color=color, label = label, markersize = 10)
         axs[i].text(.05, .95, labels_variables_tight[i], ha='left', va='top', \
                       transform=axs[i].transAxes, size = font_size_axes)
         i = i + 1
+    if observed_scenario:
+        axs[0].set_ylim(-0.8,-0.25) # eva_f
+        axs[1].set_ylim(-0.35,-0.3) # neglected 
+        axs[2].set_ylim(0.6,1.03)   # sno_s
+        axs[3].set_ylim(0.78,0.83)  # sub_f
+        axs[4].set_ylim(0.30,0.44)  # sub_s
+        #axs[4].set_ylim(0.0,1.0)  # sub_s
+    else:
+        axs[0].set_ylim(0.94,1.01)
+        axs[1].set_ylim(0.87,1.02)
+        axs[2].set_ylim(0.9965,1.001)
+        axs[3].set_ylim(0.995,1.001)
+        axs[4].set_ylim(0.974,1.005)
+    plt.tight_layout()
     axs[5].remove()
-    #plt.tight_layout()
-    fig.savefig(figure_directory + "r2_by_variable.pdf")
+    if observed_scenario:
+        # do not plot snow melt
+        pos1 = axs[1].get_position()
+        axs[1].set_position(axs[2].get_position())
+        axs[2].set_position(pos1)
+        axs[1].remove()
+    fig.savefig(figure_directory + "r2_by_variable.pdf", transparent = True)
     plt.close(fig)
 
 if create_r2_by_variable:
@@ -1283,10 +1352,10 @@ def nsePlot(black, variable):
 
 if create_nse:
     if observed_scenario:
-        nsePlot(False, 'sub_f')
-        nsePlot(False, 'sno_s')
-        nsePlot(False, 'eva_f')
-        nsePlot(False, 'sub_s')
+       nsePlot(False, 'sub_f')
+       nsePlot(False, 'sno_s')
+       nsePlot(False, 'eva_f')
+       nsePlot(False, 'sub_s')
 
 
 
