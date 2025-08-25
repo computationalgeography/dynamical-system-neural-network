@@ -11,16 +11,17 @@ from matplotlib.lines import Line2D
 # main configurations #
 #######################
 
-observed_scenario = True
+observed_scenario = False
 one_area = True
 
 create_scatter = False
-create_timeseries = True
-create_r2_by_variable = True
+create_timeseries = False
+create_r2_by_variable = False
 create_r2_by_scenario = False
-create_nse = True
+create_nse = False
 print_stats = False
 create_histogram = False
+create_act_melt_vs_temp = True
 
 #figure_directory = "../figures/"
 
@@ -301,13 +302,24 @@ else:
 
 # Replace potential snow melt by actual snow melt both for synthetic data
 # and for ML modelled data
+# assume zero for no snow (too simple)
+#if actual_snow_flux:
+#    df['valid_ts_sno_f'] = df.apply(lambda x: \
+#                           numpy.where(x['valid_ts_sno_s'] < 0.0001, 0.0, \
+#                   x['valid_ts_sno_f']), \
+#                           axis=1)
+#    df['val_art_ts_sno_f'] = df.apply(lambda x: \
+#                          numpy.where(x['val_art_ts_sno_s'] < 0.0001, 0.0, \
+#                   x['val_art_ts_sno_f']), \
+#                   axis=1)
+# actually calculate it like in the model
 if actual_snow_flux:
     df['valid_ts_sno_f'] = df.apply(lambda x: \
-                           numpy.where(x['valid_ts_sno_s'] < 0.0001, 0.0, \
+                           numpy.where(x['valid_ts_sno_s'] < x['valid_ts_sno_f'], x['valid_ts_sno_s'], \
                            x['valid_ts_sno_f']), \
                            axis=1)
     df['val_art_ts_sno_f'] = df.apply(lambda x: \
-                           numpy.where(x['val_art_ts_sno_s'] < 0.0001, 0.0, \
+                           numpy.where(x['val_art_ts_sno_s'] < x['val_art_ts_sno_f'], x['val_art_ts_sno_s'], \
                            x['val_art_ts_sno_f']), \
                            axis=1)
 
@@ -573,14 +585,17 @@ else:
     axs[0, 0].set_ylim(0, 0.013)
 
 # x axis 
-axs[0, 0].set_xlim(-10, 15)
-axs[0, 1].set_xlim(-2, 8)
+#axs[0, 0].set_xlim(-10, 15)
+axs[0, 0].set_xlim(-10, 12)
+#axs[0, 1].set_xlim(-2, 8)
+axs[0, 1].set_xlim(-2, 6)
 if observed_scenario:
     if one_area:
         axs[0, 2].set_xlim(0, 0.4)
     else:
         axs[0, 2].set_xlim(0, 0.12)
 else:
+    #axs[0, 2].set_xlim(0.0, 0.15)
     axs[0, 2].set_xlim(0, 0.18)
 
 axs[7, 0].set_xticks([-10, -5, 0, 5, 10])
@@ -600,7 +615,7 @@ for i in range(0, 8):
     axs[i, 0].set_ylabel("flux (m/day)", fontsize=font_size_axes)
 axs[0, 0].set_title("evapotranspiration\nincluding sublimation", fontsize=font_size_axes)
 axs[0, 1].set_title("snow melt", fontsize=font_size_axes)
-axs[0, 2].set_title("outflow subsurf. storage", fontsize=font_size_axes)
+axs[0, 2].set_title("outflow subsurf. storage\n(streamflow)", fontsize=font_size_axes)
 if not EGU:
     plt.subplots_adjust(wspace=0, hspace=0)
 fig.savefig(figure_directory + "response.pdf")
@@ -768,7 +783,7 @@ def timeseries_plot_by_scenario(modelled_tss_es, observed_tss_es, scenario, star
                     #color=green
                     color='black'
                 )
-            if not(observed_scenario) or (observed_tss == 'val_cosero_sub_s'):
+            if not(observed_scenario) and (observed_tss == 'val_cosero_sub_s'):
                 axs[rij].plot(
                     a["valid_date"][start:end],
                     a["val_cosero_sub_s_soil"][start:end],
@@ -1036,9 +1051,14 @@ def histogram_by_scenario(hist_tss, scenario, name, start, end):
     axs = [axen[0,0], axen[0,1], axen[0,2], axen[1,0], axen[1,1], axen[1,2]]
     fig.set_size_inches(8.27, 5.0)
     a = (df[df["sc"] == scenario].sort_values(by="lossModelSelection")).iloc[0]
-    snow = (a["valid_ts_sno_s"][start:end] > 0.0001)
+    #snow = (a["valid_ts_sno_s"][start:end] > 0.0001)
+    snow = (a["val_art_ts_sno_s"][start:end] > 0.0001)
     temperature = (a["valid_ts_temperature"][start:end])
     temp_with_snow = temperature[snow]
+    daysWithTempAboveThreshold = numpy.sum(temp_with_snow > 4.0)
+    daysWithTempBelowThreshold = numpy.sum(temp_with_snow <= 4.0)
+    proportionDays = daysWithTempAboveThreshold / (daysWithTempAboveThreshold + daysWithTempBelowThreshold)
+    print(proportionDays)
     label = ['temp', 'temp with snow', 'sub_s', 'sno_s']
     rij = 0
     tssNumber = 0
@@ -1070,11 +1090,37 @@ if create_histogram:
         histogram_by_scenario(hist_tss, scenario, name, startTimeTss, endTimeTss)
         i = i + 1
 
+def actual_melt_vs_temperature(start, end):
+    plt.close('all')
+    fig = plt.figure(dpi=dpi_figures)
+    fig, axen = plt.subplots(2, 3)
+    axs = [axen[0,0], axen[0,1], axen[0,2], axen[1,0], axen[1,1], axen[1,2]]
+    fig.set_size_inches(8.27, 5.0)
+    a = (df[df["sc"] == "fit_xhr"].sort_values(by="lossModelSelection")).iloc[0]
+    snow = (a["val_art_ts_sno_s"][start:end] > 0.0001)
+    # actual snow melt from synthetic observational data set
+    actual_snow_melt = (a["val_art_ts_sno_f"][start:end])[snow]
+    temperature = (a["valid_ts_temperature"][start:end])[snow]
+    axs[0].plot(temperature,actual_snow_melt, '.')
+    #hb = axs[0].hexbin(
+    #        temperature, actual_snow_melt, gridsize=15, cmap="Greens", bins="log", linewidths=0.0
+    #    )
+    axs[0].set_xlim(-2,6)
+    fig.savefig(figure_directory + "act_melt_vs_temp.pdf")
+
+if create_act_melt_vs_temp:
+    if not observed_scenario:
+        actual_melt_vs_temperature(startTimeTss, endTimeTss)
+
+
+
 def r2_by_variable(scenarios, tss_variables, start, end):
     if one_area:
         colour = green
+        size = 12
     else:
         colour = blue
+        size = 8
     fig, axen = plt.subplots(2, 3)
     axs = [axen[0,0], axen[0,1], axen[0,2],
            axen[1,0], axen[1,1], axen[1,2],
@@ -1099,10 +1145,11 @@ def r2_by_variable(scenarios, tss_variables, start, end):
             xVal.append(names[rij])
             yVal.append(r_sq_for)
             rij += 1
-        axs[i].plot(xVal,yVal, '.', markersize=12, color = colour)
+        axs[i].plot(xVal,yVal, '.', markersize=size, color = colour)
         xValExp = []
         yValExp = []
         rij = 0
+        # add expert model scenario as reference, for observed scenario only
         if observed_scenario:
             # expert scenario
             for sc in scenarios[:-1]:
@@ -1129,11 +1176,16 @@ def r2_by_variable(scenarios, tss_variables, start, end):
         axs[4].set_ylim(0.30,0.44)  # sub_s
         #axs[4].set_ylim(0.0,1.0)  # sub_s
     else:
-        axs[0].set_ylim(0.94,1.01)
-        axs[1].set_ylim(0.87,1.02)
-        axs[2].set_ylim(0.9965,1.001)
-        axs[3].set_ylim(0.995,1.001)
-        axs[4].set_ylim(0.974,1.005)
+        #axs[0].set_ylim(0.94,1.01)
+        #axs[1].set_ylim(0.87,1.02)
+        #axs[2].set_ylim(0.9965,1.001)
+        #axs[3].set_ylim(0.995,1.001)
+        #axs[4].set_ylim(0.974,1.005)
+        axs[0].set_ylim(0.94,1.0004)
+        axs[1].set_ylim(0.87,1.0004)
+        axs[2].set_ylim(0.9980,1.0001)
+        axs[3].set_ylim(0.9965,1.0001)
+        axs[4].set_ylim(0.974,1.0002)
     plt.tight_layout()
     axs[5].remove()
     if observed_scenario:
