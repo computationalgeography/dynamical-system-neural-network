@@ -36,14 +36,18 @@ create_scatter = False
 create_timeseries = False
 create_r2_by_variable = False
 create_r2_by_scenario = False
-create_nse = False
+create_nse = True
 print_stats = False
 create_histogram = False
 create_act_melt_vs_temp = False
 
 #figure_directory = "../figures/"
 
-modelSelectionWithTraining = False  # use training set or combination of training and stopping
+# True: use training set or False: combination of training and stopping
+# False gives overall somewhat better NSE for streamflow
+modelSelectionWithTraining = False 
+
+
 GFS = False
 
 data_dir = '../data/scenarios/LAND/final_runs/' 
@@ -497,8 +501,8 @@ response_sno_y = numpy.array(df_first[df_first["sc"] == "fit_eva"]["response_sno
 response_sub_x = numpy.array(df_first[df_first["sc"] == "fit_eva"]["response_sub_x"])[0]
 response_sub_y = numpy.array(df_first[df_first["sc"] == "fit_eva"]["response_sub_y"])[0]
 
-line_width_best = 2.5
-line_width_other = 0.7
+line_width_best = 3.0
+line_width_other = 1.0
 
 rij = 0
 
@@ -631,7 +635,7 @@ axs[response_nr_rows - 1, 0].set_xticks([-10, -5, 0, 5, 10])
 #axs[7, 0].set_xticklabels([-10, -5, 0, 5, 10], size=font_size_axes)
 axs[response_nr_rows - 1, 0].set_xticklabels([-10, -5, 0, 5, 10], size=font_size_axes)
 
-labels = [-2, 0, 2, 4, 6]
+labels = [-2, 0, 2, 4]
 axs[response_nr_rows - 1, 1].set_xticks(labels)
 axs[response_nr_rows - 1, 1].set_xticklabels(labels, size=font_size_axes)
 
