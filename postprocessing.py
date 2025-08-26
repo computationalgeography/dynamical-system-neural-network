@@ -2,6 +2,7 @@ import numpy
 import pandas
 import os
 import string
+import sys
 from matplotlib import pyplot as plt
 from itertools import product
 from matplotlib.transforms import Bbox
@@ -11,8 +12,25 @@ from matplotlib.lines import Line2D
 # main configurations #
 #######################
 
-observed_scenario = False
-one_area = True
+run = sys.argv[1]
+
+if run == "art_one":
+    observed_scenario = False
+    one_area = True
+
+if run == "art_two":
+    observed_scenario = False
+    one_area = False
+
+if run == "obs_one":
+    observed_scenario = True
+    one_area = True
+
+if run == "obs_two":
+    observed_scenario = True
+    one_area = False
+
+
 
 create_scatter = False
 create_timeseries = False
@@ -21,7 +39,7 @@ create_r2_by_scenario = False
 create_nse = False
 print_stats = False
 create_histogram = False
-create_act_melt_vs_temp = True
+create_act_melt_vs_temp = False
 
 #figure_directory = "../figures/"
 
@@ -457,8 +475,16 @@ if print_stats:
 
 
 fig = plt.figure(dpi=dpi_figures)
-gs = fig.add_gridspec(8, 3, hspace=0, wspace=0)
-fig, axs = plt.subplots(8, 3, sharex="col", sharey=True)
+
+if observed_scenario:
+    response_scenarios_to_plot = scenarios_to_plot
+    response_nr_rows = 8
+else:
+    response_scenarios_to_plot = scenarios_to_plot[:-1]
+    response_nr_rows = 7
+
+gs = fig.add_gridspec(response_nr_rows, 3, hspace=0, wspace=0)
+fig, axs = plt.subplots(response_nr_rows, 3, sharex="col", sharey=True)
 fig.set_size_inches(8.27, 11.69)
 rij = 0
 
@@ -475,7 +501,8 @@ line_width_best = 2.5
 line_width_other = 0.7
 
 rij = 0
-for sc in scenarios_to_plot:
+
+for sc in response_scenarios_to_plot:
     #a = df[(df["sc"] == sc)]
     a = (df[df["sc"] == sc].sort_values(by="lossModelSelection"))
     i = 0
@@ -574,10 +601,11 @@ custom_lines = [Line2D([0], [0], color=green, lw=line_width_best, ls='solid'),
                 Line2D([0], [0], color=green, lw=line_width_other, ls='dashed'),
                 Line2D([0], [0], color='black', lw=1)]
 if observed_scenario:
-    legend_text = ['model, best (all colours)', 'model, 2nd-4th best (all colours)', 'conceptual']
+    legend_text = ['model, best (all colours)', 'model, 2nd-4th best (all colours)', 'expert']
 else:
     legend_text = ['model, best (all colours)', 'model, 2nd-4th best (all colours)', 'synthetic']
-axs[7,0].legend(custom_lines, legend_text, loc = 'upper center', bbox_to_anchor = (1.5, -0.5), ncol = 3)
+#axs[7,0].legend(custom_lines, legend_text, loc = 'upper center', bbox_to_anchor = (1.5, -0.5), ncol = 3)
+axs[response_nr_rows - 1,0].legend(custom_lines, legend_text, loc = 'upper center', bbox_to_anchor = (1.5, -0.5), ncol = 3)
 
 if observed_scenario:
     axs[0, 0].set_ylim(0, 0.0205)
@@ -598,20 +626,30 @@ else:
     #axs[0, 2].set_xlim(0.0, 0.15)
     axs[0, 2].set_xlim(0, 0.18)
 
-axs[7, 0].set_xticks([-10, -5, 0, 5, 10])
-axs[7, 0].set_xticklabels([-10, -5, 0, 5, 10], size=font_size_axes)
+#axs[7, 0].set_xticks([-10, -5, 0, 5, 10])
+axs[response_nr_rows - 1, 0].set_xticks([-10, -5, 0, 5, 10])
+#axs[7, 0].set_xticklabels([-10, -5, 0, 5, 10], size=font_size_axes)
+axs[response_nr_rows - 1, 0].set_xticklabels([-10, -5, 0, 5, 10], size=font_size_axes)
 
 labels = [-2, 0, 2, 4, 6]
-axs[7, 1].set_xticks(labels)
-axs[7, 1].set_xticklabels(labels, size=font_size_axes)
+axs[response_nr_rows - 1, 1].set_xticks(labels)
+axs[response_nr_rows - 1, 1].set_xticklabels(labels, size=font_size_axes)
 
-axs[7, 0].set_xlabel("temperature ($\degree$C)", fontsize=font_size_axes)
-axs[7,0].xaxis.set_tick_params(labelsize=font_size_axes)
-axs[7,1].xaxis.set_tick_params(labelsize=font_size_axes)
-axs[7,2].xaxis.set_tick_params(labelsize=font_size_axes)
-axs[7, 1].set_xlabel("temperature ($\degree$C)", fontsize=font_size_axes)
-axs[7, 2].set_xlabel("subsurface storage (m)", fontsize=font_size_axes)
-for i in range(0, 8):
+#axs[7, 0].set_xlabel("temperature ($\degree$C)", fontsize=font_size_axes)
+#axs[7,0].xaxis.set_tick_params(labelsize=font_size_axes)
+#axs[7,1].xaxis.set_tick_params(labelsize=font_size_axes)
+#axs[7,2].xaxis.set_tick_params(labelsize=font_size_axes)
+#axs[7, 1].set_xlabel("temperature ($\degree$C)", fontsize=font_size_axes)
+#axs[7, 2].set_xlabel("subsurface storage (m)", fontsize=font_size_axes)
+
+axs[response_nr_rows - 1, 0].set_xlabel("temperature ($\degree$C)", fontsize=font_size_axes)
+axs[response_nr_rows - 1,0].xaxis.set_tick_params(labelsize=font_size_axes)
+axs[response_nr_rows - 1,1].xaxis.set_tick_params(labelsize=font_size_axes)
+axs[response_nr_rows - 1,2].xaxis.set_tick_params(labelsize=font_size_axes)
+axs[response_nr_rows - 1, 1].set_xlabel("temperature ($\degree$C)", fontsize=font_size_axes)
+axs[response_nr_rows - 1, 2].set_xlabel("subsurface storage (m)", fontsize=font_size_axes)
+
+for i in range(0, response_nr_rows):
     axs[i, 0].set_ylabel("flux (m/day)", fontsize=font_size_axes)
 axs[0, 0].set_title("evapotranspiration\nincluding sublimation", fontsize=font_size_axes)
 axs[0, 1].set_title("snow melt", fontsize=font_size_axes)
@@ -1101,11 +1139,11 @@ def actual_melt_vs_temperature(start, end):
     # actual snow melt from synthetic observational data set
     actual_snow_melt = (a["val_art_ts_sno_f"][start:end])[snow]
     temperature = (a["valid_ts_temperature"][start:end])[snow]
-    axs[0].plot(temperature,actual_snow_melt, '.')
-    #hb = axs[0].hexbin(
-    #        temperature, actual_snow_melt, gridsize=15, cmap="Greens", bins="log", linewidths=0.0
-    #    )
-    axs[0].set_xlim(-2,6)
+    #axs[0].plot(temperature,actual_snow_melt, '.')
+    hb = axs[0].hexbin(
+            temperature, actual_snow_melt, gridsize=50, cmap="Greens", bins="log", linewidths=0.0
+        )
+    axs[0].set_xlim(-2,15)
     fig.savefig(figure_directory + "act_melt_vs_temp.pdf")
 
 if create_act_melt_vs_temp:
@@ -1367,7 +1405,7 @@ def nsePlot(black, variable):
         i = 0
         for scen in scenariosToPlotExp:
             if (fit == 0) & (i == 0):
-                label = "conceptual model"
+                label = "expert model"
             else:
                 label = ""
             if variable == 'sub_f':
