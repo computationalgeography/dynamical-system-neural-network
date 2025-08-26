@@ -33,10 +33,10 @@ if run == "obs_two":
 
 
 create_scatter = False
-create_timeseries = False
+create_timeseries = True
 create_r2_by_variable = False
 create_r2_by_scenario = False
-create_nse = True
+create_nse = False
 print_stats = False
 create_histogram = False
 create_act_melt_vs_temp = False
@@ -825,7 +825,8 @@ def timeseries_plot_by_scenario(modelled_tss_es, observed_tss_es, scenario, star
                     #color=green
                     color='black'
                 )
-            if not(observed_scenario) and (observed_tss == 'val_cosero_sub_s'):
+            #if not(observed_scenario) and (observed_tss == 'val_cosero_sub_s'):
+            if observed_scenario and (observed_tss == 'val_cosero_sub_s'):
                 axs[rij].plot(
                     a["valid_date"][start:end],
                     a["val_cosero_sub_s_soil"][start:end],
@@ -869,7 +870,7 @@ def timeseries_plot_by_scenario(modelled_tss_es, observed_tss_es, scenario, star
                 if rij == 2:
                     axs[rij].set_ylim(0,0.022)
                 if rij == 3:
-                    axs[rij].set_ylim(0,0.9)
+                    axs[rij].set_ylim(0,0.8)
                 if rij == 4:
                     axs[rij].set_ylim(0,0.025)
                 if rij == 5:
