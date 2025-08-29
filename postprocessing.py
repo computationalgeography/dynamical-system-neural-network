@@ -385,7 +385,8 @@ df["val_cosero_sub_s_additional"] = df["val_cosero_bw0"] + df["val_cosero_bw1"] 
 min_val_cosero_sub_s_additional = df["val_cosero_sub_s_additional"].apply(lambda x: x.min())
 df["val_cosero_sub_s_additional"] = df["val_cosero_sub_s_additional"] - min_val_cosero_sub_s_additional
 
-df["val_cosero_sno_f_additional"] = df["val_cosero_smelt"] + df["val_cosero_glacmelt"]
+#df["val_cosero_sno_f_additional"] = df["val_cosero_smelt"] + df["val_cosero_glacmelt"]
+df["val_cosero_sno_f_additional"] = df["val_cosero_smelt"]
 
 
 
@@ -1257,7 +1258,7 @@ def r2_by_variable(scenarios, tss_variables, start, end):
         i = i + 1
     if observed_scenario:
         axs[0].set_ylim(-0.8,-0.25) # eva_f
-        axs[1].set_ylim(0.37,0.52) # sno_f 
+        axs[1].set_ylim(0.1,0.6) # sno_f 
         axs[2].set_ylim(0.6,1.03)   # sno_s
         axs[3].set_ylim(0.78,0.83)  # sub_f
         axs[4].set_ylim(-1.6,0.8)  # sub_s
