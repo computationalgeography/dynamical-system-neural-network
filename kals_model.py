@@ -335,6 +335,7 @@ def createMeteoData(input_data_directory, output_directory, startDate, endDate):
     temperatureFile.close()
     return temperature_time_series, precipitation_time_series, land_sno_time_series, land_eva_time_series
 
+# read model outputs from cosero runs in Lama
 def create_cosero_data(input_data_directory, output_directory, startDate, endDate):
     date = datetime.date(1981, 1, 1)
 
@@ -372,6 +373,79 @@ def create_cosero_data(input_data_directory, output_directory, startDate, endDat
     numpy.save(output_directory + "cosero_sub_s_gw.npy", cosero_sub_s_gw_time_series)
     numpy.save(output_directory + "cosero_eva_f.npy", cosero_eva_f_time_series)
     return cosero_sub_s_soil_time_series, cosero_sub_s_gw_time_series, cosero_eva_f_time_series
+
+# read model outputs from cosero runs in LamaH, additional attributes
+# bw 0 item 8
+# bw 1 item 9
+# bw 2 item 10
+# bw 3 item 11
+# bw 4 item 12
+# melt item 21
+# smelt item 36
+# glacmelt item 40
+def create_cosero_data_additional(input_data_directory, output_directory, startDate, endDate):
+    date = datetime.date(1981, 1, 1)
+
+    timestep = datetime.timedelta(days=1)
+
+    cosero_bw0_time_series = []
+    cosero_bw1_time_series = []
+    cosero_bw2_time_series = []
+    cosero_bw3_time_series = []
+    cosero_bw4_time_series = []
+    cosero_melt_time_series = []
+    cosero_smelt_time_series = []
+    cosero_glacmelt_time_series = []
+
+    coseroDataCSV = "monitor_sb0276.txt"
+
+    with open(input_data_directory + coseroDataCSV) as csv_file:
+        csv_reader = csv.reader(csv_file, dialect="excel", delimiter=" ", skipinitialspace=True)
+        line_count = 0
+        line_out_count = 1
+        for row in csv_reader:
+            if line_count == 0:
+            #if (line_count == 0) | (line_count == 1):
+            #    print(len(row))
+            #    print(f'Column names are {", ".join(row)}')
+            #    print(row[8])
+            #    print(row[9])
+            #    print(row[10])
+            #    print(row[11])
+            #    print(row[12])
+            #    print(row[21])
+            #    print(row[36])
+            #    print(row[40])
+                line_count += 1
+            else:
+                bw0 = float(row[8])/1000.0
+                bw1 = float(row[9])/1000.0
+                bw2 = float(row[10])/1000.0
+                bw3 = float(row[11])/1000.0
+                bw4 = float(row[12])/1000.0
+                melt = float(row[21])/1000.0
+                smelt = float(row[36])/1000.0
+                glacmelt = float(row[40])/1000.0
+                if (date >= startDate) and (date <= endDate):
+                    cosero_bw0_time_series.append(bw0)
+                    cosero_bw1_time_series.append(bw1)
+                    cosero_bw2_time_series.append(bw2)
+                    cosero_bw3_time_series.append(bw3)
+                    cosero_bw4_time_series.append(bw4)
+                    cosero_melt_time_series.append(melt)
+                    cosero_smelt_time_series.append(smelt)
+                    cosero_glacmelt_time_series.append(glacmelt)
+                    line_out_count += 1
+                line_count += 1
+                date = date + timestep
+    numpy.save(output_directory + "cosero_bw0.npy", cosero_bw0_time_series)
+    numpy.save(output_directory + "cosero_bw1.npy", cosero_bw1_time_series)
+    numpy.save(output_directory + "cosero_bw2.npy", cosero_bw2_time_series)
+    numpy.save(output_directory + "cosero_bw3.npy", cosero_bw3_time_series)
+    numpy.save(output_directory + "cosero_bw4.npy", cosero_bw4_time_series)
+    numpy.save(output_directory + "cosero_melt.npy", cosero_melt_time_series)
+    numpy.save(output_directory + "cosero_smelt.npy", cosero_smelt_time_series)
+    numpy.save(output_directory + "cosero_glacmelt.npy", cosero_glacmelt_time_series)
 
 
 def create_streamflow_data(input_data_directory, output_directory, start, end):
@@ -1666,6 +1740,8 @@ streamflow_time_series_val, date_time_series_val = create_streamflow_data(
 cosero_sub_s_soil_time_series_val, cosero_sub_s_gw_time_series_val, cosero_eva_f_time_series_val = create_cosero_data(
     input_data_directory, output_directory, startVal, endVal
 )
+create_cosero_data_additional(input_data_directory, output_directory, startVal, endVal)
+
 # note that no error is added to artificial streamflow in any case as it is used for validation only
 sno_s_tsVal, sub_s_tsVal, sno_f_tsVal, sub_f_tsVal, eva_f_tsVal, \
     sno_s_ts_areasVal, sub_s_ts_areasVal, sno_f_ts_areasVal, sub_f_ts_areasVal, eva_f_ts_areasVal = (
