@@ -404,20 +404,21 @@ def create_cosero_data_additional(input_data_directory, output_directory, startD
         line_count = 0
         line_out_count = 1
         for row in csv_reader:
-            if line_count == 0:
-            #if (line_count == 0) | (line_count == 1):
-            #    print(len(row))
-            #    print(f'Column names are {", ".join(row)}')
-            #    print(row[8])
-            #    print(row[9])
-            #    print(row[10])
-            #    print(row[11])
-            #    print(row[12])
-            #    print(row[21])
-            #    print(row[36])
-            #    print(row[40])
+            #if line_count == 0:
+            if (line_count == 0) | (line_count == 1):
+                print(len(row))
+                print(f'Column names are {", ".join(row)}')
+                print(row[8])
+                print(row[9])
+                print(row[10])
+                print(row[11])
+                print(row[12])
+                print(row[21])
+                print(row[36])
+                print(row[40])
                 line_count += 1
             else:
+                exit()
                 bw0 = float(row[8])/1000.0
                 bw1 = float(row[9])/1000.0
                 bw2 = float(row[10])/1000.0

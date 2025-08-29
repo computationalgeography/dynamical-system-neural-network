@@ -34,7 +34,7 @@ if run == "obs_two":
 
 create_scatter = False
 create_timeseries = True
-create_r2_by_variable = False
+create_r2_by_variable = True
 create_r2_by_scenario = False
 create_nse = False
 print_stats = False
@@ -281,25 +281,46 @@ for array in arrays:
         arrayContents.append(arrayContent)
     df[array] = arrayContents
 
+## add additional_validation_data
+## cosero model, sub_s groundwater
+#arrayContents = []
+#for sc, ts, rs in product(scenarios, training_scenarios, rerun_scenarios):
+#    arrayContent = numpy.load(data_dir + "additional_validation_data/" + "val_cosero_sub_s_gw.npy" , allow_pickle=True)
+#    arrayContents.append(arrayContent)
+#df["val_cosero_sub_s_gw"] = arrayContents
+## cosero model, sub_s soil
+#arrayContents = []
+#for sc, ts, rs in product(scenarios, training_scenarios, rerun_scenarios):
+#    arrayContent = numpy.load(data_dir + "additional_validation_data/" + "val_cosero_sub_s_soil.npy" , allow_pickle=True)
+#    arrayContents.append(arrayContent)
+#df["val_cosero_sub_s_soil"] = arrayContents
+## cosero model, eva_f soil
+#arrayContents = []
+#for sc, ts, rs in product(scenarios, training_scenarios, rerun_scenarios):
+#    arrayContent = numpy.load(data_dir + "additional_validation_data/" + "val_cosero_eva_f.npy" , allow_pickle=True)
+#    arrayContents.append(arrayContent)
+#df["val_cosero_eva_f"] = arrayContents
+
 # add additional_validation_data
 # cosero model, sub_s groundwater
-arrayContents = []
-for sc, ts, rs in product(scenarios, training_scenarios, rerun_scenarios):
-    arrayContent = numpy.load(data_dir + "additional_validation_data/" + "val_cosero_sub_s_gw.npy" , allow_pickle=True)
-    arrayContents.append(arrayContent)
-df["val_cosero_sub_s_gw"] = arrayContents
-# cosero model, sub_s soil
-arrayContents = []
-for sc, ts, rs in product(scenarios, training_scenarios, rerun_scenarios):
-    arrayContent = numpy.load(data_dir + "additional_validation_data/" + "val_cosero_sub_s_soil.npy" , allow_pickle=True)
-    arrayContents.append(arrayContent)
-df["val_cosero_sub_s_soil"] = arrayContents
-# cosero model, eva_f soil
-arrayContents = []
-for sc, ts, rs in product(scenarios, training_scenarios, rerun_scenarios):
-    arrayContent = numpy.load(data_dir + "additional_validation_data/" + "val_cosero_eva_f.npy" , allow_pickle=True)
-    arrayContents.append(arrayContent)
-df["val_cosero_eva_f"] = arrayContents
+coseroVariables = ["val_cosero_bw0", \
+                   "val_cosero_bw1", \
+                   "val_cosero_bw2", \
+                   "val_cosero_bw3", \
+                   "val_cosero_bw4", \
+                   "val_cosero_eva_f", \
+                   "val_cosero_glacmelt", \
+                   "val_cosero_melt", \
+                   "val_cosero_smelt", \
+                   "val_cosero_sub_s_gw", \
+                   "val_cosero_sub_s_soil"]
+
+for coseroVariable in coseroVariables:
+    arrayContents = []
+    for sc, ts, rs in product(scenarios, training_scenarios, rerun_scenarios):
+        arrayContent = numpy.load(data_dir + "additional_validation_data/" + coseroVariable + ".npy", allow_pickle=True)
+        arrayContents.append(arrayContent)
+    df[coseroVariable] = arrayContents
 
 
 # loss values
@@ -358,6 +379,14 @@ df["val_cosero_sub_s_gw"] = df["val_cosero_sub_s_gw"] - min_val_cosero_sub_s_gw
 
 df["val_cosero_sub_s"] = df["val_cosero_sub_s_gw"] + df["val_cosero_sub_s_soil"]
 #df["val_cosero_sub_s"] = df["val_cosero_sub_s_soil"]
+
+# sum cosero sub_s for all storages, additional cosero data
+df["val_cosero_sub_s_additional"] = df["val_cosero_bw0"] + df["val_cosero_bw1"] + df["val_cosero_bw2"] + df["val_cosero_bw3"]
+min_val_cosero_sub_s_additional = df["val_cosero_sub_s_additional"].apply(lambda x: x.min())
+df["val_cosero_sub_s_additional"] = df["val_cosero_sub_s_additional"] - min_val_cosero_sub_s_additional
+
+df["val_cosero_sno_f_additional"] = df["val_cosero_smelt"] + df["val_cosero_glacmelt"]
+
 
 
 # for calculation of nash sutcliffe
@@ -679,10 +708,10 @@ if observed_scenario:
     observed_tss_list = [
         #"val_lan_ts_eva_f",
         "val_cosero_eva_f",
-        "val_art_ts_sno_f",
+        "val_cosero_sno_f_additional",
         "val_lan_ts_sno_s",
         "valid_ts_OBS",
-        "val_cosero_sub_s"
+        "val_cosero_sub_s_additional"
     ]
 else:
     observed_tss_list = [
@@ -826,22 +855,37 @@ def timeseries_plot_by_scenario(modelled_tss_es, observed_tss_es, scenario, star
                     color='black'
                 )
             #if not(observed_scenario) and (observed_tss == 'val_cosero_sub_s'):
-            if observed_scenario and (observed_tss == 'val_cosero_sub_s'):
+            if observed_scenario and (observed_tss == 'val_cosero_sub_s_additional'):
                 axs[rij].plot(
                     a["valid_date"][start:end],
-                    a["val_cosero_sub_s_soil"][start:end],
+                    a["val_cosero_sub_s_additional"][start:end],
                     linewidth = 0.5,
                     #color=green
                     color='black'
                 )
+            if observed_scenario and (observed_tss == 'val_cosero_sno_f_additional'):
                 axs[rij].plot(
                     a["valid_date"][start:end],
-                    a["val_cosero_sub_s_gw"][start:end],
+                    a["val_cosero_sno_f_additional"][start:end],
                     linewidth = 0.5,
                     #color=green
-                    color='black',
-                    linestyle = (0, (1,5))
+                    color='black'
                 )
+#                axs[rij].plot(
+#                    a["valid_date"][start:end],
+#                    a["val_cosero_sub_s_soil"][start:end],
+#                    linewidth = 0.5,
+#                    #color=green
+#                    color='black'
+#                )
+#                axs[rij].plot(
+#                    a["valid_date"][start:end],
+#                    a["val_cosero_sub_s_gw"][start:end],
+#                    linewidth = 0.5,
+#                    #color=green
+#                    color='black',
+#                    linestyle = (0, (1,5))
+#                )
             # Plot modelled timeseries.
             if i == 0:
                 line_width_best = 1.5
@@ -1181,10 +1225,10 @@ def r2_by_variable(scenarios, tss_variables, start, end):
             a = (df[df["sc"] == sc].sort_values(by="lossModelSelection")).iloc[0]
             x = a[observed_tss][start:end]
             y = a[modelled_tss][start:end]
-            if (modelled_tss == 'valid_ts_sub_s') and (observed_scenario):
-                r_sq_for = rSquared(x, y)
-            else:
-                r_sq_for = ns(x, y)
+            #if (modelled_tss == 'valid_ts_sub_s') and (observed_scenario):
+            #    r_sq_for = rSquared(x, y)
+            #else:
+            r_sq_for = ns(x, y)
             xVal.append(names[rij])
             yVal.append(r_sq_for)
             rij += 1
@@ -1213,11 +1257,10 @@ def r2_by_variable(scenarios, tss_variables, start, end):
         i = i + 1
     if observed_scenario:
         axs[0].set_ylim(-0.8,-0.25) # eva_f
-        axs[1].set_ylim(-0.35,-0.3) # neglected 
+        axs[1].set_ylim(0.37,0.52) # sno_f 
         axs[2].set_ylim(0.6,1.03)   # sno_s
         axs[3].set_ylim(0.78,0.83)  # sub_f
-        axs[4].set_ylim(0.30,0.44)  # sub_s
-        #axs[4].set_ylim(0.0,1.0)  # sub_s
+        axs[4].set_ylim(-1.6,0.8)  # sub_s
     else:
         #axs[0].set_ylim(0.94,1.01)
         #axs[1].set_ylim(0.87,1.02)
@@ -1231,12 +1274,12 @@ def r2_by_variable(scenarios, tss_variables, start, end):
         axs[4].set_ylim(0.974,1.0002)
     plt.tight_layout()
     axs[5].remove()
-    if observed_scenario:
-        # do not plot snow melt
-        pos1 = axs[1].get_position()
-        axs[1].set_position(axs[2].get_position())
-        axs[2].set_position(pos1)
-        axs[1].remove()
+    #if observed_scenario:
+    #    # do not plot snow melt
+    #    pos1 = axs[1].get_position()
+    #    axs[1].set_position(axs[2].get_position())
+    #    axs[2].set_position(pos1)
+    #    axs[1].remove()
     fig.savefig(figure_directory + "r2_by_variable.pdf", transparent = True)
     plt.close(fig)
 
