@@ -32,11 +32,11 @@ if run == "obs_two":
 
 
 
-create_scatter = True
+create_scatter = False
 create_timeseries = True
-create_r2_by_variable = True
+create_r2_by_variable = False
 create_r2_by_scenario = False
-create_nse = True
+create_nse = False
 print_stats = False
 create_histogram = False
 create_act_melt_vs_temp = True
@@ -842,6 +842,8 @@ def timeseries_plot_by_scenario(modelled_tss_es, observed_tss_es, scenario, star
     tssNumber = 0
     if best_fit_only:
         number_of_fits_to_plot = 1
+    else:
+        number_of_fits_to_plot = 4
     for tss in modelled_tss_es:
         for i in range(0,number_of_fits_to_plot):
             a = (df[df["sc"] == scenario].sort_values(by="lossModelSelection")).iloc[i]
@@ -891,7 +893,8 @@ def timeseries_plot_by_scenario(modelled_tss_es, observed_tss_es, scenario, star
 #                )
             # Plot modelled timeseries.
             if i == 0:
-                line_width_best = 1.5
+                #line_width_best = 1.5
+                line_width_best = 1.0
                 line_width = line_width_best 
                 line_style = 'solid'
                 z_order = 10
@@ -900,6 +903,13 @@ def timeseries_plot_by_scenario(modelled_tss_es, observed_tss_es, scenario, star
                 line_width = line_width_other 
                 line_style = 'dashed'
                 z_order = -10
+            if best_fit_only:
+                if one_area:
+                    theColor = green
+                else:
+                    theColor = blue
+            else:
+                theColor = a["color"]
             axs[rij].plot(
                 a["valid_date"][start:end],
                 a[tss][start:end],
@@ -907,7 +917,8 @@ def timeseries_plot_by_scenario(modelled_tss_es, observed_tss_es, scenario, star
                 linewidth = line_width,
                 linestyle = line_style,
                 #color="black"
-                color = a["color"],
+                #color = a["color"],
+                color = theColor,
                 zorder = z_order
             )
             axs[rij].text(.02, .93, labels_variables[rij-1], ha='left', va='top', \
@@ -938,29 +949,34 @@ def timeseries_plot_by_scenario(modelled_tss_es, observed_tss_es, scenario, star
     axTemp.set_ylabel("temperature ($\degree$C)", size=font_size_axes, color = red)
     axs[rows_in_figure - 1].xaxis.set_tick_params(labelsize=font_size_axes, ) # labelrotation = 30)
     if best_fit_only:
-        print('.')
+        custom_lines = [Line2D([0], [0], color=green, lw=line_width_best, ls='solid'),
+                        Line2D([0], [0], color=blue, lw=line_width_best, ls='solid'),
+                        Line2D([0], [0], color='black', lw=1)]
     else:
         custom_lines = [Line2D([0], [0], color=green, lw=line_width_best, ls='solid'),
                         Line2D([0], [0], color=green, lw=line_width_other, ls='dashed'),
                         Line2D([0], [0], color='black', lw=1)]
     if observed_scenario:
-        legend_text = ['model, best (all colours)', 'model, 2nd-4th best (all colours)', 'observed']
+        if best_fit_only:
+            legend_text = ['lumped model', 'distributed model', 'observed/reference']
+        else:
+            legend_text = ['model, best (all colours)', 'model, 2nd-4th best (all colours)', 'observed/reference']
     else:
-        legend_text = ['model, best (all colours)', 'model, 2nd-4th best (all colours)', 'synthetic']
-    if best_fit_only:
-        print('.')
-    else:
-        axs[rows_in_figure - 1].legend(custom_lines, legend_text, loc = 'upper center', \
+        if best_fit_only:
+            legend_text = ['lumped model', 'distributed model', 'observed']
+        else:
+            legend_text = ['model, best (all colours)', 'model, 2nd-4th best (all colours)', 'synthetic']
+    axs[rows_in_figure - 1].legend(custom_lines, legend_text, loc = 'upper center', \
                                        bbox_to_anchor = (0.5, -0.25), ncol = 3)
     plt.subplots_adjust(wspace=0, hspace=0)
     if best_fit_only:
-        fig.savefig(figure_directory + "tss_modartcomp_best_fit_only_" + scenario + ".pdf")
+        fig.savefig(figure_directory + "tss_modartcomp_best_fit_only_" + scenario + ".pdf", transparent = True)
     else:
         fig.savefig(figure_directory + "tss_modartcomp_" + scenario + ".pdf")
     plt.close(fig)
 
 
-startTimeTss = 4 * 365
+startTimeTss = 5 * 365
 #endTimeTss = 4 * 365
 #endTimeTss = 6 * 365
 endTimeTss = 10 * 365
@@ -979,7 +995,7 @@ if create_timeseries:
     i = 0
     for scenario in scenarios_to_plot:
         timeseries_plot_by_scenario(modelled_tss_list, observed_tss_list, scenario, startTimeTss, endTimeTss, True)
-        #timeseries_plot_by_scenario(modelled_tss_list, observed_tss_list, scenario, startTimeTss, endTimeTss, False)
+        timeseries_plot_by_scenario(modelled_tss_list, observed_tss_list, scenario, startTimeTss, endTimeTss, False)
         i = i + 1
 
 
