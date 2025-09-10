@@ -355,13 +355,14 @@ def create_cosero_data(input_data_directory, output_directory, startDate, endDat
             if line_count == 0:
                 #print(f'Column names are {", ".join(row)}')
                 #print(row[11])
-                #print(row[13])
+                #print(row[9])
                 #exit()
                 line_count += 1
             else:
                 sub_s_soil = float(row[11])/1000.0
                 sub_s_gw = float(row[13])/1000.0
-                eva_f = float(row[8])/1000.0
+                #eva_f = float(row[8])/1000.0
+                eva_f = float(row[9])/1000.0
                 if (date >= startDate) and (date <= endDate):
                     cosero_sub_s_soil_time_series.append(sub_s_soil)
                     cosero_sub_s_gw_time_series.append(sub_s_gw)
@@ -404,21 +405,21 @@ def create_cosero_data_additional(input_data_directory, output_directory, startD
         line_count = 0
         line_out_count = 1
         for row in csv_reader:
-            #if line_count == 0:
-            if (line_count == 0) | (line_count == 1):
-                print(len(row))
-                print(f'Column names are {", ".join(row)}')
-                print(row[8])
-                print(row[9])
-                print(row[10])
-                print(row[11])
-                print(row[12])
-                print(row[21])
-                print(row[36])
-                print(row[40])
+            if line_count == 0:
+            #if (line_count == 0) | (line_count == 1):
+                #print(len(row))
+                #print(f'Column names are {", ".join(row)}')
+                #print(row[8])
+                #print(row[9])
+                #print(row[10])
+                #print(row[11])
+                #print(row[12])
+                #print(row[21])
+                #print(row[36])
+                #print(row[40])
                 line_count += 1
             else:
-                exit()
+                #exit()
                 bw0 = float(row[8])/1000.0
                 bw1 = float(row[9])/1000.0
                 bw2 = float(row[10])/1000.0

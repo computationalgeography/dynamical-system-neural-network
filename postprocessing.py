@@ -32,14 +32,16 @@ if run == "obs_two":
 
 
 
-create_scatter = False
+create_scatter = True
 create_timeseries = True
-create_r2_by_variable = False
+create_r2_by_variable = True
 create_r2_by_scenario = False
 create_nse = False
 print_stats = False
+print_budgets = False
 create_histogram = False
 create_act_melt_vs_temp = True
+
 
 #figure_directory = "../figures/"
 
@@ -437,6 +439,19 @@ else:
     xxx = 0
 if observed_scenario:
     df["NSEValSubS"] = 1.0 - (df["mss_sub_s"] / valid_ss_sub_s_mean)
+
+if print_budgets:
+    ## budgets, kals model
+    mean_valid_ts_eva_f = df["valid_ts_eva_f"][0][366:].mean()
+    print('mean modelled evapotranspiration', mean_valid_ts_eva_f)
+    mean_valid_ts_sub_f = df["valid_ts_sub_f"][0][366:].mean()
+    print('mean modelled streamflow', mean_valid_ts_sub_f)
+    mean_valid_ts_precipitation = df["valid_ts_precipitation"][0][366:].mean()/1000.0
+    print('mean observed rainfall', mean_valid_ts_precipitation)
+    print('total out', mean_valid_ts_eva_f + mean_valid_ts_sub_f)
+    ## budgets, cosero
+    mean_val_cosero_eva_f = df["val_cosero_eva_f"][0][366:].mean()
+    print('mean cosero evapotranspiration', mean_val_cosero_eva_f)
 
 
 
@@ -848,34 +863,35 @@ def timeseries_plot_by_scenario(modelled_tss_es, observed_tss_es, scenario, star
         for i in range(0,number_of_fits_to_plot):
             a = (df[df["sc"] == scenario].sort_values(by="lossModelSelection")).iloc[i]
             # Plot observed timeseries either from artificial data or from observations.
-            observed_tss = observed_tss_es[tssNumber]
-            if not(observed_scenario) or (observed_tss == 'valid_ts_OBS') \
-                                         or (observed_tss == 'val_lan_ts_sno_s') \
-                                         or (observed_tss == 'val_cosero_eva_f'): 
-                axs[rij].plot(
-                    a["valid_date"][start:end],
-                    a[observed_tss][start:end],
-                    linewidth = 0.5,
-                    #color=green
-                    color='black'
-                )
-            #if not(observed_scenario) and (observed_tss == 'val_cosero_sub_s'):
-            if observed_scenario and (observed_tss == 'val_cosero_sub_s_additional'):
-                axs[rij].plot(
-                    a["valid_date"][start:end],
-                    a["val_cosero_sub_s_additional"][start:end],
-                    linewidth = 0.5,
-                    #color=green
-                    color='black'
-                )
-            if observed_scenario and (observed_tss == 'val_cosero_sno_f_additional'):
-                axs[rij].plot(
-                    a["valid_date"][start:end],
-                    a["val_cosero_sno_f_additional"][start:end],
-                    linewidth = 0.5,
-                    #color=green
-                    color='black'
-                )
+            if one_area or (number_of_fits_to_plot > 1):
+                observed_tss = observed_tss_es[tssNumber]
+                if not(observed_scenario) or (observed_tss == 'valid_ts_OBS') \
+                                             or (observed_tss == 'val_lan_ts_sno_s') \
+                                             or (observed_tss == 'val_cosero_eva_f'): 
+                    axs[rij].plot(
+                        a["valid_date"][start:end],
+                        a[observed_tss][start:end],
+                        linewidth = 0.5,
+                        #color=green
+                        color='black'
+                    )
+                #if not(observed_scenario) and (observed_tss == 'val_cosero_sub_s'):
+                if observed_scenario and (observed_tss == 'val_cosero_sub_s_additional'):
+                    axs[rij].plot(
+                        a["valid_date"][start:end],
+                        a["val_cosero_sub_s_additional"][start:end],
+                        linewidth = 0.5,
+                        #color=green
+                        color='black'
+                    )
+                if observed_scenario and (observed_tss == 'val_cosero_sno_f_additional'):
+                    axs[rij].plot(
+                        a["valid_date"][start:end],
+                        a["val_cosero_sno_f_additional"][start:end],
+                        linewidth = 0.5,
+                        #color=green
+                        color='black'
+                    )
 #                axs[rij].plot(
 #                    a["valid_date"][start:end],
 #                    a["val_cosero_sub_s_soil"][start:end],
@@ -894,7 +910,7 @@ def timeseries_plot_by_scenario(modelled_tss_es, observed_tss_es, scenario, star
             # Plot modelled timeseries.
             if i == 0:
                 #line_width_best = 1.5
-                line_width_best = 1.0
+                line_width_best = 0.5
                 line_width = line_width_best 
                 line_style = 'solid'
                 z_order = 10
@@ -925,14 +941,16 @@ def timeseries_plot_by_scenario(modelled_tss_es, observed_tss_es, scenario, star
                           transform=axs[rij].transAxes, size = font_size_axes,
                           zorder = 10, backgroundcolor = 'white')
             if observed_scenario:
+                if rij == 1:
+                    axs[rij].set_ylim(0,0.0043)
                 if rij == 2:
-                    axs[rij].set_ylim(0,0.022)
+                    axs[rij].set_ylim(0,0.024)
                 if rij == 3:
                     axs[rij].set_ylim(0,0.8)
                 if rij == 4:
                     axs[rij].set_ylim(0,0.025)
                 if rij == 5:
-                    axs[rij].set_ylim(0,0.45)
+                    axs[rij].set_ylim(0,0.46)
 
         axs[rij].yaxis.set_tick_params(labelsize=font_size_axes)
         axs[rij].locator_params(axis='y', nbins=3)
@@ -1112,9 +1130,9 @@ def scatter_plot_by_scenario(modelled_tss_es, observed_tss_es, scenario, name, s
         #rmse_for = rmseFormatted(x, y)
         ns_for = nsFormatted(x, y)
         axs[rij].text(
-            0.99, 0.01, '$r^2$ = ' + r_sq_for, ha="right", va="bottom", transform=axs[rij].transAxes, size = font_size_axes
+            #0.99, 0.01, '$r^2$ = ' + r_sq_for, ha="right", va="bottom", transform=axs[rij].transAxes, size = font_size_axes
             #0.99, 0.01, '$r^2$ = ' + rmse_for, ha="right", va="bottom", transform=axs[rij].transAxes, size = font_size_axes
-            #0.99, 0.01, 'NSE = ' + ns_for, ha="right", va="bottom", transform=axs[rij].transAxes, size = font_size_axes
+            0.99, 0.01, 'NSE = ' + ns_for, ha="right", va="bottom", transform=axs[rij].transAxes, size = font_size_axes
         )
         #if rij < len(scenarios) - 1:
         #    axs[rij].set(xticklabels=[])
@@ -1285,7 +1303,7 @@ def r2_by_variable(scenarios, tss_variables, start, end):
                       transform=axs[i].transAxes, size = font_size_axes)
         i = i + 1
     if observed_scenario:
-        axs[0].set_ylim(-0.8,-0.25) # eva_f
+        axs[0].set_ylim(-1.0,0.2) # eva_f
         axs[1].set_ylim(0.1,0.6) # sno_f 
         axs[2].set_ylim(0.6,1.03)   # sno_s
         axs[3].set_ylim(0.78,0.83)  # sub_f
