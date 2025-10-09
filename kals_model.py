@@ -129,6 +129,8 @@ else:
 # blob/main/how-to-use-l1-l2-and-elastic-net-regularization-with-pytorch.md
 l1_regularization = False
 
+# conversion from m3/s to m/day, catchment area 47.5 km3 (own calculation from DEM)
+# GRDC gives 47.0, Lama-H gives 47.242 km3 which are very similar
 conversion_fluxes = 549.3
 
 # line width in plots
