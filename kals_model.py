@@ -713,18 +713,6 @@ class Net(nn.Module):
 
         nr_timesteps = len(temperature)
 
-        # parameters and inputs for expert model
-
-        # temperatureOffsetExpert = -1.19 # calibrated see txt for info
-
-        # EPar = 0.85  # calibrated see txt for info
-        # offset should actually be (((2115+2797)/2)-1180)*0.005 = 6.38 degrees.. (i.e. lower and higher half,
-        # average, multipled by lapse rate
-        # difference between lower and higher is (2115-2797) * 0.005 = 3.41 degrees
-        # https://journals.ametsoc.org/view/journals/clim/16/7/1520-0442_2003_016_1032_sasvoa_2.0.co_2.xml
-
-        # proportion of evapotranspiration potentially assigned to sno storage
-        # evaPropToSnoExpert = 0.995
 
         if modeTem == "fitExpert":
             temperatureOffset = self.tem_parameter
@@ -736,6 +724,8 @@ class Net(nn.Module):
         if modeEvP == "obsCreation":
             evaPropToSno = torch.sigmoid(torch.tensor(self.evp_parameter_obs_creation))
 
+        # difference between lower and higher is (2115 m -2797 m) * 0.005 = 3.41 degrees
+        # https://journals.ametsoc.org/view/journals/clim/16/7/1520-0442_2003_016_1032_sasvoa_2.0.co_2.xml
         if one_area:
             areaTemperatureOffsets = [0.0]
         else:
