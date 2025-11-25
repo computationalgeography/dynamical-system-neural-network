@@ -32,15 +32,15 @@ if run == "obs_two":
 
 
 
-create_scatter = True
-create_timeseries = True
-create_r2_by_variable = True
+create_scatter = False
+create_timeseries = False
+create_r2_by_variable = False
 create_r2_by_scenario = False
 create_nse = False
-print_stats = False
+print_stats = True
 print_budgets = False
 create_histogram = False
-create_act_melt_vs_temp = True
+create_act_melt_vs_temp = False
 
 
 #figure_directory = "../figures/"
@@ -486,16 +486,38 @@ def set_share_axes(axs, target=None, sharex=False, sharey=False):
             ax.yaxis.set_tick_params(which='both', labelleft=False, labelright=False)
             ax.yaxis.offsetText.set_visible(False)
 
+def anova(a):
+    scenario = a.sc.iloc[0]
+    one = (a.NSEVal[a.ts == 1])
+    two = (a.NSEVal[a.ts == 2])
+    thr = (a.NSEVal[a.ts == 3])
+    fou = (a.NSEVal[a.ts == 4])
+    oneVar = (numpy.var(one))
+    twoVar = (numpy.var(two))
+    thrVar = (numpy.var(thr))
+    fouVar = (numpy.var(fou))
+    oneMea = (numpy.mean(one))
+    twoMea = (numpy.mean(two))
+    thrMea = (numpy.mean(thr))
+    fouMea = (numpy.mean(fou))
+    varBetGroups = numpy.var([oneMea,twoMea,thrMea,fouMea])
+    sdBetGroups = numpy.sqrt(varBetGroups)
+    varWithGroups = (oneVar + twoVar + thrVar + fouVar)/4.0
+    sdWithGroups = numpy.sqrt(varWithGroups)
+    totVar = numpy.var(a.NSEVal)
+    totSD = numpy.sqrt(totVar)
+    return scenario, varBetGroups, varWithGroups, totVar
+
 if print_stats:
     # overfitting
     df["minLossValidationValue"] = df["lossValidation"].apply(lambda x: x.min())
     df["lossRatioValidationValue"] = df["minLossValidationValue"]/df["lossValidationValue"]
-    print('overall mean overfit metric is ', df["lossRatioValidationValue"].mean())
-    print('and by scenario: ')
-    for scen in scenarios:
-        a = df[df["sc"] == scen]
-        print(scen, a["lossRatioValidationValue"].mean())
-    df["minNSEVal"] = 1.0 - (df["minLossValidationValue"] / valid_ss_q_mean)
+#    print('overall (including expert model) mean overfit metric is ', df["lossRatioValidationValue"].mean())
+#    print('and by scenario: ')
+#    for scen in scenarios:
+#        a = df[df["sc"] == scen]
+#        print(scen, a["lossRatioValidationValue"].mean())
+#    df["minNSEVal"] = 1.0 - (df["minLossValidationValue"] / valid_ss_q_mean)
 
     # performance metrics
     variables = [
@@ -514,8 +536,38 @@ if print_stats:
 
     ]
     # print(df[df['sc'] == 'fit_eva'].sort_values(by="lossModelSelection").loc[:,['sc','ts','rs','lossModelSelection', 'lossStoppingValue','lossValidationValue', 'NSEVal']])
-    for scen in scenarios:
-        print(df[df["sc"] == scen].sort_values(by="lossModelSelection").loc[:, variables])
+
+    #for scen in scenarios:
+    #    print(df[df["sc"] == scen].sort_values(by="lossModelSelection").loc[:, variables])
+
+    # calculate variance between folds and within folds for NSE
+    varBetweenGroupsList = []
+    varWithinGroupsList = []
+    totVarList = []
+    for scen in scenarios[:-1]:
+        a = (df[df["sc"] == scen].loc[:, ["sc", "ts", "rs", "NSEVal"]])
+        scenario, varBetweenGroups, varWithinGroups, totVar = anova(a)
+        varBetweenGroupsList.append(varBetweenGroups)
+        varWithinGroupsList.append(varWithinGroups)
+        totVarList.append(totVar)
+    meanVarBetweenGroups = (sum(varBetweenGroupsList)/len(varBetweenGroupsList))
+    meanVarWithinGroups = (sum(varWithinGroupsList)/len(varWithinGroupsList))
+    meanTotVar = (sum(totVarList)/len(totVarList))
+    mult = 100000.0
+    print(f"{meanVarBetweenGroups * mult:.1f}", f"{meanVarWithinGroups * mult:.1f}", f"{meanTotVar * mult:.1f}", f"{(meanVarBetweenGroups + meanVarWithinGroups) * mult:.1f}")
+    print(f"{numpy.sqrt(meanVarBetweenGroups):.3f}", f"{numpy.sqrt(meanVarWithinGroups):.3f}", f"{numpy.sqrt(meanTotVar):.3f}")
+
+    # calculate lowest NSE before stopping as percentage of NSE at stopping
+    mean = (df[df["sc"] != "fit_xhr"].lossRatioValidationValue).mean()
+    print("lowest NSE before stopping as percentage of NSE at stopping is ", mean)
+
+    # calculate average number of epochs
+    df["numberOfEpochs"] = df["epochs"].apply(lambda x: len(x))
+    df["stoppedEarly"] = df["numberOfEpochs"] < 5000
+    dfNoXhr = (df[df["sc"] != "fit_xhr"])
+    numberOfTimesStoppedEarly = dfNoXhr.stoppedEarly.sum()
+    proportionStoppedEarly = numberOfTimesStoppedEarly / df.shape[0]
+    print("proportionStoppedEarly is ", proportionStoppedEarly)
 
 
 ###################
