@@ -41,6 +41,7 @@ print_stats = True
 print_budgets = False
 create_histogram = False
 create_act_melt_vs_temp = False
+create_epochs = False
 
 
 #figure_directory = "../figures/"
@@ -1596,11 +1597,35 @@ if create_nse:
 
 
 
-### unused code
-    #if EGU:
-    #    # Save just the portion _inside_ the second axis's boundaries
-    #    extent = full_extent(axs[0]).transformed(fig.dpi_scale_trans.inverted())
-    #    # Alternatively,
-    #    #extent = axs[0].get_tightbbox(fig.canvas.renderer).transformed(fig.dpi_scale_trans.inverted())
-    #    fig.savefig(figure_directory + "sca_modartcomp_" + scenario + ".pdf", bbox_inches=extent)
+def epochs_plot():
+    fig = plt.figure(dpi=dpi_figures)
+    epochs_nr_rows = 7
+    gs = fig.add_gridspec(epochs_nr_rows, 1, hspace=0, wspace=0)
+    fig, axs = plt.subplots(epochs_nr_rows, 1)
+    fig.set_size_inches(8.27, 11.69)
+    rij = 0
+    epoch_scenarios_to_plot = scenarios_to_plot[:-1]
+    print(epoch_scenarios_to_plot)
+    a = df[df["ts"] == 2]
+    b = a[a["rs"] == 2]
+    for sc in epoch_scenarios_to_plot:
+        c = (b[b["sc"] == sc].sort_values(by="lossModelSelection"))
+        axs[rij].plot(c["epochs"].iloc[0], c["lossTraining"].iloc[0] * 10000, color=blue)
+        axs[rij].plot(c["epochs"].iloc[0], c["lossStopping"].iloc[0] * 10000, color=red)
+        axs[rij].plot(c["epochs"].iloc[0], c["lossValidation"].iloc[0] * 10000, color=green)
+        axs[rij].set_ylim(0.000003 * 10000, 0.00001 * 10000)
+        axs[rij].text(.02, .93, names[rij], ha='left', va='top', \
+                      transform=axs[rij].transAxes, size = 1.5*font_size_axes)
+        axs[rij].set_ylabel("loss (1e-5)", fontsize=font_size_axes)
+        rij = rij + 1
+    custom_lines = [Line2D([0], [0], color=blue),
+                   Line2D([0], [0], color=red),
+                   Line2D([0], [0], color=green)]
+    legend_text = ['training', 'validation', 'testing']
+    #axs[epochs_nr_rows-1].legend(custom_lines, legend_text, loc = 'upper center', bbox_to_anchor = (1.5, -0.5), ncol = 3)
+    axs[epochs_nr_rows-1].legend(custom_lines, legend_text)
+    fig.savefig(figure_directory + "epochs.pdf")
+    plt.close(fig)
 
+if create_epochs:
+    epochs_plot()
