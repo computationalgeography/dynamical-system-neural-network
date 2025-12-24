@@ -515,13 +515,13 @@ class Net(nn.Module):
                 eva_par = 0.014076318 
                 sub_par = 0.03213018
                 sno_par = 0.0029198169 
-                tem_par = 0.0
-                evp_par = 3.5  # note input to sigmoid (evp [0,1])
+                tem_par = 0.0  # assumed zero
+                evp_par = 3.5  # note input to sigmoid (evp [0,1]), 3.5 equals 0.97
             else:
                 eva_par = 0.072542064 
                 sub_par = 0.113195494 
                 sno_par = 0.0012788665 
-                tem_par = 0.0
+                tem_par = 0.0 # assumed zero
                 evp_par = 3.5
 
         self.eva_parameter_obs_creation = eva_par

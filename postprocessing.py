@@ -32,12 +32,12 @@ if run == "obs_two":
 
 
 
-create_scatter = False
-create_timeseries = False
-create_r2_by_variable = False
-create_r2_by_scenario = False
+create_scatter = True
+create_timeseries = True
+create_r2_by_variable = True
+create_r2_by_scenario = True
 create_nse = False
-print_stats = True
+print_stats = False
 print_budgets = False
 create_histogram = False
 create_act_melt_vs_temp = False
@@ -75,9 +75,9 @@ actual_snow_flux = True
 if EGU:
     font_size_axes = 9
 else:
-    font_size_axes = 8 
+    font_size_axes = 9 
 
-labels_variables = ['evapotranspiration',
+labels_variables = ['evapotranspiration including sublimation',
                     'snow melt',
                     'snow storage',
                     'outflow subsurface storage (streamflow)',
@@ -893,13 +893,13 @@ def timeseries_plot_by_scenario(modelled_tss_es, observed_tss_es, scenario, star
     axTemp = axs[0].twinx()
     axTemp.plot(
             firstSc["valid_date"][start:end],
-            firstSc["valid_ts_temperature"][start:end] - 0.93,
+            firstSc["valid_ts_temperature"][start:end],
             linewidth = 1.0,
             color = red 
             )
     axTemp.plot(
             firstSc["valid_date"][start:end],
-            (firstSc["valid_ts_temperature"][start:end] - 0.93)/100000,
+            (firstSc["valid_ts_temperature"][start:end])/100000,
             linestyle = 'dashed',
             linewidth = 0.5,
             color = red,
@@ -990,9 +990,10 @@ def timeseries_plot_by_scenario(modelled_tss_es, observed_tss_es, scenario, star
                 color = theColor,
                 zorder = z_order
             )
-            axs[rij].text(.02, .93, labels_variables[rij-1], ha='left', va='top', \
-                          transform=axs[rij].transAxes, size = font_size_axes,
+            legend = axs[rij].text(.02, .93, labels_variables[rij-1], ha='left', va='top', \
+                          transform=axs[rij].transAxes, size = font_size_axes * 1.1,
                           zorder = 10, backgroundcolor = 'white')
+            legend.set_bbox(dict(facecolor='white', alpha=0.0, edgecolor='white'))
             if observed_scenario:
                 if rij == 1:
                     axs[rij].set_ylim(0,0.0043)
@@ -1038,7 +1039,8 @@ def timeseries_plot_by_scenario(modelled_tss_es, observed_tss_es, scenario, star
         else:
             legend_text = ['model, best (all colours)', 'model, 2nd-4th best (all colours)', 'synthetic']
     axs[rows_in_figure - 1].legend(custom_lines, legend_text, loc = 'upper center', \
-                                       bbox_to_anchor = (0.5, -0.25), ncol = 3)
+                                       bbox_to_anchor = (0.5, -0.25), ncol = 3, \
+                                       fontsize = font_size_axes)
     plt.subplots_adjust(wspace=0, hspace=0)
     if best_fit_only:
         fig.savefig(figure_directory + "tss_modartcomp_best_fit_only_" + scenario + ".pdf", transparent = True)
