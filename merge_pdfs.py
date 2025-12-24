@@ -23,8 +23,6 @@ def merge_pdfs(file_name):
 
     writer.write(figure_directory + "merged/" + output_sub_directory + "/" + file_name)
 
-# r2
-
 merge_pdfs("r2_by_variable.pdf")
 merge_pdfs("tss_modartcomp_best_fit_only_fit_thr.pdf")
 

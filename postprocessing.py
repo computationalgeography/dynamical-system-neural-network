@@ -35,7 +35,7 @@ if run == "obs_two":
 create_scatter = True
 create_timeseries = True
 create_r2_by_variable = True
-create_r2_by_scenario = True
+create_r2_by_scenario = False
 create_nse = False
 print_stats = False
 print_budgets = False
@@ -668,7 +668,7 @@ for sc in response_scenarios_to_plot:
             if not ((n == "E") or (n == "ES") or (n == "EG") or (n == "ESG") or (n == "Exp")) & o:
                 axs[rij, 0].plot(
                     response_eva_x, response_eva_y,
-                    linewidth = 1,
+                    linewidth = 2,
                     linestyle = 'solid',
                     color='black',
                     zorder = -10,
@@ -677,7 +677,7 @@ for sc in response_scenarios_to_plot:
             if not ((n == "S") or (n == "ES") or (n == "SG") or (n == "ESG") or (n == "Exp")) & o:
                     axs[rij, 1].plot(
                     response_sno_x, response_sno_y,
-                    linewidth = 1,
+                    linewidth = 2,
                     linestyle = 'solid',
                     color='black',
                     zorder = -10
@@ -685,7 +685,7 @@ for sc in response_scenarios_to_plot:
             if not ((n == "G") or (n == "EG") or (n == "SG") or (n == "ESG") or (n == "Exp")) & o:
                 axs[rij, 2].plot(
                     response_sub_x, response_sub_y,
-                    linewidth = 1,
+                    linewidth = 2,
                     linestyle = 'solid',
                     color='black',
                     zorder = -10
