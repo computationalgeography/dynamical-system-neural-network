@@ -32,12 +32,12 @@ if run == "obs_two":
 
 
 
-create_scatter = True
-create_timeseries = True
-create_r2_by_variable = True
+create_scatter = False
+create_timeseries = False
+create_r2_by_variable = False
 create_r2_by_scenario = False
 create_nse = False
-print_stats = False
+print_stats = True
 print_budgets = False
 create_histogram = False
 create_act_melt_vs_temp = False
@@ -545,8 +545,16 @@ if print_stats:
     varBetweenGroupsList = []
     varWithinGroupsList = []
     totVarList = []
-    for scen in scenarios[:-1]:
-        a = (df[df["sc"] == scen].loc[:, ["sc", "ts", "rs", "NSEVal"]])
+    # evaluate over all scenarios
+    #for scen in scenarios[:-1]:
+    # evaluate over fit_thr only
+    for scen in [scenarios[-3]]:
+    #for scen in [scenarios[-7]]:
+        # print unsorted
+        #a = (df[df["sc"] == scen].loc[:, ["sc", "ts", "rs", "NSEVal"]])
+        # print sorted by model selection nse
+        a = (df[df["sc"] == scen].loc[:, ["sc", "ts", "rs", "NSEVal", "lossModelSelection"]]).sort_values(by="lossModelSelection")
+        print(a)
         scenario, varBetweenGroups, varWithinGroups, totVar = anova(a)
         varBetweenGroupsList.append(varBetweenGroups)
         varWithinGroupsList.append(varWithinGroups)
@@ -555,7 +563,9 @@ if print_stats:
     meanVarWithinGroups = (sum(varWithinGroupsList)/len(varWithinGroupsList))
     meanTotVar = (sum(totVarList)/len(totVarList))
     mult = 100000.0
-    print(f"{meanVarBetweenGroups * mult:.1f}", f"{meanVarWithinGroups * mult:.1f}", f"{meanTotVar * mult:.1f}", f"{(meanVarBetweenGroups + meanVarWithinGroups) * mult:.1f}")
+    print("var between, var within, total var, between + within")
+    print(f"{meanVarBetweenGroups * mult:.2f}", f"{meanVarWithinGroups * mult:.2f}", f"{meanTotVar * mult:.2f}", f"{(meanVarBetweenGroups + meanVarWithinGroups) * mult:.2f}")
+    print("std between, std within, tot std")
     print(f"{numpy.sqrt(meanVarBetweenGroups):.3f}", f"{numpy.sqrt(meanVarWithinGroups):.3f}", f"{numpy.sqrt(meanTotVar):.3f}")
 
     # calculate lowest NSE before stopping as percentage of NSE at stopping
@@ -911,7 +921,8 @@ def timeseries_plot_by_scenario(modelled_tss_es, observed_tss_es, scenario, star
     if best_fit_only:
         number_of_fits_to_plot = 1
     else:
-        number_of_fits_to_plot = 4
+        #number_of_fits_to_plot = 4
+        number_of_fits_to_plot = 16
     for tss in modelled_tss_es:
         for i in range(0,number_of_fits_to_plot):
             a = (df[df["sc"] == scenario].sort_values(by="lossModelSelection")).iloc[i]
