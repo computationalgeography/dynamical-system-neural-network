@@ -509,16 +509,45 @@ def anova(a):
     totSD = numpy.sqrt(totVar)
     return scenario, varBetGroups, varWithGroups, totVar
 
+def varianceOverReal(modelled_tss_es, scenario, number_of_fits):
+    numpy.set_printoptions(threshold=numpy.inf)
+    a = df[df["sc"] == scenario].sort_values(by="lossModelSelection")
+    for tss in modelled_tss_es:
+        arr = []
+        for i in range(0,number_of_fits):
+            b = a.iloc[i]
+            timeS = b[tss]
+            arr.append(timeS)
+        mean = numpy.mean(arr)
+        std = numpy.sqrt(numpy.var(arr, axis=0))
+        std_mean = numpy.mean(std)
+        coeff = 100*(std_mean/mean)
+        print(tss, f"{coeff:.1f}")
+
 if print_stats:
+    # number of top fits to be used
+    number_of_fits = 4
     # overfitting
     df["minLossValidationValue"] = df["lossValidation"].apply(lambda x: x.min())
     df["lossRatioValidationValue"] = df["minLossValidationValue"]/df["lossValidationValue"]
-#    print('overall (including expert model) mean overfit metric is ', df["lossRatioValidationValue"].mean())
-#    print('and by scenario: ')
-#    for scen in scenarios:
-#        a = df[df["sc"] == scen]
-#        print(scen, a["lossRatioValidationValue"].mean())
-#    df["minNSEVal"] = 1.0 - (df["minLossValidationValue"] / valid_ss_q_mean)
+
+    ##############
+    # coefficient of variation of timeseries in top runs
+    ##############
+    tss_for_var = [
+        "valid_ts_eva_f",
+        "valid_ts_sno_f",
+        "valid_ts_sno_s",
+        "valid_ts_sub_f",
+        "valid_ts_sub_s"
+                  ]
+
+    # scenarios for calculation of stats
+    scenariosStats = ['fit_eva', 'fit_thr']
+
+    for scenario in scenariosStats:
+        print(scenario, '===========')
+        varianceOverReal(tss_for_var, scenario, number_of_fits)
 
     # performance metrics
     variables = [
@@ -531,30 +560,21 @@ if print_stats:
         "lossRatioValidationValue",
         "minNSEVal",
         "NSEVal",
-        #"eva_parameter",
-        #"sub_parameter",
-        #"sno_parameter",
+                ]
 
-    ]
-    # print(df[df['sc'] == 'fit_eva'].sort_values(by="lossModelSelection").loc[:,['sc','ts','rs','lossModelSelection', 'lossStoppingValue','lossValidationValue', 'NSEVal']])
-
-    #for scen in scenarios:
-    #    print(df[df["sc"] == scen].sort_values(by="lossModelSelection").loc[:, variables])
-
+    ##############
     # calculate variance between folds and within folds for NSE
+    ##############
     varBetweenGroupsList = []
     varWithinGroupsList = []
     totVarList = []
-    # evaluate over all scenarios
-    #for scen in scenarios[:-1]:
-    # evaluate over fit_thr only
-    for scen in [scenarios[-3]]:
-    #for scen in [scenarios[-7]]:
-        # print unsorted
-        #a = (df[df["sc"] == scen].loc[:, ["sc", "ts", "rs", "NSEVal"]])
-        # print sorted by model selection nse
+    for scen in scenariosStats:
+        print(scen, '===========')
         a = (df[df["sc"] == scen].loc[:, ["sc", "ts", "rs", "NSEVal", "lossModelSelection"]]).sort_values(by="lossModelSelection")
-        print(a)
+        # top 4
+        b = a[0:number_of_fits]
+        coeff = 100.0 * numpy.sqrt(numpy.var(b['lossModelSelection']))/numpy.mean(b['lossModelSelection'])
+        print('coefficient of variation lossModelSelection', f"{coeff:.1f}")
         scenario, varBetweenGroups, varWithinGroups, totVar = anova(a)
         varBetweenGroupsList.append(varBetweenGroups)
         varWithinGroupsList.append(varWithinGroups)
@@ -563,10 +583,10 @@ if print_stats:
     meanVarWithinGroups = (sum(varWithinGroupsList)/len(varWithinGroupsList))
     meanTotVar = (sum(totVarList)/len(totVarList))
     mult = 100000.0
-    print("var between, var within, total var, between + within")
-    print(f"{meanVarBetweenGroups * mult:.2f}", f"{meanVarWithinGroups * mult:.2f}", f"{meanTotVar * mult:.2f}", f"{(meanVarBetweenGroups + meanVarWithinGroups) * mult:.2f}")
-    print("std between, std within, tot std")
-    print(f"{numpy.sqrt(meanVarBetweenGroups):.3f}", f"{numpy.sqrt(meanVarWithinGroups):.3f}", f"{numpy.sqrt(meanTotVar):.3f}")
+    #print("var between, var within, total var, between + within")
+    #print(f"{meanVarBetweenGroups * mult:.2f}", f"{meanVarWithinGroups * mult:.2f}", f"{meanTotVar * mult:.2f}", f"{(meanVarBetweenGroups + meanVarWithinGroups) * mult:.2f}")
+    #print("std between, std within, tot std")
+    #print(f"{numpy.sqrt(meanVarBetweenGroups):.3f}", f"{numpy.sqrt(meanVarWithinGroups):.3f}", f"{numpy.sqrt(meanTotVar):.3f}")
 
     # calculate lowest NSE before stopping as percentage of NSE at stopping
     mean = (df[df["sc"] != "fit_xhr"].lossRatioValidationValue).mean()
@@ -1607,8 +1627,6 @@ if create_nse:
        nsePlot(False, 'sno_s')
        nsePlot(False, 'eva_f')
        nsePlot(False, 'sub_s')
-
-
 
 def epochs_plot():
     fig = plt.figure(dpi=dpi_figures)
