@@ -49,20 +49,26 @@ fitOnObservations = True
 # add error to artificial data
 addErrorToArtificialStreamFlow = False
 
-# input directory
-input_data_directory = "../data/inputData/"
+# input directory with input data
+#input_data_directory = " ../data/inputData/" 
+input_data_directory = "../data/inputData/" 
 
-# output directory
+# output directories
+# folder where results folder (scen_directory) is written
+#out_folder = " ../data/results/"
 out_folder = "../data/results/"
-scen_directory = "testje"
+
+# name of results folder
+scen_directory = "test"
 
 
 ########################
 # other configurations #
 ########################
 
-# use weather data, if True GFS, else ECMWF Land
+# what weather data to use, if True GFS, else ECMWF Land
 GFS = False 
+
 # training data to calculate loss over (typical sub, i.e. outflow)
 training_data = "trainingSub"
 
@@ -89,6 +95,7 @@ if run_in_batch:
 
 output_directory = out_folder + scen_directory  + "/"
 
+# print status for epochs to screen
 print('##### RUN INFO ######')
 print('running scenario: ', batch_scenario)
 print('running training fold: ', training_scenario)
@@ -99,7 +106,7 @@ print('results written to: ', output_directory)
 print('#### END RUN INFO ######')
 
 
-# Create the directory
+# Create the run directory
 try:
     os.mkdir(output_directory)
     print(f"Directory '{output_directory}' created successfully.")
@@ -115,23 +122,23 @@ except Exception as e:
 # some definitions #
 ####################
 
+# define if an additional NN layer is used (typically True in runs thus far)
 # note that for true, it may need to be in the parameter list of the optimizer
 deep_layer = (True)
 
 m = torch.nn.ReLU()
 
-#seedAll = 4
+# set the seed for the random initialization
 seedAll = 5
 torch.manual_seed(seedAll)
 numpy.random.seed(seedAll)
 
+# set the number of nodes in the NN layers
 if deep_layer:
     nodes = 100
 else:
     nodes = 1000
 
-# https://github.com/christianversloot/machine-learning-articles/
-# blob/main/how-to-use-l1-l2-and-elastic-net-regularization-with-pytorch.md
 l1_regularization = False
 
 # conversion from m3/s to m/day, catchment area 47.5 km3 (own calculation from DEM)
@@ -149,8 +156,11 @@ myFontSize = 7
 # streamflow available always in this period
 
 
-
 def seed_generator(string):
+    """
+    generator of seed to support different (and known)
+    seed when rerunning the model
+    """
     tot = 0
     i = 1
     for letter in string:
@@ -159,19 +169,13 @@ def seed_generator(string):
     return tot + seedAll
 
 
-def timeSeriesPlot(date_time_series, variableTimeSeriesList, ylabel):
-    fig = plt.figure(dpi=600)
-    plt.xlabel("time")
-    plt.ylabel(ylabel)
-    for item in variableTimeSeriesList:
-        plt.plot(date_time_series, item, linewidth=width)
-    fig.savefig(ylabel + ".pdf")
-    plt.close(fig)
-
-
 def timeSeriesPlot_rich(
     sfd, fileName, date_time_series, variableTimeSeriesList, xlabel, ylabel
-):
+                        ):
+    """
+    function to plot timeseries while running
+    the optimization
+    """
     fig = plt.figure(dpi=600, figsize=(6, 3))
     plt.xlabel(xlabel, fontsize=myFontSize)
     plt.ylabel(ylabel, fontsize=myFontSize)
@@ -182,15 +186,6 @@ def timeSeriesPlot_rich(
     for item in variableTimeSeriesList:
         plt.plot(date_time_series, item, linewidth=width)
     fig.savefig(sfd + "/" + fileName + ".pdf")
-    plt.close(fig)
-
-
-def scatterplot(variableOne, variableTwo, ylabel, symbol):
-    fig = plt.figure(dpi=600)
-    plt.xlabel("obs")
-    plt.ylabel(ylabel)
-    plt.plot(variableOne, variableTwo, symbol)
-    fig.savefig(ylabel + ".pdf")
     plt.close(fig)
 
 
@@ -976,8 +971,9 @@ def training_loop(
     output_directory,
     scenario_directory,
     linearArt,
-):
+    ):
 
+    # create output directories for writing data below
     sfd = output_directory + scenario_directory + "/"
     sfdAr = sfd + "arrays" + "/"
     if not os.path.exists(sfd):
@@ -991,6 +987,7 @@ def training_loop(
     numpy.save(sfdAr + "train_art_ts_sno_f.npy", sno_f_ts)
     numpy.save(sfdAr + "train_art_ts_sub_f.npy", sub_f_ts)
     numpy.save(sfdAr + "train_art_ts_eva_f.npy", eva_f_ts)
+
     # write artificial data to disk, validation, total of catchment and areas
     numpy.save(sfdAr + "val_art_ts_sno_s.npy", sno_s_tsVal)
     numpy.save(sfdAr + "val_art_ts_sub_s.npy", sub_s_tsVal)
@@ -1002,14 +999,17 @@ def training_loop(
     numpy.save(sfdAr + "val_art_ts_sno_f_areas.npy", sno_f_ts_areasVal)
     numpy.save(sfdAr + "val_art_ts_sub_f_areas.npy", sub_f_ts_areasVal)
     numpy.save(sfdAr + "val_art_ts_eva_f_areas.npy", eva_f_ts_areasVal)
+
     # write internal observed variables to disk, validation
     numpy.save(sfdAr + "val_lan_ts_sno_s.npy", land_sno_time_series_val)
     numpy.save(sfdAr + "val_lan_ts_eva_f.npy", land_eva_time_series_val)
+
     # write internal observed variables to disk, validation
     numpy.save(sfdAr + "train_lan_ts_sno_s.npy", land_sno_time_series)
     numpy.save(sfdAr + "train_lan_ts_eva_f.npy", land_eva_time_series)
 
-
+    # create empty lists for information related to each epoch
+    # in particular loss, epoch number, stopper
     loss_training_series = []
     loss_validation_series = []
     loss_stopping_series = []
@@ -1018,6 +1018,7 @@ def training_loop(
 
     early_stopper = EarlyStopper(patience=200, min_delta_proportion=1e-2)
 
+    # set time for tracking run times
     time = datetime.datetime.now()
 
     first_epochs = True
@@ -1151,15 +1152,16 @@ def training_loop(
             # Add L1 loss component
             loss_train += l1
 
+
         if epoch == 1 or epoch % 20 == 0 or stop:
             print("\n###############################")
             # print('running scenario: ', scenario_directory, ' running one area: ', one_area)
             print(
-                "running scenario: ",
+                "running scenario:",
                 scenario_directory,
-                " Running one area: ",
+                " Running one area:",
                 one_area,
-                ". Duration of one epoch:",
+                " Duration of one epoch:",
                 duration,
             )
             print(f"Epoch {epoch}, Training loss {loss_train.item():.10},", end="")
