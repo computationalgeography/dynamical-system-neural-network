@@ -192,6 +192,10 @@ def timeSeriesPlot_rich(
 def scatterplot_rich(
     sfd, filename, variableOne, variableTwo, xlabel, ylabel, symbol, ylim
 ):
+    """
+    function to plot scatterplots while running
+    the optimization
+    """
     fig = plt.figure(dpi=600, figsize=(4, 3))
     # fig = plt.figure(dpi=600)
     plt.xlabel(xlabel, fontsize=myFontSize)
@@ -232,16 +236,16 @@ def rand_min_max(mean, proportion):
     return torch.rand(1) * (max - min) + min
 
 
-class weightConstraint(object):
-    def __init__(self):
-        pass
-
-    def __call__(self, module):
-        if hasattr(module, "weight"):
-            w = module.weight.data
-            w = w.clamp(0.0, 2.0)
-            # w=w.clamp(0.0,0.0)
-            module.weight.data = w
+#class weightConstraint(object):
+#    def __init__(self):
+#        pass
+#
+#    def __call__(self, module):
+#        if hasattr(module, "weight"):
+#            w = module.weight.data
+#            w = w.clamp(0.0, 2.0)
+#            # w=w.clamp(0.0,0.0)
+#            module.weight.data = w
 
 
 class EarlyStopper:
@@ -271,6 +275,9 @@ class EarlyStopper:
 
 
 def createMeteoData(input_data_directory, output_directory, startDate, endDate):
+    """
+    Creates meteodata set from input data
+    """
     precipitation_file = open(output_directory + "precipitation.txt", "w")
     temperatureFile = open(output_directory + "temperature.txt", "w")
     if GFS:
@@ -280,10 +287,10 @@ def createMeteoData(input_data_directory, output_directory, startDate, endDate):
 
     timestep = datetime.timedelta(days=1)
 
-    temperature_time_series = []
-    precipitation_time_series = []
-    land_sno_time_series = []
-    land_eva_time_series = []
+    temperature_time_series = []        # temperature
+    precipitation_time_series = []      # precipitation
+    land_sno_time_series = []           # snow
+    land_eva_time_series = []           # evapotranspiration
 
     if GFS:
         weatherDataCSV = "weatherdata-470125_corrected.csv"
@@ -299,10 +306,6 @@ def createMeteoData(input_data_directory, output_directory, startDate, endDate):
         line_out_count = 1
         for row in csv_reader:
             if line_count == 0:
-                #print(f'Column names are {", ".join(row)}')
-                #print(row[15])
-                #print(row[21])
-                #exit()
                 line_count += 1
             else:
                 if GFS:
@@ -319,7 +322,6 @@ def createMeteoData(input_data_directory, output_directory, startDate, endDate):
                 else:
                     land_sno = float(row[15])/1000.0
                     land_eva = float(row[21])/1000.0
-                # if (date >= start) and (date <= end):
                 if (date >= startDate) and (date <= endDate):
                     precipitation_file.write(str(line_out_count) + " " + precip + "\n")
                     precipitation_time_series.append(float(precip))
@@ -337,15 +339,17 @@ def createMeteoData(input_data_directory, output_directory, startDate, endDate):
     temperatureFile.close()
     return temperature_time_series, precipitation_time_series, land_sno_time_series, land_eva_time_series
 
-# read model outputs from cosero runs in Lama
 def create_cosero_data(input_data_directory, output_directory, startDate, endDate):
+    """
+    Creates data set from cosero runs in Lama
+    """
     date = datetime.date(1981, 1, 1)
 
     timestep = datetime.timedelta(days=1)
 
-    cosero_sub_s_soil_time_series = []
-    cosero_sub_s_gw_time_series = []
-    cosero_eva_f_time_series = []
+    cosero_sub_s_soil_time_series = []   # subsurface storage, soil
+    cosero_sub_s_gw_time_series = []     # subsurface storage, groundwater
+    cosero_eva_f_time_series = []        # evapotranspiration flux
 
     coseroDataCSV = "ID_535_cosero.csv"
 
@@ -355,15 +359,10 @@ def create_cosero_data(input_data_directory, output_directory, startDate, endDat
         line_out_count = 1
         for row in csv_reader:
             if line_count == 0:
-                #print(f'Column names are {", ".join(row)}')
-                #print(row[11])
-                #print(row[9])
-                #exit()
                 line_count += 1
             else:
                 sub_s_soil = float(row[11])/1000.0
                 sub_s_gw = float(row[13])/1000.0
-                #eva_f = float(row[8])/1000.0
                 eva_f = float(row[9])/1000.0
                 if (date >= startDate) and (date <= endDate):
                     cosero_sub_s_soil_time_series.append(sub_s_soil)
@@ -377,16 +376,18 @@ def create_cosero_data(input_data_directory, output_directory, startDate, endDat
     numpy.save(output_directory + "cosero_eva_f.npy", cosero_eva_f_time_series)
     return cosero_sub_s_soil_time_series, cosero_sub_s_gw_time_series, cosero_eva_f_time_series
 
-# read model outputs from cosero runs in LamaH, additional attributes
-# bw 0 item 8
-# bw 1 item 9
-# bw 2 item 10
-# bw 3 item 11
-# bw 4 item 12
-# melt item 21
-# smelt item 36
-# glacmelt item 40
 def create_cosero_data_additional(input_data_directory, output_directory, startDate, endDate):
+    """
+    read model outputs from cosero runs in LamaH, additional attributes
+    bw 0 item 8
+    bw 1 item 9
+    bw 2 item 10
+    bw 3 item 11
+    bw 4 item 12
+    melt item 21
+    smelt item 36
+    glacmelt item 40
+    """
     date = datetime.date(1981, 1, 1)
 
     timestep = datetime.timedelta(days=1)
@@ -408,20 +409,8 @@ def create_cosero_data_additional(input_data_directory, output_directory, startD
         line_out_count = 1
         for row in csv_reader:
             if line_count == 0:
-            #if (line_count == 0) | (line_count == 1):
-                #print(len(row))
-                #print(f'Column names are {", ".join(row)}')
-                #print(row[8])
-                #print(row[9])
-                #print(row[10])
-                #print(row[11])
-                #print(row[12])
-                #print(row[21])
-                #print(row[36])
-                #print(row[40])
                 line_count += 1
             else:
-                #exit()
                 bw0 = float(row[8])/1000.0
                 bw1 = float(row[9])/1000.0
                 bw2 = float(row[10])/1000.0
@@ -453,6 +442,9 @@ def create_cosero_data_additional(input_data_directory, output_directory, startD
 
 
 def create_streamflow_data(input_data_directory, output_directory, start, end):
+    """
+    Create data set for streamflow data
+    """
     streamflow_file = open(output_directory + "streamflow.txt", "w")
     date = datetime.date(1951, 1, 1)
     timestep = datetime.timedelta(days=1)
@@ -478,25 +470,31 @@ def create_streamflow_data(input_data_directory, output_directory, start, end):
     return streamFlowTimeSeries, date_time_series
 
 
+#########################################
+# Dynamical System Neural Network model #
+#########################################
+
+
 class Net(nn.Module):
     def __init__(self):
         super().__init__()
 
-        # calibrated parameters used for modes obsCreation
-        # self.seepageProportion = 0.029 # calibrated, see txt for info
-        # self.meltRateParameter = 0.0026 # calibrated, see txt for info https://tc.copernicus.org/articles/17/211/2023/#abstract, 0.006 not strange
-
-        self.eva_f_d = nn.Linear(1, nodes)
+        # neural network layers for each of the three neural network
+        # model components
+        self.eva_f_d = nn.Linear(1, nodes)  # eva, evapotranspiration
         self.eva_f_c = nn.Linear(nodes, 1)
-        self.sno_f_d = nn.Linear(1, nodes)
+        self.sno_f_d = nn.Linear(1, nodes)  # sno, snow
         self.sno_f_c = nn.Linear(nodes, 1)
-        self.sub_f_d = nn.Linear(1, nodes)
+        self.sub_f_d = nn.Linear(1, nodes)  # sub, subsurface
         self.sub_f_c = nn.Linear(nodes, 1)
+
+        # option to include an additional layer in each component
         if deep_layer:
             self.eva_f_dd = nn.Linear(nodes, nodes)
             self.sno_f_dd = nn.Linear(nodes, nodes)
             self.sub_f_dd = nn.Linear(nodes, nodes)
 
+        # calibrated parameters of process-based model components
         if GFS:
             if one_area:
                 eva_par = 0.8715501
@@ -530,6 +528,8 @@ class Net(nn.Module):
         self.tem_parameter_obs_creation = tem_par
         self.evp_parameter_obs_creation = evp_par
 
+        # random initialisation of parameters of process-based model components
+        # as starting value for calibrating the process-based model
         proportion = 0.5
         self.eva_parameter = nn.Parameter(rand_min_max(eva_par, proportion))
         self.sub_parameter = nn.Parameter(rand_min_max(sub_par, proportion))
@@ -537,6 +537,7 @@ class Net(nn.Module):
         self.tem_parameter = nn.Parameter(rand_min_max(tem_par, proportion))
         self.evp_parameter = nn.Parameter(rand_min_max(evp_par, proportion))
 
+        # create dictionary with model parameters for accessing these
         if deep_layer:
             self.params = nn.ModuleDict(
                 {
@@ -573,10 +574,15 @@ class Net(nn.Module):
             )
 
     def eva_f_calculate(self, temp, mode_eva, deep_layer, linearArt):
+        """
+        Evapotranspiration module
+        mode_eva defines what type of component is used:
+        obsCreation: process-based component model
+            linearArt: for synthetic model (True) or process-based (expert) model
+        fit: machine learning component model
+        """
         if mode_eva == "obsCreation":
             if linearArt:
-                # potential evapotranspiration
-                # https://en.wikipedia.org/wiki/Blaney–Criddle_equation (see link for params)
                 EPot = torch.max(
                     ((0.35 * (0.457 * torch.tensor([temp]) + 8.128)) / 1000.0)
                     * self.eva_parameter_obs_creation,
@@ -584,7 +590,6 @@ class Net(nn.Module):
                 )
             else:
                 if temp > -15.0:
-                    # EPot = torch.max(((0.35 * (0.457 * temp + 8.128))/1000.0) * self.eva_parameter_obs_creation, torch.tensor(0.0))
                     EPot = (
                         (
                             torch.sin(
@@ -600,7 +605,7 @@ class Net(nn.Module):
             out_eva_f = m(self.eva_f_d((torch.tensor([temp]))))
             if deep_layer:
                 out_eva_f = m(self.eva_f_dd(out_eva_f))
-            EPot = torch.sigmoid(self.eva_f_c(out_eva_f)) / 75.0  # /750.0 or /1000.0
+            EPot = torch.sigmoid(self.eva_f_c(out_eva_f)) / 75.0
         if mode_eva == "fitExpert":
             # potential evapotranspiration
             # https://en.wikipedia.org/wiki/Blaney–Criddle_equation (see link for params)
