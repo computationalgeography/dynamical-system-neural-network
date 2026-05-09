@@ -575,11 +575,15 @@ class Net(nn.Module):
 
     def eva_f_calculate(self, temp, mode_eva, deep_layer, linearArt):
         """
-        Evapotranspiration module
+        Evapotranspiration component model
+        Calculates evapotranspiration from temperature (temp argument)
         mode_eva defines what type of component is used:
-        obsCreation: process-based component model
-            linearArt: for synthetic model (True) or process-based (expert) model
-        fit: machine learning component model
+        obsCreation: process-based component model is used (without training)
+            linearArt: for synthetic data set generation model (True)
+                       or process-based (expert) model
+        fit: machine learning component model is trained
+        fitExpert: process-based component model is calibrated (for real-world data
+                   set only)
         """
         if mode_eva == "obsCreation":
             if linearArt:
@@ -601,22 +605,33 @@ class Net(nn.Module):
                     ) + 0.0001 * torch.tensor([temp + 15.0])
                 else:
                     EPot = torch.tensor([0.0])
+
         if mode_eva == "fit":
             out_eva_f = m(self.eva_f_d((torch.tensor([temp]))))
             if deep_layer:
                 out_eva_f = m(self.eva_f_dd(out_eva_f))
             EPot = torch.sigmoid(self.eva_f_c(out_eva_f)) / 75.0
+
         if mode_eva == "fitExpert":
-            # potential evapotranspiration
-            # https://en.wikipedia.org/wiki/Blaney–Criddle_equation (see link for params)
             EPot = torch.max(
                 ((0.35 * (0.457 * temp + 8.128)) / 1000.0) * self.eva_parameter,
                 torch.tensor(0.0),
             )
         return EPot
 
-    def sno_f_calculate(self, temp, modeSno, deep_layer, linearArt):
-        if modeSno == "obsCreation":
+    def sno_f_calculate(self, temp, mode_sno, deep_layer, linearArt):
+        """
+        Snow component model
+        Calculates potential snowmelt from temperature (temp argument)
+        mode_sno defines what type of component is used:
+        obsCreation: process-based component model is used (without training)
+            linearArt: for synthetic data set generation model (True)
+                       or process-based (expert) model
+        fit: machine learning component model is trained
+        fitExpert: process-based component model is calibrated (for real-world data
+                   set only)
+        """
+        if mode_sno == "obsCreation":
             if linearArt:
                 melting = temp > 0.0
                 if melting:
@@ -632,12 +647,12 @@ class Net(nn.Module):
                     ) + 0.0004 * torch.tensor([temp])
                 else:
                     potential_melt = torch.tensor(0.0)
-        if modeSno == "fit":
+        if mode_sno == "fit":
             out_sno_f = m(self.sno_f_d((torch.tensor([temp]))))
             if deep_layer:
                 out_sno_f = m(self.sno_f_dd(out_sno_f))
             potential_melt = torch.sigmoid(self.sno_f_c(out_sno_f)) / 50.0
-        if modeSno == "fitExpert":
+        if mode_sno == "fitExpert":
             melting = temp > 0.0
             if melting:
                 potential_melt = temp * self.sno_parameter
@@ -645,26 +660,44 @@ class Net(nn.Module):
                 potential_melt = torch.tensor(0.0)
         return potential_melt
 
-    def sub_f_calculate(self, sub_s, modeSub, deep_layer, linearArt):
-        if modeSub == "obsCreation":
+    def sub_f_calculate(self, sub_s, mode_sub, deep_layer, linearArt):
+        """
+        Subsurface water component model
+        Calculates snowmelt from subsurface storage (sub_s argument)
+        mode_sno defines what type of component is used:
+        obsCreation: process-based component model is used (without training)
+            linearArt: for synthetic data set generation model (True)
+                       or process-based (expert) model
+        fit: machine learning component model is trained
+        fitExpert: process-based component model is calibrated (for real-world data
+                   set only)
+        """
+        if mode_sub == "obsCreation":
             if linearArt:
-                seepagePot = self.sub_parameter_obs_creation * sub_s
+                seepage_pot = self.sub_parameter_obs_creation * sub_s
             else:
-                seepagePot = (
+                seepage_pot = (
                     (torch.sin((torch.tensor([sub_s]) * 20 - 0.5 * torch.pi)) + 1) / 500
-                ) + 0.03 * sub_s
-        if modeSub == "fit":
+                    ) + 0.03 * sub_s
+        if mode_sub == "fit":
             out_sub_f = m(self.sub_f_d((torch.tensor([sub_s]) * 2.0)))
             if deep_layer:
                 out_sub_f = m(self.sub_f_dd(out_sub_f))
             proportion = torch.sigmoid(self.sub_f_c(out_sub_f))
-            seepagePot = proportion * sub_s
-        if modeSub == "fitExpert":
+            seepage_pot = proportion * sub_s
+        if mode_sub == "fitExpert":
             seepage = self.sub_parameter * sub_s
-            seepagePot = seepage
-        return seepagePot
+            seepage_pot = seepage
+        return seepage_pot
 
-    def com_f_response(self, modeSub, deep_layer, component, linearArt):
+    def com_f_response(self, mode_sub, deep_layer, component, linearArt):
+        """
+        Creates data to plot governing equation ('response function') with
+        used type of model component.
+        It first creates a range of drivers (com_s_values) and then
+        passes these to the model component which returns the range of
+        corresponding fluxes (com_f_value).
+        """
         if component == "sub":
             com_s_values = numpy.arange(0.0, 1.0, 0.01)
         if component == "sno":
@@ -675,18 +708,18 @@ class Net(nn.Module):
         for com_s_value in com_s_values:
             if component == "sub":
                 com_f_value = self.sub_f_calculate(
-                    com_s_value.item(), modeSub, deep_layer, linearArt
+                    com_s_value.item(), mode_sub, deep_layer, linearArt
                 )
             if component == "sno":
                 com_f_value = self.sno_f_calculate(
-                    com_s_value.item(), modeSub, deep_layer, linearArt
+                    com_s_value.item(), mode_sub, deep_layer, linearArt
                 )
             if component == "eva":
                 com_f_value = self.eva_f_calculate(
-                    com_s_value.item(), modeSub, deep_layer, linearArt
+                    com_s_value.item(), mode_sub, deep_layer, linearArt
                 )
             if isinstance(com_f_value, torch.Tensor):
-                if modeSub == "fitExpert":
+                if mode_sub == "fitExpert":
                     com_f_value_detached = com_f_value.detach().numpy()
                 else:
                     if component == "sub":
@@ -703,17 +736,17 @@ class Net(nn.Module):
 
     def forward(
         self,
-        linearArt,  # linear obs creation model
-        first_epochs,  # start of training or not
+        linearArt,      # linear obs creation model
+        first_epochs,   # start of training or not
         sno_s_initial,  # initial snow storage
         sub_s_initial,  # initial subsurface storage
-        temperature,  # temperature time series
+        temperature,    # temperature time series
         precipitation,  # precipitation time series
-        mode_eva,  # mode evapotranspiration
-        modeSno,  # mode snow
-        modeSub,  # mode subsurface
-        modeTem,  # temperature offset
-        modeEvP,  # potential proportion of evap to sublimation
+        mode_eva,       # mode evapotranspiration
+        mode_sno,       # mode snow
+        mode_sub,       # mode subsurface
+        modeTem,        # temperature offset
+        modeEvP,        # potential proportion of evap to sublimation
     ):
 
         nr_timesteps = len(temperature)
@@ -788,7 +821,7 @@ class Net(nn.Module):
 
                 # snow melt
                 potential_melt = self.sno_f_calculate(
-                    temp, modeSno, deep_layer, linearArt
+                    temp, mode_sno, deep_layer, linearArt
                 )
 
                 if first_epochs:  # hard cap to prevent zero snow cover
@@ -823,9 +856,9 @@ class Net(nn.Module):
 
                 sub_s_ts[i] = sub_s
 
-                seepagePot = self.sub_f_calculate(sub_s, modeSub, deep_layer, linearArt)
+                seepage_pot = self.sub_f_calculate(sub_s, mode_sub, deep_layer, linearArt)
 
-                seepageNotNegative = torch.max(seepagePot, torch.tensor(0.0))
+                seepageNotNegative = torch.max(seepage_pot, torch.tensor(0.0))
                 seepageAct = torch.min(seepageNotNegative, sub_s)
 
                 sub_f = seepageAct + hortonRunoff
@@ -901,8 +934,8 @@ def create_artificial_observations(
             torch.tensor(temperature_time_series),
             torch.tensor(precipitation_time_series),
             mode_eva="obsCreation",
-            modeSno="obsCreation",
-            modeSub="obsCreation",
+            mode_sno="obsCreation",
+            mode_sub="obsCreation",
             modeTem="obsCreation",
             modeEvP="obsCreation",
         )
@@ -1049,8 +1082,8 @@ def training_loop(
             torch.tensor(temperature_time_series),
             torch.tensor(precipitation_time_series),
             mode_eva=mode_eva_train,
-            modeSno=modeSnoTrain,
-            modeSub=modeSubTrain,
+            mode_sno=modeSnoTrain,
+            mode_sub=modeSubTrain,
             modeTem=modeTemTrain,
             modeEvP=modeEvPTrain,
         )
@@ -1121,8 +1154,8 @@ def training_loop(
                     torch.tensor(temperature_time_series_val),
                     torch.tensor(precipitation_time_series_val),
                     mode_eva=mode_eva_train,
-                    modeSno=modeSnoTrain,
-                    modeSub=modeSubTrain,
+                    mode_sno=modeSnoTrain,
+                    mode_sub=modeSubTrain,
                     modeTem=modeTemTrain,
                     modeEvP=modeEvPTrain,
                 )
