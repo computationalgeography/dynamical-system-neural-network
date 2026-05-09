@@ -1,6 +1,4 @@
 import numpy as numpy
-
-numpy.set_printoptions(precision=2)
 import torch
 import torch.optim as optim
 import torch.nn as nn
@@ -13,6 +11,8 @@ import os
 import sys
 import string
 
+numpy.set_printoptions(precision=2)
+
 
 ########################
 # main configurations #
@@ -21,10 +21,21 @@ import string
 # Run in batch by providing inputs on command line
 run_in_batch = True
 
+# running in batch (typical usage) is done by for instance
+# set run_in_batch to True
+# python kals_model.py sub 1 1 observations one test
+# 1st value is scenario (here sub)
+# 2nd value is training fold (1-4) (here 1)
+# 3rd value is rerun scenario (1, 2, 3,...) (here 1)
+# 4th value is observations indicating fitting on observational data
+# or something else (here observations)
+# 5th value is one or two, representing lumped or semi-distributed (here one)
+# 6th value is name of output folder (here test)
+# these same related settings below are ignored when running in batch
+
 # max number of epochs to run (will run for this number of epochs
 # if validation (stopping) does not make it stop
 nr_epochs = 5000
-#nr_epochs = 20
 
 # run one area or else two
 one_area = True
@@ -40,9 +51,11 @@ addErrorToArtificialStreamFlow = False
 
 # input directory
 input_data_directory = "../data/inputData/"
+
 # output directory
 out_folder = "../data/results/"
 scen_directory = "testje"
+
 
 ########################
 # other configurations #
@@ -58,14 +71,6 @@ linearArtForNotFitOnObservations = False
 
 print_parameters = True
 
-# for instance
-#                      scenario
-#                          training fold (1-4)
-#                            rerun scenario (1, 2, 3,...)
-#                              observations or something else 
-#                                   one or two areas
-#                                       output folder
-# python kals_model.py sub 1 1 observations one test
 if run_in_batch:
     batch_scenario = sys.argv[1]
     training_scenario = sys.argv[2] 
