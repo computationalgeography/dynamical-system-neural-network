@@ -11,6 +11,9 @@ import os
 import sys
 import string
 
+# Dynamical Neural Network Model
+# by Derek Karssenberg, Utrecht University
+
 numpy.set_printoptions(precision=2)
 
 
@@ -50,13 +53,13 @@ fitOnObservations = True
 addErrorToArtificialStreamFlow = False
 
 # input directory with input data
-input_data_directory = " ../data/inputData/" 
-#input_data_directory = "../data/inputData/" 
+input_data_directory = " ../data/inputData/"
+# input_data_directory = "../data/inputData/"
 
 # output directories
 # folder where results folder (scen_directory) is written
 out_folder = " ../data/results/"
-#out_folder = "../data/results/"
+# out_folder = "../data/results/"
 
 # name of results folder
 scen_directory = "test"
@@ -67,7 +70,7 @@ scen_directory = "test"
 ########################
 
 # what weather data to use, if True GFS, else ECMWF Land
-GFS = False 
+GFS = False
 
 # training data to calculate loss over (typical sub, i.e. outflow)
 training_data = "trainingSub"
@@ -79,31 +82,31 @@ print_parameters = True
 
 if run_in_batch:
     batch_scenario = sys.argv[1]
-    training_scenario = sys.argv[2] 
+    training_scenario = sys.argv[2]
     re_run_scenario = sys.argv[3]
     fitOnObservationsOne = sys.argv[4]
     oneArea = sys.argv[5]
     scen_directory = sys.argv[6]
-    if fitOnObservationsOne == 'observations':
+    if fitOnObservationsOne == "observations":
         fitOnObservations = True
     else:
         fitOnObservations = False
-    if oneArea == 'one':
+    if oneArea == "one":
         one_area = True
     else:
         one_area = False
 
-output_directory = out_folder + scen_directory  + "/"
+output_directory = out_folder + scen_directory + "/"
 
 # print status for epochs to screen
-print('##### RUN INFO ######')
-print('running scenario: ', batch_scenario)
-print('running training fold: ', training_scenario)
-print('running rerun scenario: ', re_run_scenario)
-print('fitting on observations: ', fitOnObservations)
-print('running one area: ', one_area)
-print('results written to: ', output_directory)
-print('#### END RUN INFO ######')
+print("##### RUN INFO ######")
+print("running scenario: ", batch_scenario)
+print("running training fold: ", training_scenario)
+print("running rerun scenario: ", re_run_scenario)
+print("fitting on observations: ", fitOnObservations)
+print("running one area: ", one_area)
+print("results written to: ", output_directory)
+print("#### END RUN INFO ######")
 
 
 # Create the run directory
@@ -124,7 +127,7 @@ except Exception as e:
 
 # define if an additional NN layer is used (typically True in runs thus far)
 # note that for true, it may need to be in the parameter list of the optimizer
-deep_layer = (True)
+deep_layer = True
 
 m = torch.nn.ReLU()
 
@@ -171,7 +174,7 @@ def seed_generator(string):
 
 def timeSeriesPlot_rich(
     sfd, fileName, date_time_series, variableTimeSeriesList, xlabel, ylabel
-                        ):
+):
     """
     function to plot timeseries while running
     the optimization
@@ -236,7 +239,7 @@ def rand_min_max(mean, proportion):
     return torch.rand(1) * (max - min) + min
 
 
-#class weightConstraint(object):
+# class weightConstraint(object):
 #    def __init__(self):
 #        pass
 #
@@ -270,7 +273,7 @@ class EarlyStopper:
 
 
 ####################
-# data preparation #
+# Data preparation #
 ####################
 
 
@@ -287,10 +290,10 @@ def createMeteoData(input_data_directory, output_directory, startDate, endDate):
 
     timestep = datetime.timedelta(days=1)
 
-    temperature_time_series = []        # temperature
-    precipitation_time_series = []      # precipitation
-    land_sno_time_series = []           # snow
-    land_eva_time_series = []           # evapotranspiration
+    temperature_time_series = []  # temperature
+    precipitation_time_series = []  # precipitation
+    land_sno_time_series = []  # snow
+    land_eva_time_series = []  # evapotranspiration
 
     if GFS:
         weatherDataCSV = "weatherdata-470125_corrected.csv"
@@ -320,8 +323,8 @@ def createMeteoData(input_data_directory, output_directory, startDate, endDate):
                     land_sno = -9.0
                     land_eva = -9.0
                 else:
-                    land_sno = float(row[15])/1000.0
-                    land_eva = float(row[21])/1000.0
+                    land_sno = float(row[15]) / 1000.0
+                    land_eva = float(row[21]) / 1000.0
                 if (date >= startDate) and (date <= endDate):
                     precipitation_file.write(str(line_out_count) + " " + precip + "\n")
                     precipitation_time_series.append(float(precip))
@@ -337,7 +340,13 @@ def createMeteoData(input_data_directory, output_directory, startDate, endDate):
 
     precipitation_file.close()
     temperatureFile.close()
-    return temperature_time_series, precipitation_time_series, land_sno_time_series, land_eva_time_series
+    return (
+        temperature_time_series,
+        precipitation_time_series,
+        land_sno_time_series,
+        land_eva_time_series,
+    )
+
 
 def create_cosero_data(input_data_directory, output_directory, startDate, endDate):
     """
@@ -347,9 +356,9 @@ def create_cosero_data(input_data_directory, output_directory, startDate, endDat
 
     timestep = datetime.timedelta(days=1)
 
-    cosero_sub_s_soil_time_series = []   # subsurface storage, soil
-    cosero_sub_s_gw_time_series = []     # subsurface storage, groundwater
-    cosero_eva_f_time_series = []        # evapotranspiration flux
+    cosero_sub_s_soil_time_series = []  # subsurface storage, soil
+    cosero_sub_s_gw_time_series = []  # subsurface storage, groundwater
+    cosero_eva_f_time_series = []  # evapotranspiration flux
 
     coseroDataCSV = "ID_535_cosero.csv"
 
@@ -361,9 +370,9 @@ def create_cosero_data(input_data_directory, output_directory, startDate, endDat
             if line_count == 0:
                 line_count += 1
             else:
-                sub_s_soil = float(row[11])/1000.0
-                sub_s_gw = float(row[13])/1000.0
-                eva_f = float(row[9])/1000.0
+                sub_s_soil = float(row[11]) / 1000.0
+                sub_s_gw = float(row[13]) / 1000.0
+                eva_f = float(row[9]) / 1000.0
                 if (date >= startDate) and (date <= endDate):
                     cosero_sub_s_soil_time_series.append(sub_s_soil)
                     cosero_sub_s_gw_time_series.append(sub_s_gw)
@@ -371,12 +380,21 @@ def create_cosero_data(input_data_directory, output_directory, startDate, endDat
                     line_out_count += 1
                 line_count += 1
                 date = date + timestep
-    numpy.save(output_directory + "cosero_sub_s_soil.npy", cosero_sub_s_soil_time_series)
+    numpy.save(
+        output_directory + "cosero_sub_s_soil.npy", cosero_sub_s_soil_time_series
+    )
     numpy.save(output_directory + "cosero_sub_s_gw.npy", cosero_sub_s_gw_time_series)
     numpy.save(output_directory + "cosero_eva_f.npy", cosero_eva_f_time_series)
-    return cosero_sub_s_soil_time_series, cosero_sub_s_gw_time_series, cosero_eva_f_time_series
+    return (
+        cosero_sub_s_soil_time_series,
+        cosero_sub_s_gw_time_series,
+        cosero_eva_f_time_series,
+    )
 
-def create_cosero_data_additional(input_data_directory, output_directory, startDate, endDate):
+
+def create_cosero_data_additional(
+    input_data_directory, output_directory, startDate, endDate
+):
     """
     read model outputs from cosero runs in LamaH, additional attributes
     bw 0 item 8
@@ -404,21 +422,23 @@ def create_cosero_data_additional(input_data_directory, output_directory, startD
     coseroDataCSV = "monitor_sb0276.txt"
 
     with open(input_data_directory + coseroDataCSV) as csv_file:
-        csv_reader = csv.reader(csv_file, dialect="excel", delimiter=" ", skipinitialspace=True)
+        csv_reader = csv.reader(
+            csv_file, dialect="excel", delimiter=" ", skipinitialspace=True
+        )
         line_count = 0
         line_out_count = 1
         for row in csv_reader:
             if line_count == 0:
                 line_count += 1
             else:
-                bw0 = float(row[8])/1000.0
-                bw1 = float(row[9])/1000.0
-                bw2 = float(row[10])/1000.0
-                bw3 = float(row[11])/1000.0
-                bw4 = float(row[12])/1000.0
-                melt = float(row[21])/1000.0
-                smelt = float(row[36])/1000.0
-                glacmelt = float(row[40])/1000.0
+                bw0 = float(row[8]) / 1000.0
+                bw1 = float(row[9]) / 1000.0
+                bw2 = float(row[10]) / 1000.0
+                bw3 = float(row[11]) / 1000.0
+                bw4 = float(row[12]) / 1000.0
+                melt = float(row[21]) / 1000.0
+                smelt = float(row[36]) / 1000.0
+                glacmelt = float(row[40]) / 1000.0
                 if (date >= startDate) and (date <= endDate):
                     cosero_bw0_time_series.append(bw0)
                     cosero_bw1_time_series.append(bw1)
@@ -510,16 +530,16 @@ class Net(nn.Module):
                 evp_par = 3.4553902
         else:
             if one_area:
-                eva_par = 0.014076318 
+                eva_par = 0.014076318
                 sub_par = 0.03213018
-                sno_par = 0.0029198169 
+                sno_par = 0.0029198169
                 tem_par = 0.0  # assumed zero
                 evp_par = 3.5  # note input to sigmoid (evp [0,1]), 3.5 equals 0.97
             else:
-                eva_par = 0.072542064 
-                sub_par = 0.113195494 
-                sno_par = 0.0012788665 
-                tem_par = 0.0 # assumed zero
+                eva_par = 0.072542064
+                sub_par = 0.113195494
+                sno_par = 0.0012788665
+                tem_par = 0.0  # assumed zero
                 evp_par = 3.5
 
         self.eva_parameter_obs_creation = eva_par
@@ -678,7 +698,7 @@ class Net(nn.Module):
             else:
                 seepage_pot = (
                     (torch.sin((torch.tensor([sub_s]) * 20 - 0.5 * torch.pi)) + 1) / 500
-                    ) + 0.03 * sub_s
+                ) + 0.03 * sub_s
         if mode_sub == "fit":
             out_sub_f = m(self.sub_f_d((torch.tensor([sub_s]) * 2.0)))
             if deep_layer:
@@ -736,22 +756,20 @@ class Net(nn.Module):
 
     def forward(
         self,
-        linearArt,      # linear obs creation model
-        first_epochs,   # start of training or not
+        linearArt,  # linear obs creation model
+        first_epochs,  # start of training or not
         sno_s_initial,  # initial snow storage
         sub_s_initial,  # initial subsurface storage
-        temperature,    # temperature time series
+        temperature,  # temperature time series
         precipitation,  # precipitation time series
-        mode_eva,       # mode evapotranspiration
-        mode_sno,       # mode snow
-        mode_sub,       # mode subsurface
-        modeTem,        # temperature offset
-        modeEvP,        # potential proportion of evap to sublimation
+        mode_eva,  # mode evapotranspiration
+        mode_sno,  # mode snow
+        mode_sub,  # mode subsurface
+        modeTem,  # temperature offset
+        modeEvP,  # potential proportion of evap to sublimation
     ):
-
         # number of time steps in model run
         nr_timesteps = len(temperature)
-
 
         if modeTem == "fitExpert":
             temperatureOffset = self.tem_parameter
@@ -796,7 +814,6 @@ class Net(nn.Module):
                 # get system drivers for timestep
                 temp = temperature[i] + temperatureOffset + areaTemperatureOffsets[area]
 
-
                 ######################
                 # evapotranspiration #
                 ######################
@@ -807,7 +824,6 @@ class Net(nn.Module):
 
                 eva_f = EPot
                 eva_f_ts[i] = eva_f
-
 
                 ################
                 # snow or rain #
@@ -839,7 +855,7 @@ class Net(nn.Module):
 
                 # limit snow melt to prevent zero snow cover
                 # over first epochs, for more efficient training
-                if first_epochs: 
+                if first_epochs:
                     if temp < -5.0:
                         potential_melt = torch.tensor(0.0)
 
@@ -874,7 +890,9 @@ class Net(nn.Module):
 
                 sub_s_ts[i] = sub_s
 
-                seepage_pot = self.sub_f_calculate(sub_s, mode_sub, deep_layer, linearArt)
+                seepage_pot = self.sub_f_calculate(
+                    sub_s, mode_sub, deep_layer, linearArt
+                )
 
                 seepageNotNegative = torch.max(seepage_pot, torch.tensor(0.0))
                 seepageAct = torch.min(seepageNotNegative, sub_s)
@@ -930,7 +948,7 @@ class Net(nn.Module):
 
 
 ##################################
-# create artificial observations #
+# Create artificial observations #
 ##################################
 
 
@@ -946,20 +964,24 @@ def create_artificial_observations(
     hydromodel = Net()
     sno_s_initial = 0.0
     sub_s_initial = 0.0
-    sno_s_ts_areas, sub_s_ts_areas, sno_f_ts_areas, sub_f_ts_areas, eva_f_ts_areas = (
-        hydromodel(
-            linearArt,
-            False,
-            torch.tensor(sno_s_initial),
-            torch.tensor(sub_s_initial),
-            torch.tensor(temperature_time_series),
-            torch.tensor(precipitation_time_series),
-            mode_eva="obsCreation",
-            mode_sno="obsCreation",
-            mode_sub="obsCreation",
-            modeTem="obsCreation",
-            modeEvP="obsCreation",
-        )
+    (
+        sno_s_ts_areas,
+        sub_s_ts_areas,
+        sno_f_ts_areas,
+        sub_f_ts_areas,
+        eva_f_ts_areas,
+    ) = hydromodel(
+        linearArt,
+        False,
+        torch.tensor(sno_s_initial),
+        torch.tensor(sub_s_initial),
+        torch.tensor(temperature_time_series),
+        torch.tensor(precipitation_time_series),
+        mode_eva="obsCreation",
+        mode_sno="obsCreation",
+        mode_sub="obsCreation",
+        modeTem="obsCreation",
+        modeEvP="obsCreation",
     )
     sno_s_ts = sno_s_ts_areas.mean(dim=0)
     sub_s_ts = sub_s_ts_areas.mean(dim=0)
@@ -972,12 +994,22 @@ def create_artificial_observations(
             numpy.maximum(0.0, numpy.random.normal(1, sd, len(streamFlowTimeSeries))), 2
         )
         sub_f_ts = torch.max(sub_f_ts * errorMultiplier, torch.tensor(0.0))
-    return sno_s_ts, sub_s_ts, sno_f_ts, sub_f_ts, eva_f_ts, sno_s_ts_areas, \
-           sub_s_ts_areas, sno_f_ts_areas, sub_f_ts_areas, eva_f_ts_areas
+    return (
+        sno_s_ts,
+        sub_s_ts,
+        sno_f_ts,
+        sub_f_ts,
+        eva_f_ts,
+        sno_s_ts_areas,
+        sub_s_ts_areas,
+        sno_f_ts_areas,
+        sub_f_ts_areas,
+        eva_f_ts_areas,
+    )
 
 
 ############
-# training #
+# Training #
 ############
 
 
@@ -1026,8 +1058,7 @@ def training_loop(
     output_directory,
     scenario_directory,
     linearArt,
-    ):
-
+):
     # create output directories for writing data below
     sfd = output_directory + scenario_directory + "/"
     sfdAr = sfd + "arrays" + "/"
@@ -1176,24 +1207,24 @@ def training_loop(
         # this is done only for every 50 epochs to save run time
         if epoch == 1 or epoch % 50 == 0 or stop:
             (
-                    tr_sno_s_ts_areasVal,
-                    tr_sub_s_ts_areasVal,
-                    tr_sno_f_ts_areasVal,
-                    tr_sub_f_ts_areasVal,
-                    tr_eva_f_ts_areasVal,
-                ) = hydromodel(
-                    linearArt,
-                    True,
-                    torch.tensor(sno_s_initial),
-                    torch.tensor(sub_s_initial),
-                    torch.tensor(temperature_time_series_val),
-                    torch.tensor(precipitation_time_series_val),
-                    mode_eva=mode_eva_train,
-                    mode_sno=modeSnoTrain,
-                    mode_sub=modeSubTrain,
-                    modeTem=modeTemTrain,
-                    modeEvP=modeEvPTrain,
-                )
+                tr_sno_s_ts_areasVal,
+                tr_sub_s_ts_areasVal,
+                tr_sno_f_ts_areasVal,
+                tr_sub_f_ts_areasVal,
+                tr_eva_f_ts_areasVal,
+            ) = hydromodel(
+                linearArt,
+                True,
+                torch.tensor(sno_s_initial),
+                torch.tensor(sub_s_initial),
+                torch.tensor(temperature_time_series_val),
+                torch.tensor(precipitation_time_series_val),
+                mode_eva=mode_eva_train,
+                mode_sno=modeSnoTrain,
+                mode_sub=modeSubTrain,
+                modeTem=modeTemTrain,
+                modeEvP=modeEvPTrain,
+            )
             tr_sno_s_tsVal = tr_sno_s_ts_areasVal.mean(dim=0)
             tr_sub_s_tsVal = tr_sub_s_ts_areasVal.mean(dim=0)
             tr_sno_f_tsVal = tr_sno_f_ts_areasVal.mean(dim=0)
@@ -1224,7 +1255,6 @@ def training_loop(
 
             # Add L1 loss component
             loss_train += l1
-
 
         # every 20 epochs, print status, create intermediate figures, and save outputs ###################
         if epoch == 1 or epoch % 20 == 0 or stop:
@@ -1339,7 +1369,9 @@ def training_loop(
             numpy.save(sfdAr + "response_sno_x.npy", numpy.array(a))
             numpy.save(sfdAr + "response_sno_y.npy", numpy.array(b))
 
-            a, b = hydromodel.com_f_response(mode_eva_train, deep_layer, "eva", linearArt)
+            a, b = hydromodel.com_f_response(
+                mode_eva_train, deep_layer, "eva", linearArt
+            )
             if GFS:
                 y_max = 0.02
             else:
@@ -1380,7 +1412,9 @@ def training_loop(
             numpy.save(sfdAr + "epochs.npy", numpy.array(epoch_series))
             numpy.save(sfdAr + "lossTraining.npy", numpy.array(loss_training_series))
             numpy.save(sfdAr + "lossStopping.npy", numpy.array(loss_stopping_series))
-            numpy.save(sfdAr + "lossValidation.npy", numpy.array(loss_validation_series))
+            numpy.save(
+                sfdAr + "lossValidation.npy", numpy.array(loss_validation_series)
+            )
             # mean over area only
             # training
             timeSeriesPlot_rich(
@@ -1454,8 +1488,13 @@ def training_loop(
                 (torch.tensor(streamFlowTimeSeries) / conversion_fluxes).numpy(),
             )
             numpy.save(sfdAr + "train_date.npy", numpy.array(date_time_series))
-            numpy.save(sfdAr + "train_ts_temperature.npy", numpy.array(temperature_time_series))
-            numpy.save(sfdAr + "train_ts_precipitation.npy", numpy.array(precipitation_time_series))
+            numpy.save(
+                sfdAr + "train_ts_temperature.npy", numpy.array(temperature_time_series)
+            )
+            numpy.save(
+                sfdAr + "train_ts_precipitation.npy",
+                numpy.array(precipitation_time_series),
+            )
             # validation
             timeSeriesPlot_rich(
                 sfd,
@@ -1512,10 +1551,7 @@ def training_loop(
                 sfd,
                 "valid_ts_lan_sno",
                 date_time_series_val,
-                [
-                    tr_sno_s_tsVal.detach().numpy(),
-                    land_sno_time_series_val
-                ],
+                [tr_sno_s_tsVal.detach().numpy(), land_sno_time_series_val],
                 "time",
                 "storage (m)",
             )
@@ -1523,10 +1559,7 @@ def training_loop(
                 sfd,
                 "valid_ts_lan_eva",
                 date_time_series_val,
-                [
-                    tr_eva_f_tsVal.detach().numpy(),
-                    land_eva_time_series_val
-                ],
+                [tr_eva_f_tsVal.detach().numpy(), land_eva_time_series_val],
                 "time",
                 "flux (m/day)",
             )
@@ -1555,8 +1588,14 @@ def training_loop(
                 (torch.tensor(streamflow_time_series_val) / conversion_fluxes).numpy(),
             )
             numpy.save(sfdAr + "valid_date.npy", numpy.array(date_time_series_val))
-            numpy.save(sfdAr + "valid_ts_temperature.npy", numpy.array(temperature_time_series_val))
-            numpy.save(sfdAr + "valid_ts_precipitation.npy", numpy.array(precipitation_time_series_val))
+            numpy.save(
+                sfdAr + "valid_ts_temperature.npy",
+                numpy.array(temperature_time_series_val),
+            )
+            numpy.save(
+                sfdAr + "valid_ts_precipitation.npy",
+                numpy.array(precipitation_time_series_val),
+            )
 
             # scatterplots, indep vs dep
             # mean over area only
@@ -1757,9 +1796,8 @@ else:
     linearArt = linearArtForNotFitOnObservations
 
 
-
 #####################
-# data set creation #
+# Data set creation #
 #####################
 
 # data for training and stopping ie validation
@@ -1771,40 +1809,67 @@ else:
     yearIncrease = 2
 startOne = datetime.date(1979 + yearIncrease, 10, 1)
 endOne = datetime.date(1996 + yearIncrease, 9, 26)
-temperature_time_series, precipitation_time_series, land_sno_time_series, land_eva_time_series = createMeteoData(
-    input_data_directory, output_directory, startOne, endOne
-)
+(
+    temperature_time_series,
+    precipitation_time_series,
+    land_sno_time_series,
+    land_eva_time_series,
+) = createMeteoData(input_data_directory, output_directory, startOne, endOne)
 streamFlowTimeSeries, date_time_series = create_streamflow_data(
     input_data_directory, output_directory, startOne, endOne
 )
-sno_s_ts, sub_s_ts, sno_f_ts, sub_f_ts, eva_f_ts, \
-    sno_s_ts_areas, sub_s_ts_areas, sno_f_ts_areas, sub_f_ts_areas, eva_f_ts_areas = (
-    create_artificial_observations(
-    temperature_time_series, precipitation_time_series, addErrorToArtificialStreamFlow, linearArt
-    )
+(
+    sno_s_ts,
+    sub_s_ts,
+    sno_f_ts,
+    sub_f_ts,
+    eva_f_ts,
+    sno_s_ts_areas,
+    sub_s_ts_areas,
+    sno_f_ts_areas,
+    sub_f_ts_areas,
+    eva_f_ts_areas,
+) = create_artificial_observations(
+    temperature_time_series,
+    precipitation_time_series,
+    addErrorToArtificialStreamFlow,
+    linearArt,
 )
 
 # data for validation, ie testing
 
 startVal = datetime.date(1995 + yearIncrease, 10, 1)
 endVal = datetime.date(2012 + yearIncrease, 9, 26)
-temperature_time_series_val, precipitation_time_series_val, land_sno_time_series_val, land_eva_time_series_val = createMeteoData(
-    input_data_directory, output_directory, startVal, endVal
-)
+(
+    temperature_time_series_val,
+    precipitation_time_series_val,
+    land_sno_time_series_val,
+    land_eva_time_series_val,
+) = createMeteoData(input_data_directory, output_directory, startVal, endVal)
 streamflow_time_series_val, date_time_series_val = create_streamflow_data(
     input_data_directory, output_directory, startVal, endVal
 )
-cosero_sub_s_soil_time_series_val, cosero_sub_s_gw_time_series_val, cosero_eva_f_time_series_val = create_cosero_data(
-    input_data_directory, output_directory, startVal, endVal
-)
+(
+    cosero_sub_s_soil_time_series_val,
+    cosero_sub_s_gw_time_series_val,
+    cosero_eva_f_time_series_val,
+) = create_cosero_data(input_data_directory, output_directory, startVal, endVal)
 create_cosero_data_additional(input_data_directory, output_directory, startVal, endVal)
 
 # note that no error is added to artificial streamflow in any case as it is used for validation only
-sno_s_tsVal, sub_s_tsVal, sno_f_tsVal, sub_f_tsVal, eva_f_tsVal, \
-    sno_s_ts_areasVal, sub_s_ts_areasVal, sno_f_ts_areasVal, sub_f_ts_areasVal, eva_f_ts_areasVal = (
-    create_artificial_observations(
-        temperature_time_series_val, precipitation_time_series_val, False, linearArt
-    )
+(
+    sno_s_tsVal,
+    sub_s_tsVal,
+    sno_f_tsVal,
+    sub_f_tsVal,
+    eva_f_tsVal,
+    sno_s_ts_areasVal,
+    sub_s_ts_areasVal,
+    sno_f_ts_areasVal,
+    sub_f_ts_areasVal,
+    eva_f_ts_areasVal,
+) = create_artificial_observations(
+    temperature_time_series_val, precipitation_time_series_val, False, linearArt
 )
 
 
@@ -1814,7 +1879,7 @@ sub_s_initial = 0.0
 
 
 #####################
-# fitting scenarios #
+# Fitting scenarios #
 #####################
 
 # so called expert models where the process-based
@@ -1960,41 +2025,54 @@ thr = {
 
 # 8 scenarios: 7 ML scenarios and 1 expert model scenario for reference
 if fitOnObservations:
-    fitting_scenarios = [eva, sno, sub, sne, sue, sus, thr, \
-                                                       xhr] 
+    fitting_scenarios = [eva, sno, sub, sne, sue, sus, thr, xhr]
 # 14 scenarios: 7 ML scenarios and 7 expert scenarios
 else:
-    fitting_scenarios = [eva, sno, sub, sne, sue, sus, thr, \
-                         xva, xno, xub, xne, xue, xus, xhr] 
+    fitting_scenarios = [
+        eva,
+        sno,
+        sub,
+        sne,
+        sue,
+        sus,
+        thr,
+        xva,
+        xno,
+        xub,
+        xne,
+        xue,
+        xus,
+        xhr,
+    ]
 
 if run_in_batch:
-    if batch_scenario == 'eva':
+    if batch_scenario == "eva":
         fitting_scenarios = [eva]
-    if batch_scenario == 'sno':
+    if batch_scenario == "sno":
         fitting_scenarios = [sno]
-    if batch_scenario == 'sub':
+    if batch_scenario == "sub":
         fitting_scenarios = [sub]
-    if batch_scenario == 'sne':
+    if batch_scenario == "sne":
         fitting_scenarios = [sne]
-    if batch_scenario == 'sue':
+    if batch_scenario == "sue":
         fitting_scenarios = [sue]
-    if batch_scenario == 'sus':
+    if batch_scenario == "sus":
         fitting_scenarios = [sus]
-    if batch_scenario == 'thr':
+    if batch_scenario == "thr":
         fitting_scenarios = [thr]
-    if batch_scenario == 'xva':
+    if batch_scenario == "xva":
         fitting_scenarios = [xva]
-    if batch_scenario == 'xno':
+    if batch_scenario == "xno":
         fitting_scenarios = [xno]
-    if batch_scenario == 'xub':
+    if batch_scenario == "xub":
         fitting_scenarios = [xub]
-    if batch_scenario == 'xne':
+    if batch_scenario == "xne":
         fitting_scenarios = [xne]
-    if batch_scenario == 'xue':
+    if batch_scenario == "xue":
         fitting_scenarios = [xue]
-    if batch_scenario == 'xus':
+    if batch_scenario == "xus":
         fitting_scenarios = [xus]
-    if batch_scenario == 'xhr':
+    if batch_scenario == "xhr":
         fitting_scenarios = [xhr]
 
 outOne, outTwo, outThree, outFour = createTrainingIndices()
@@ -2031,13 +2109,13 @@ four["stopping"] = outFour
 training_scenarios = [one, two, three, four]
 
 if run_in_batch:
-    if training_scenario == '1':
+    if training_scenario == "1":
         training_scenarios = [one]
-    if training_scenario == '2':
+    if training_scenario == "2":
         training_scenarios = [two]
-    if training_scenario == '3':
+    if training_scenario == "3":
         training_scenarios = [three]
-    if training_scenario == '4':
+    if training_scenario == "4":
         training_scenarios = [four]
 
 # rerun scenarios, i.e. the same run each time
