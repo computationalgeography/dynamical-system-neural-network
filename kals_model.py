@@ -50,13 +50,13 @@ fitOnObservations = True
 addErrorToArtificialStreamFlow = False
 
 # input directory with input data
-#input_data_directory = " ../data/inputData/" 
-input_data_directory = "../data/inputData/" 
+input_data_directory = " ../data/inputData/" 
+#input_data_directory = "../data/inputData/" 
 
 # output directories
 # folder where results folder (scen_directory) is written
-#out_folder = " ../data/results/"
-out_folder = "../data/results/"
+out_folder = " ../data/results/"
+#out_folder = "../data/results/"
 
 # name of results folder
 scen_directory = "test"
@@ -269,9 +269,9 @@ class EarlyStopper:
         return self.counter, False
 
 
-###############
-# data import #
-###############
+####################
+# data preparation #
+####################
 
 
 def createMeteoData(input_data_directory, output_directory, startDate, endDate):
@@ -749,6 +749,7 @@ class Net(nn.Module):
         modeEvP,        # potential proportion of evap to sublimation
     ):
 
+        # number of time steps in model run
         nr_timesteps = len(temperature)
 
 
@@ -762,8 +763,9 @@ class Net(nn.Module):
         if modeEvP == "obsCreation":
             evaPropToSno = torch.sigmoid(torch.tensor(self.evp_parameter_obs_creation))
 
-        # difference between lower and higher is (2115 m -2797 m) * 0.005 = 3.41 degrees
-        # https://journals.ametsoc.org/view/journals/clim/16/7/1520-0442_2003_016_1032_sasvoa_2.0.co_2.xml
+        # difference between lower and higher half of the area is (2115 m - 2797 m)
+        # multiplied by lapse rate of 0.005 gives 3.41 degrees difference in temperature
+        # use this for semi-distributed model only
         if one_area:
             areaTemperatureOffsets = [0.0]
         else:
@@ -773,27 +775,31 @@ class Net(nn.Module):
             numberOfAreas = 1
         else:
             numberOfAreas = 2
+
+        # loop over the areas (for distributed model)
         for area in range(0, numberOfAreas):
-            # emtpy output timeseries for writing
+            # create emtpy output timeseries for writing
             # storages
             sno_s_ts = torch.zeros(nr_timesteps)
             sub_s_ts = torch.zeros(nr_timesteps)
             # fluxes
             sno_f_ts = torch.zeros(nr_timesteps)
             sub_f_ts = torch.zeros(nr_timesteps)
-            # evapotranspiration
             eva_f_ts = torch.zeros(nr_timesteps)
 
-            # initial storages
+            # set initial storages
             sno_s = sno_s_initial
             sub_s = sub_s_initial
 
+            # loop over the time steps, i.e. the actual dynamical model
             for i in range(0, nr_timesteps):
-                # get drivers for timestep
+                # get system drivers for timestep
                 temp = temperature[i] + temperatureOffset + areaTemperatureOffsets[area]
 
-                # potential evapotranspiration
 
+                ######################
+                # evapotranspiration #
+                ######################
                 EPot = torch.max(
                     self.eva_f_calculate(temp, mode_eva, deep_layer, linearArt),
                     torch.tensor(0.0),
@@ -802,8 +808,12 @@ class Net(nn.Module):
                 eva_f = EPot
                 eva_f_ts[i] = eva_f
 
-                # snow or rain
 
+                ################
+                # snow or rain #
+                ################
+
+                # convert from mm to m
                 precip = precipitation[i] / 1000.0
                 snowing = temp < 0.0
                 if snowing:
@@ -813,10 +823,13 @@ class Net(nn.Module):
                     snowfall = torch.tensor(0.0)
                     rainfall = precip
 
-                # snow storage
+                ################
+                # snow storage #
+                ################
 
-                # snowfall
+                # add snowfall to snow storage
                 sno_s = sno_s + snowfall
+
                 sno_s_ts[i] = sno_s
 
                 # snow melt
@@ -824,11 +837,14 @@ class Net(nn.Module):
                     temp, mode_sno, deep_layer, linearArt
                 )
 
-                if first_epochs:  # hard cap to prevent zero snow cover
+                # limit snow melt to prevent zero snow cover
+                # over first epochs, for more efficient training
+                if first_epochs: 
                     if temp < -5.0:
                         potential_melt = torch.tensor(0.0)
 
                 sno_f = potential_melt
+
                 sno_f_ts[i] = sno_f
 
                 potential_melt = torch.max(potential_melt, torch.tensor(0))
@@ -841,10 +857,12 @@ class Net(nn.Module):
                 sno_s = sno_s - actualSublimation
                 potentialEvapForSub = EPot - actualSublimation
 
-                # sub surface storage
+                #######################
+                # sub surface storage #
+                #######################
 
+                # total input to subsurface storage
                 totalInput = rainfall + actualMelt
-                # hortonRunoffProportion = 0.04
                 hortonRunoffProportion = 0.0
                 hortonRunoff = hortonRunoffProportion * totalInput
 
@@ -863,12 +881,11 @@ class Net(nn.Module):
 
                 sub_f = seepageAct + hortonRunoff
 
-                # sub_f = torch.max(sub_f, torch.tensor(0.0008))
-
                 sub_f_ts[i] = sub_f
 
                 sub_s = sub_s - seepageAct
 
+            # data reorganisation in case of two areas (vstack)
             if area == 0:
                 # storages
                 sno_s_ts_areas = sno_s_ts
@@ -888,7 +905,8 @@ class Net(nn.Module):
                 # evapotranspiration
                 eva_f_ts_areas = torch.vstack([eva_f_ts_areas, eva_f_ts])
 
-            # if one area add the same ones again ('fake' two areas, each the same)
+            # if one area add the same ones again (mimic two areas, each the same
+            # such that processing is the same for one or two areas
             if one_area:
                 # storages
                 sno_s_ts_areas = torch.vstack([sno_s_ts_areas, sno_s_ts])
@@ -911,9 +929,9 @@ class Net(nn.Module):
         return torch.abs(w).sum()
 
 
-#############################
-# create artificial observations
-#############################
+##################################
+# create artificial observations #
+##################################
 
 
 def create_artificial_observations(
@@ -922,6 +940,9 @@ def create_artificial_observations(
     addErrorToArtificialStreamFlow,
     linearArt,
 ):
+    """
+    Create synthetic data set
+    """
     hydromodel = Net()
     sno_s_initial = 0.0
     sub_s_initial = 0.0
@@ -946,17 +967,13 @@ def create_artificial_observations(
     sub_f_ts = sub_f_ts_areas.mean(dim=0)
     eva_f_ts = eva_f_ts_areas.mean(dim=0)
     if addErrorToArtificialStreamFlow:
-        # error = torch.tensor([numpy.random.normal(0,0.01,len(streamFlowTimeSeries))])
-        # sma = torch.nn.AvgPool1d(kernel_size=59, stride = 1, padding = 29)
-        # error = sma(error)
-        # sub_f_ts = torch.max(sub_f_ts + error, torch.tensor(0.0))[0]
         sd = 0.2
         errorMultiplier = numpy.minimum(
             numpy.maximum(0.0, numpy.random.normal(1, sd, len(streamFlowTimeSeries))), 2
         )
-        # sub_f_ts = torch.max(sub_f_ts * errorMultiplier, torch.tensor(0.0))[0]
         sub_f_ts = torch.max(sub_f_ts * errorMultiplier, torch.tensor(0.0))
-    return sno_s_ts, sub_s_ts, sno_f_ts, sub_f_ts, eva_f_ts, sno_s_ts_areas, sub_s_ts_areas, sno_f_ts_areas, sub_f_ts_areas, eva_f_ts_areas
+    return sno_s_ts, sub_s_ts, sno_f_ts, sub_f_ts, eva_f_ts, sno_s_ts_areas, \
+           sub_s_ts_areas, sno_f_ts_areas, sub_f_ts_areas, eva_f_ts_areas
 
 
 ############
@@ -1042,7 +1059,7 @@ def training_loop(
     numpy.save(sfdAr + "val_lan_ts_sno_s.npy", land_sno_time_series_val)
     numpy.save(sfdAr + "val_lan_ts_eva_f.npy", land_eva_time_series_val)
 
-    # write internal observed variables to disk, validation
+    # write internal observed variables to disk, training
     numpy.save(sfdAr + "train_lan_ts_sno_s.npy", land_sno_time_series)
     numpy.save(sfdAr + "train_lan_ts_eva_f.npy", land_eva_time_series)
 
@@ -1059,15 +1076,22 @@ def training_loop(
     # set time for tracking run times
     time = datetime.datetime.now()
 
+    # loop over the epochs
     first_epochs = True
     for epoch in range(1, n_epochs + 1):
+        # set first_epochs indicating initial part of training
+        # is used in dynamical model for snow storage component
+        # to make training more efficient
         if epoch > 100:
             first_epochs = False
         first_epochs = True
+
+        # set time for tracking run times
         newTime = datetime.datetime.now()
         duration = newTime - time
         time = datetime.datetime.now()
 
+        # run the dynamical model for training
         (
             tr_sno_s_ts_areas,
             tr_sub_s_ts_areas,
@@ -1088,6 +1112,8 @@ def training_loop(
             modeEvP=modeEvPTrain,
         )
 
+        # average model outputs over 2 areas (in case of 1 area
+        # two similar timeseries are averaged)
         tr_sno_s_ts = tr_sno_s_ts_areas.mean(dim=0)
         tr_sub_s_ts = tr_sub_s_ts_areas.mean(dim=0)
         tr_sno_f_ts = tr_sno_f_ts_areas.mean(dim=0)
@@ -1096,6 +1122,8 @@ def training_loop(
 
         training = numpy.logical_not(stopping)
 
+        # calculate training loss over observed streamflow (fitOnObservations)
+        # or over synthetic streamflow
         if fitOnObservations:
             if epoch < -5:
                 loss_train = loss_fn(tr_sub_f_ts, sub_f_ts, training)
@@ -1106,6 +1134,8 @@ def training_loop(
                     training,
                 )
         else:
+            # select what is trained on for synthetic run (so far for
+            # production always Sub, i.e. streamflow)
             if training_data == "trainingSub":
                 loss_train = loss_fn(tr_sub_f_ts, sub_f_ts, training)
             if training_data == "trainingEva":
@@ -1124,6 +1154,9 @@ def training_loop(
         epoch_series.append(epoch)
 
         # STOPPING, ie VALIDATION
+        # calculate validation loss in a similar fashion
+        # it is used here to decide on early stopping of training
+        # and is thus referred to as 'stopping'
         if epoch == 1 or epoch % 1 == 0:
             if fitOnObservations:
                 loss_trainSto = loss_fn(
@@ -1138,7 +1171,9 @@ def training_loop(
         counter, stop = early_stopper.early_stop(loss_trainSto)
         stopper_counter_series.append(counter)
 
-        # VALIDATION, ie TESTING
+        # run the dynamical model for VALIDATION, ie TESTING, on independent
+        # data not used for training or validation
+        # this is done only for every 50 epochs to save run time
         if epoch == 1 or epoch % 50 == 0 or stop:
             (
                     tr_sno_s_ts_areasVal,
@@ -1191,6 +1226,7 @@ def training_loop(
             loss_train += l1
 
 
+        # every 20 epochs, print status, create intermediate figures, and save outputs ###################
         if epoch == 1 or epoch % 20 == 0 or stop:
             print("\n###############################")
             # print('running scenario: ', scenario_directory, ' running one area: ', one_area)
@@ -1715,36 +1751,20 @@ def loss_fn(t_p, t_c, period):
     return squared_diffs.mean()
 
 
-## with momentum, works very well voor sub (sneller en precieser met zelfde loss)
-# optimizer = optim.RMSprop(hydromodel.parameters(), lr = 0.00001, momentum = 0.9)
-#
-## plateau https://pytorch.org/docs/stable/generated/torch.optim.lr_scheduler.ReduceLROnPlateau.html
-# scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', factor=0.9, eps = 1e-8, patience = 50)
-
-
-## fit model on observations or on artificial data
-#fitOnObservations = True
-#
-## if fitting on artificial data, use linear model or non-linear one
-#linearArtForNotFitOnObservations = False
-## add error to artificial data
-#addErrorToArtificialStreamFlow = False
-#
-## training data to calculate loss over (typical sub, i.e. outflow)
-#training_data = "trainingSub"
-#
-## folder to store output data, note the / at the end
-#output_directory = "../data/results/"
-
-
-# if fitting on real data, linear models for components not represented as NN are assumed
-# if fitting on artificial data, the option defined above is used
 if fitOnObservations:
     linearArt = True
 else:
     linearArt = linearArtForNotFitOnObservations
 
-# data for training or stopping ie validation
+
+
+#####################
+# data set creation #
+#####################
+
+# data for training and stopping ie validation
+
+# small modification for GFS data
 if GFS:
     yearIncrease = 0
 else:
@@ -1757,9 +1777,6 @@ temperature_time_series, precipitation_time_series, land_sno_time_series, land_e
 streamFlowTimeSeries, date_time_series = create_streamflow_data(
     input_data_directory, output_directory, startOne, endOne
 )
-#cosero_sub_s_soil_time_series, cosero_sub_s_gw_time_series = create_cosero_data(
-#    input_data_directory, output_directory, startOne, endOne
-#)
 sno_s_ts, sub_s_ts, sno_f_ts, sub_f_ts, eva_f_ts, \
     sno_s_ts_areas, sub_s_ts_areas, sno_f_ts_areas, sub_f_ts_areas, eva_f_ts_areas = (
     create_artificial_observations(
@@ -1768,6 +1785,7 @@ sno_s_ts, sub_s_ts, sno_f_ts, sub_f_ts, eva_f_ts, \
 )
 
 # data for validation, ie testing
+
 startVal = datetime.date(1995 + yearIncrease, 10, 1)
 endVal = datetime.date(2012 + yearIncrease, 9, 26)
 temperature_time_series_val, precipitation_time_series_val, land_sno_time_series_val, land_eva_time_series_val = createMeteoData(
@@ -1790,17 +1808,18 @@ sno_s_tsVal, sub_s_tsVal, sno_f_tsVal, sub_f_tsVal, eva_f_tsVal, \
 )
 
 
+# define initial snow and subsurface storages
 sno_s_initial = 0.0
 sub_s_initial = 0.0
+
 
 #####################
 # fitting scenarios #
 #####################
 
-#nr_epochs = 5000
-
-# expert models (n = 7)
-
+# so called expert models where the process-based
+# model parameters are fitted, each for a component
+# ('fitExpert') as specified below
 xub = {
     "name": "fit_xub",
     "modeEvaTrain": "obsCreation",
@@ -1867,6 +1886,9 @@ xhr = {
 
 
 # machine learning models (n = 7)
+# for the different scenarios of model configurations
+# each time fitting one or more model components represented
+# as neural network ("fit")
 
 sub = {
     "name": "fit_sub",
@@ -1977,7 +1999,7 @@ if run_in_batch:
 
 outOne, outTwo, outThree, outFour = createTrainingIndices()
 
-# training scenarios
+# training folds
 one = {
     "name": "1",
     "stopping": outOne,
@@ -2018,7 +2040,8 @@ if run_in_batch:
     if training_scenario == '4':
         training_scenarios = [four]
 
-# rerun scenarios
+# rerun scenarios, i.e. the same run each time
+# with different random initial parameters
 number_of_scenarios = 4
 aRange = numpy.arange(1, number_of_scenarios + 1)
 re_run_scenarios = []
@@ -2027,11 +2050,6 @@ for s in aRange:
 
 if run_in_batch:
     re_run_scenarios = [re_run_scenario]
-
-#if run_in_batch:
-#    fitting_scenarios = [fitting_scenarios[int(first) - 1]]
-#    training_scenarios = training_scenarios[int(second) - 1 : int(second) + 1]
-#    re_run_scenarios = str.split(third, ",")
 
 for fs in fitting_scenarios:
     for ts in training_scenarios:
