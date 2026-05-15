@@ -44,7 +44,7 @@ run is for training, on the training fold. This same run is used
 for validation (testing), on the remaining data. The second run is
 for testing (independent validation), on the independent validation
 (testing) data. The second part of this code creates intermediate
-figures and write data to disk.
+figures and writes data to disk.
 5. Data set creation. Calls the function from Data preparation to
 create the input data for the model.
 6. Fitting scenarios. Defines fitting scenarios.
