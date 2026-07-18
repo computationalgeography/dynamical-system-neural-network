@@ -32,7 +32,8 @@ g_a["impact_l"] = g_a["degimpact"] == "l"
 g_a["no_impact"] = g_a.impact_u | g_a.impact_l
 
 # proper time span
-g_a["start_early_enough"] = g_a["obsbeg_day"] < 1982
+g_a["start_early_enough"] = g_a["obsbeg_day"] == 1981
+#g_a["start_early_enough"] = g_a["obsbeg_day"] < 1999
 
 # no gaps in hourly time series
 g_a["no_gaps"] = g_a["gaps_post"] == 0
@@ -71,4 +72,4 @@ joined = pandas.merge(g_a_selected,b_a_selected, how = "inner", left_on="ID", ri
 print(joined)
 
 print(joined[["ID", "country", "area_gov", "elev", "urban_fra","frac_snow", "glac_fra", \
-              "name", "river", "region", "lon", "lat", "area_calc"]])
+              "name", "river", "region", "lon", "lat", "area_calc", "obsbeg_day", "obsend"]])

@@ -26,14 +26,18 @@ run_in_batch = True
 
 # running in batch (typical usage) is done by for instance
 # set run_in_batch to True
-# python kals_model.py sub 1 1 observations one test
+# for running kals catchment only use
+# python kals_model.py sub 1 1 observations one test kals
+# for running one of all catchments use for catchment twelve
+# python kals_model.py sub 1 1 observations one 12 all_catch
 # 1st value is scenario (here sub)
 # 2nd value is training fold (1-4) (here 1)
 # 3rd value is rerun scenario (1, 2, 3,...) (here 1)
 # 4th value is observations indicating fitting on observational data
 # or something else (here observations)
 # 5th value is one or two, representing lumped or semi-distributed (here one)
-# 6th value is name of output folder (here test)
+# 6th value is name of output folder (here test), for all_catch this should be catchment ID
+# 7th value is all_catch for running over all catch or else run Kals only
 # these same related settings below are ignored when running in batch
 
 # max number of epochs to run (will run for this number of epochs
@@ -95,6 +99,16 @@ if run_in_batch:
         one_area = True
     else:
         one_area = False
+    ID = sys.argv[6]    # ID of catchment from LamaH-CE, when running all catchm.
+    if sys.argv[7] == "all_catch":
+        all_catch = True
+        print("Running one catchment from all catchm., catchment ID is: ", ID)
+        scen_directory = ID
+    else:
+        all_catch = False
+
+
+
 
 output_directory = out_folder + scen_directory + "/"
 
@@ -277,9 +291,11 @@ class EarlyStopper:
 ####################
 
 
-def createMeteoData(input_data_directory, output_directory, startDate, endDate):
+def createMeteoData(input_data_directory, output_directory, startDate, endDate, ID):
     """
     Creates meteodata set from input data
+    Note that start date for ECMWF Land from LamaH-CH is assumed to be 1981 for
+    all catchments. This is taken care of in catch_sel.py
     """
     precipitation_file = open(output_directory + "precipitation.txt", "w")
     temperatureFile = open(output_directory + "temperature.txt", "w")
@@ -298,9 +314,13 @@ def createMeteoData(input_data_directory, output_directory, startDate, endDate):
     if GFS:
         weatherDataCSV = "weatherdata-470125_corrected.csv"
     else:
-        weatherDataCSV = "ID_535.csv"
+        if all_catch:
+            weatherDataCSV = "ID_" + ID + ".csv"
+        else:
+            weatherDataCSV = "ID_535.csv"
+        print("input meteodata file is: ", weatherDataCSV)
 
-    with open(input_data_directory + weatherDataCSV) as csv_file:
+    with open(input_data_directory + "A_basins_total_upstrm/" + weatherDataCSV) as csv_file:
         if GFS:
             csv_reader = csv.reader(csv_file, dialect="excel")
         else:
@@ -337,6 +357,9 @@ def createMeteoData(input_data_directory, output_directory, startDate, endDate):
                     line_out_count += 1
                 line_count += 1
                 date = date + timestep
+        if line_count < 14245:
+            print("number of days in meteo data is too limited")
+            exit()
 
     precipitation_file.close()
     temperatureFile.close()
@@ -348,7 +371,7 @@ def createMeteoData(input_data_directory, output_directory, startDate, endDate):
     )
 
 
-def create_cosero_data(input_data_directory, output_directory, startDate, endDate):
+def create_cosero_data(input_data_directory, output_directory, startDate, endDate, ID):
     """
     Creates data set from cosero runs in Lama
     """
@@ -362,7 +385,13 @@ def create_cosero_data(input_data_directory, output_directory, startDate, endDat
 
     coseroDataCSV = "ID_535_cosero.csv"
 
-    with open(input_data_directory + coseroDataCSV) as csv_file:
+    if all_catch:
+        coseroDataCSV = "ID_" + ID + ".csv"
+    else:
+        coseroDataCSV = "ID_535.csv"
+    print("input cosero data file is: ", coseroDataCSV)
+
+    with open(input_data_directory + "F_hydrol_model/" + coseroDataCSV) as csv_file:
         csv_reader = csv.reader(csv_file, dialect="excel", delimiter=";")
         line_count = 0
         line_out_count = 1
@@ -420,6 +449,8 @@ def create_cosero_data_additional(
     cosero_glacmelt_time_series = []
 
     coseroDataCSV = "monitor_sb0276.txt"
+    print('update this')
+    exit()
 
     with open(input_data_directory + coseroDataCSV) as csv_file:
         csv_reader = csv.reader(
@@ -1802,19 +1833,21 @@ else:
 
 # data for training and stopping ie validation
 
-# small modification for GFS data
+# small modification for non GFS data
 if GFS:
     yearIncrease = 0
 else:
     yearIncrease = 2
 startOne = datetime.date(1979 + yearIncrease, 10, 1)
 endOne = datetime.date(1996 + yearIncrease, 9, 26)
+
 (
     temperature_time_series,
     precipitation_time_series,
     land_sno_time_series,
     land_eva_time_series,
-) = createMeteoData(input_data_directory, output_directory, startOne, endOne)
+) = createMeteoData(input_data_directory, output_directory, startOne, endOne, ID)
+
 streamFlowTimeSeries, date_time_series = create_streamflow_data(
     input_data_directory, output_directory, startOne, endOne
 )
@@ -1840,20 +1873,24 @@ streamFlowTimeSeries, date_time_series = create_streamflow_data(
 
 startVal = datetime.date(1995 + yearIncrease, 10, 1)
 endVal = datetime.date(2012 + yearIncrease, 9, 26)
+
 (
     temperature_time_series_val,
     precipitation_time_series_val,
     land_sno_time_series_val,
     land_eva_time_series_val,
-) = createMeteoData(input_data_directory, output_directory, startVal, endVal)
+) = createMeteoData(input_data_directory, output_directory, startVal, endVal, ID)
+
 streamflow_time_series_val, date_time_series_val = create_streamflow_data(
     input_data_directory, output_directory, startVal, endVal
 )
+
 (
     cosero_sub_s_soil_time_series_val,
     cosero_sub_s_gw_time_series_val,
     cosero_eva_f_time_series_val,
-) = create_cosero_data(input_data_directory, output_directory, startVal, endVal)
+) = create_cosero_data(input_data_directory, output_directory, startVal, endVal, ID)
+
 create_cosero_data_additional(input_data_directory, output_directory, startVal, endVal)
 
 # note that no error is added to artificial streamflow in any case as it is used for validation only
