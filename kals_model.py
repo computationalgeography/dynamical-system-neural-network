@@ -1845,7 +1845,8 @@ else:
 # Data set creation #
 #####################
 
-# data for training and stopping ie validation
+
+### data for training and stopping ie validation
 
 # small modification for non GFS data
 if GFS:
@@ -1862,6 +1863,7 @@ endOne = datetime.date(1996 + yearIncrease, 9, 26)
     land_eva_time_series,
 ) = createMeteoData(input_data_directory, output_directory, startOne, endOne, ID)
 
+# observed streamflow only as the other ones were not used in kals catchment runs
 (
     tmp,
     tmp,
@@ -1872,6 +1874,12 @@ endOne = datetime.date(1996 + yearIncrease, 9, 26)
 streamFlowTimeSeries, date_time_series = create_streamflow_data(
     input_data_directory, output_directory, startOne, endOne
 )
+
+test = numpy.array(cosero_observed_streamflow) - numpy.array(streamFlowTimeSeries)
+numpy.savetxt('test.txt', test)
+numpy.savetxt('test2.txt', numpy.array(streamFlowTimeSeries))
+print('check here, time steps should also be OK, and old version should remain')
+exit()
 
 (
     sno_s_ts,
