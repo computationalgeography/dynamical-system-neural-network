@@ -71,4 +71,4 @@ joined = pandas.merge(g_a_selected,b_a_selected, how = "inner", left_on="ID", ri
 print(joined)
 
 print(joined[["ID", "country", "area_gov", "elev", "urban_fra","frac_snow", "glac_fra", \
-              "name", "river", "region", "lon", "lat"]])
+              "name", "river", "region", "lon", "lat", "area_calc"]])
