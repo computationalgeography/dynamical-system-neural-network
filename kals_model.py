@@ -10,6 +10,7 @@ import datetime
 import os
 import sys
 import string
+import pandas
 
 # Dynamical Neural Network Model
 # by Derek Karssenberg, Utrecht University
@@ -172,6 +173,15 @@ myFontSize = 7
 # so do not select a time stem outside this range
 # streamflow available always in this period
 
+
+def lama_to_cosero_id(lama_id):
+    conv_table = pandas.read_csv(input_data_directory + \
+                 "LamaH_additional_data/LamaH_COSERO_extended_outputs_20250829/Lookup_table_ID_SB.csv", \
+                 sep = ";")
+    selected = conv_table.loc[conv_table.ID == lama_id]
+    cosero_id = int(selected.COSERO_SB.iloc[0])
+    txt = (f"{cosero_id:04d}")
+    return txt
 
 def seed_generator(string):
     """
@@ -382,6 +392,7 @@ def create_cosero_data(input_data_directory, output_directory, startDate, endDat
     cosero_sub_s_soil_time_series = []  # subsurface storage, soil
     cosero_sub_s_gw_time_series = []  # subsurface storage, groundwater
     cosero_eva_f_time_series = []  # evapotranspiration flux
+    cosero_observed_streamflow_time_series = [] # streamflow (m3/s)
 
     coseroDataCSV = "ID_535_cosero.csv"
 
@@ -402,27 +413,28 @@ def create_cosero_data(input_data_directory, output_directory, startDate, endDat
                 sub_s_soil = float(row[11]) / 1000.0
                 sub_s_gw = float(row[13]) / 1000.0
                 eva_f = float(row[9]) / 1000.0
+                q_obs = float(row[19]) # unit m3/s
                 if (date >= startDate) and (date <= endDate):
                     cosero_sub_s_soil_time_series.append(sub_s_soil)
                     cosero_sub_s_gw_time_series.append(sub_s_gw)
                     cosero_eva_f_time_series.append(eva_f)
+                    cosero_observed_streamflow_time_series.append(q_obs)
                     line_out_count += 1
                 line_count += 1
                 date = date + timestep
-    numpy.save(
-        output_directory + "cosero_sub_s_soil.npy", cosero_sub_s_soil_time_series
-    )
+    numpy.save(output_directory + "cosero_sub_s_soil.npy", cosero_sub_s_soil_time_series)
     numpy.save(output_directory + "cosero_sub_s_gw.npy", cosero_sub_s_gw_time_series)
     numpy.save(output_directory + "cosero_eva_f.npy", cosero_eva_f_time_series)
     return (
         cosero_sub_s_soil_time_series,
         cosero_sub_s_gw_time_series,
         cosero_eva_f_time_series,
+        cosero_observed_streamflow_time_series
     )
 
 
 def create_cosero_data_additional(
-    input_data_directory, output_directory, startDate, endDate
+    input_data_directory, output_directory, startDate, endDate, ID
 ):
     """
     read model outputs from cosero runs in LamaH, additional attributes
@@ -448,9 +460,11 @@ def create_cosero_data_additional(
     cosero_smelt_time_series = []
     cosero_glacmelt_time_series = []
 
-    coseroDataCSV = "monitor_sb0276.txt"
-    print('update this')
-    exit()
+    if all_catch:
+        cosero_id = lama_to_cosero_id(int(ID))
+        coseroDataCSV = "monitor_sb" + cosero_id + ".txt"
+    else:
+        coseroDataCSV = "monitor_sb0276.txt"
 
     with open(input_data_directory + coseroDataCSV) as csv_file:
         csv_reader = csv.reader(
@@ -1848,6 +1862,13 @@ endOne = datetime.date(1996 + yearIncrease, 9, 26)
     land_eva_time_series,
 ) = createMeteoData(input_data_directory, output_directory, startOne, endOne, ID)
 
+(
+    tmp,
+    tmp,
+    tmp,
+    cosero_observed_streamflow,
+) = create_cosero_data(input_data_directory, output_directory, startOne, endOne, ID)
+
 streamFlowTimeSeries, date_time_series = create_streamflow_data(
     input_data_directory, output_directory, startOne, endOne
 )
@@ -1890,9 +1911,10 @@ streamflow_time_series_val, date_time_series_val = create_streamflow_data(
     cosero_sub_s_soil_time_series_val,
     cosero_sub_s_gw_time_series_val,
     cosero_eva_f_time_series_val,
+    cosero_observed_streamflow_time_series_val,
 ) = create_cosero_data(input_data_directory, output_directory, startVal, endVal, ID)
 
-create_cosero_data_additional(input_data_directory, output_directory, startVal, endVal)
+create_cosero_data_additional(input_data_directory, output_directory, startVal, endVal, ID)
 
 # note that no error is added to artificial streamflow in any case as it is used for validation only
 (
