@@ -1875,11 +1875,13 @@ streamFlowTimeSeries, date_time_series = create_streamflow_data(
     input_data_directory, output_directory, startOne, endOne
 )
 
-test = numpy.array(cosero_observed_streamflow) - numpy.array(streamFlowTimeSeries)
-numpy.savetxt('test.txt', test)
-numpy.savetxt('test2.txt', numpy.array(streamFlowTimeSeries))
-print('check here, time steps should also be OK, and old version should remain')
-exit()
+# use observed streamflow from cosero model data set for all catch
+if all_catch:
+    streamFlowTimeSeries = cosero_observed_streamflow
+
+#test = numpy.array(cosero_observed_streamflow) - numpy.array(streamFlowTimeSeries)
+#numpy.savetxt('test.txt', test)
+#numpy.savetxt('test2.txt', numpy.array(streamFlowTimeSeries))
 
 (
     sno_s_ts,
@@ -1899,7 +1901,9 @@ exit()
     linearArt,
 )
 
+########
 # data for validation, ie testing
+########
 
 startVal = datetime.date(1995 + yearIncrease, 10, 1)
 endVal = datetime.date(2012 + yearIncrease, 9, 26)
@@ -1919,10 +1923,16 @@ streamflow_time_series_val, date_time_series_val = create_streamflow_data(
     cosero_sub_s_soil_time_series_val,
     cosero_sub_s_gw_time_series_val,
     cosero_eva_f_time_series_val,
-    cosero_observed_streamflow_time_series_val,
+    cosero_observed_streamflow_val,
 ) = create_cosero_data(input_data_directory, output_directory, startVal, endVal, ID)
 
+# use observed streamflow from cosero model data set for all catch
+if all_catch:
+    streamflow_time_series_val = cosero_observed_streamflow_val
+
+
 create_cosero_data_additional(input_data_directory, output_directory, startVal, endVal, ID)
+
 
 # note that no error is added to artificial streamflow in any case as it is used for validation only
 (
