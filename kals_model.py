@@ -53,13 +53,13 @@ fitOnObservations = True
 addErrorToArtificialStreamFlow = False
 
 # input directory with input data
-input_data_directory = " ../data/inputData/"
-# input_data_directory = "../data/inputData/"
+#input_data_directory = " ../data/inputData/"
+input_data_directory = "../data/inputData/"
 
 # output directories
 # folder where results folder (scen_directory) is written
-out_folder = " ../data/results/"
-# out_folder = "../data/results/"
+#out_folder = " ../data/results/"
+out_folder = "../data/results/"
 
 # name of results folder
 scen_directory = "test"
