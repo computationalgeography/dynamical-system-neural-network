@@ -1861,7 +1861,10 @@ def loss_fn(t_p, t_c, period):
     a = 366  # must be used as spin up is embedded in training/stopping and validation data sets
     # periodFloat = torch.tensor(numpy.where(period, 1.0, 0.0))[a:]
     period = period[a:]
-    squared_diffs = ((t_p[a:] - t_c[a:]) ** 2.0)[period]
+    if all_catch:
+        squared_diffs = ((t_p[a:] - t_c[a:]) ** 2.0)
+    else:
+        squared_diffs = ((t_p[a:] - t_c[a:]) ** 2.0)[period]
     return squared_diffs.mean()
 
 
