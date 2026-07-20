@@ -140,6 +140,18 @@ except Exception as e:
 # some definitions #
 ####################
 
+def catchment_attributes(lama_id):
+    catch_attributes = pandas.read_csv(input_data_directory + \
+                 "A_basins_total_upstrm/1_attributes/Catchment_attributes.csv", \
+                 sep = ";")
+    selected = catch_attributes.loc[catch_attributes.ID == lama_id]
+    # area of catchment (km2), calculated
+    area_calc = float(selected.area_calc.iloc[0])
+    # range of catchment elevation (m)
+    elev_ran = float(selected.elev_ran.iloc[0])
+    #txt = (f"{cosero_id:04d}")
+    return area_calc, elev_ran
+
 # define if an additional NN layer is used (typically True in runs thus far)
 # note that for true, it may need to be in the parameter list of the optimizer
 deep_layer = True
@@ -159,9 +171,17 @@ else:
 
 l1_regularization = False
 
-# conversion from m3/s to m/day, catchment area 47.5 km3 (own calculation from DEM)
+# area_calc, area in km; elev_ran, range of elevation (max elev - min elev) in km
+if all_catch:
+    area_calc, elev_ran = catchment_attributes(int(ID))
+
+# conversion from m/day to m3/s, catchment area 47.5 km3 (own calculation from DEM)
 # GRDC gives 47.0, Lama-H gives 47.242 km3 which are very similar
-conversion_fluxes = 549.3
+# for all_catch take it from the database
+if all_catch:
+    conversion_fluxes = (area_calc * 1000.0 * 1000.0) / (60.0 * 60.0 * 24.0)
+else:
+    conversion_fluxes = 549.3
 
 # line width in plots
 width = 0.25
@@ -169,10 +189,10 @@ width = 0.25
 # font size in plots
 myFontSize = 7
 
+# for kals catchment:
 # meteo start date is 1 jan 1979, end date is 31 juli 2014
 # so do not select a time stem outside this range
 # streamflow available always in this period
-
 
 def lama_to_cosero_id(lama_id):
     conv_table = pandas.read_csv(input_data_directory + \
@@ -462,7 +482,8 @@ def create_cosero_data_additional(
 
     if all_catch:
         cosero_id = lama_to_cosero_id(int(ID))
-        coseroDataCSV = "monitor_sb" + cosero_id + ".txt"
+        coseroDataCSV = "LamaH_additional_data/LamaH_COSERO_extended_outputs_20250829/A_basins_full/" \
+                        + "monitor_sb" + cosero_id + ".txt"
     else:
         coseroDataCSV = "monitor_sb0276.txt"
 
@@ -832,7 +853,16 @@ class Net(nn.Module):
         if one_area:
             areaTemperatureOffsets = [0.0]
         else:
-            areaTemperatureOffsets = [1.705, -1.705]
+            if all_catch:
+                # estimated difference in elevation between higher and lower area (m)
+                elev_dif_high_low = elev_ran / 2.0 
+                # estimated difference in temperature between higher and lower area (m)
+                temp_dif_high_low = elev_dif_high_low * 0.005
+                # offset (degrees)
+                temp_offset_high_low = temp_dif_high_low / 2.0
+                areaTemperatureOffsets = [temp_offset_high_low, -temp_offset_high_low]
+            else:
+                areaTemperatureOffsets = [1.705, -1.705]
 
         if one_area:
             numberOfAreas = 1
