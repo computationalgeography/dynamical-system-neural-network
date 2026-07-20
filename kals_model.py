@@ -46,6 +46,7 @@ run_in_batch = True
 # if validation (stopping) does not make it stop
 #nr_epochs = 5000
 nr_epochs = 1000
+#nr_epochs = 30
 
 # run one area or else two
 one_area = True
