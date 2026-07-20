@@ -1,6 +1,6 @@
 # training scenario, 1, 2, 3, or 4 (folds)
 t_s=$1
-# re-run scenario, 1, 2, 3, or 4 (reruns, can also be more than 4, eg 5)
+# re-run scenario, 1, 2, 3, or 4 (reruns, can also greater than 4, eg 5, it always runs one)
 re_run_s=$2
 
 #batch_scenarios='eva sno sub sne sue sus thr xhr'

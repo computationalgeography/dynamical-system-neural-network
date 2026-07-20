@@ -28,7 +28,7 @@ run_in_batch = True
 # running in batch (typical usage) is done by for instance
 # set run_in_batch to True
 # for running kals catchment only use
-# python kals_model.py sub 1 1 observations one test kals
+# python kals_model.py thr 1 1 observations one 68 all_catch land_obs_one
 # for running one of all catchments use for catchment twelve
 # python kals_model.py sub 1 1 observations one 12 all_catch
 # 1st value is scenario (here sub)
@@ -37,13 +37,15 @@ run_in_batch = True
 # 4th value is observations indicating fitting on observational data
 # or something else (here observations)
 # 5th value is one or two, representing lumped or semi-distributed (here one)
-# 6th value is name of output folder (here test), for all_catch this should be catchment ID
+# 6th value is name of output folder, for all_catch this should be catchment ID
 # 7th value is all_catch for running over all catch or else run Kals only
+# 8th value is name of folder with scenario (e.g. land_obs_one)
 # these same related settings below are ignored when running in batch
 
 # max number of epochs to run (will run for this number of epochs
 # if validation (stopping) does not make it stop
-nr_epochs = 5000
+#nr_epochs = 5000
+nr_epochs = 30
 
 # run one area or else two
 one_area = True
@@ -91,7 +93,8 @@ if run_in_batch:
     re_run_scenario = sys.argv[3]
     fitOnObservationsOne = sys.argv[4]
     oneArea = sys.argv[5]
-    scen_directory = sys.argv[6]
+    scen_directory = sys.argv[6]  # id of catchment
+    scenario = sys.argv[8]        # scenario, e.g. land_obs_one
     if fitOnObservationsOne == "observations":
         fitOnObservations = True
     else:
@@ -105,13 +108,17 @@ if run_in_batch:
         all_catch = True
         print("Running one catchment from all catchm., catchment ID is: ", ID)
         scen_directory = ID
+
     else:
         all_catch = False
 
 
 
-
-output_directory = out_folder + scen_directory + "/"
+if all_catch:
+    output_root_directory = out_folder + scenario + "/"
+    output_directory = out_folder + scenario + "/" + scen_directory + "/"
+else: 
+    output_directory = out_folder + scen_directory + "/"
 
 # print status for epochs to screen
 print("##### RUN INFO ######")
@@ -125,6 +132,15 @@ print("#### END RUN INFO ######")
 
 
 # Create the run directory
+try:
+    os.mkdir(output_root_directory)
+    print(f"Directory '{output_root_directory}' created successfully.")
+except FileExistsError:
+    print(f"Directory '{output_root_directory}' already exists.")
+except PermissionError:
+    print(f"Permission denied: Unable to create '{output_root_directory}'.")
+except Exception as e:
+    print(f"An error occurred: {e}")
 try:
     os.mkdir(output_directory)
     print(f"Directory '{output_directory}' created successfully.")
