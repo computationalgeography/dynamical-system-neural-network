@@ -30,17 +30,17 @@ if run == "obs_two":
     observed_scenario = True
     one_area = False
 
-all_catch = True
+all_catch = False
 
 # for all catch only
 id ='68'
 
-create_scatter = True
-create_timeseries = True
-create_r2_by_variable = True
+create_scatter = False
+create_timeseries = False
+create_r2_by_variable = False
 create_r2_by_scenario = False
 create_nse = False
-print_stats = False
+print_stats = True
 print_budgets = False
 create_histogram = False
 create_act_melt_vs_temp = False
@@ -570,6 +570,7 @@ def varianceOverReal(modelled_tss_es, scenario, number_of_fits):
 if print_stats:
     # number of top fits to be used
     number_of_fits = 4
+    #number_of_fits = 16
     # overfitting
     df["minLossValidationValue"] = df["lossValidation"].apply(lambda x: x.min())
     df["lossRatioValidationValue"] = df["minLossValidationValue"]/df["lossValidationValue"]
@@ -586,7 +587,7 @@ if print_stats:
                   ]
 
     # scenarios for calculation of stats
-    scenariosStats = ['fit_eva', 'fit_thr']
+    scenariosStats = ['fit_eva', 'fit_thr', 'fit_xhr', 'fit_sub']
 
     for scenario in scenariosStats:
         print(scenario, '===========')
@@ -616,6 +617,7 @@ if print_stats:
         a = (df[df["sc"] == scen].loc[:, ["sc", "ts", "rs", "NSEVal", "lossModelSelection"]]).sort_values(by="lossModelSelection")
         # top 4
         b = a[0:number_of_fits]
+        print(b)
         coeff = 100.0 * numpy.sqrt(numpy.var(b['lossModelSelection']))/numpy.mean(b['lossModelSelection'])
         print('coefficient of variation lossModelSelection', f"{coeff:.1f}")
         scenario, varBetweenGroups, varWithinGroups, totVar = anova(a)
