@@ -30,14 +30,17 @@ if run == "obs_two":
     observed_scenario = True
     one_area = False
 
+all_catch = True
 
+# for all catch only
+id ='68'
 
-create_scatter = False
-create_timeseries = False
-create_r2_by_variable = False
+create_scatter = True
+create_timeseries = True
+create_r2_by_variable = True
 create_r2_by_scenario = False
 create_nse = False
-print_stats = True
+print_stats = False
 print_budgets = False
 create_histogram = False
 create_act_melt_vs_temp = False
@@ -53,15 +56,22 @@ modelSelectionWithTraining = False
 
 GFS = False
 
-data_dir = '../data/scenarios/LAND/final_runs/' 
-number_of_rerun_scenarios = 4  # CHANGE TO 4 FOR FINAL RUNS
+if all_catch:
+    data_dir = '../data/results_temporary/' 
+    number_of_rerun_scenarios = 1  # CHANGE TO 4 FOR FINAL RUNS
+else:
+    data_dir = '../data/scenarios/LAND/final_runs/' 
+    number_of_rerun_scenarios = 4  # CHANGE TO 4 FOR FINAL RUNS
 
 
 ##################
 # other settings #
 ##################
 
-number_of_fits_to_plot = 4
+if all_catch:
+    number_of_fits_to_plot = 1
+else:
+    number_of_fits_to_plot = 4
 
 plt.rcParams["font.size"] = 8
 plt.rcParams.update({'figure.max_open_warning': 0})
@@ -94,13 +104,11 @@ labels_variables_tight = ['evapotranspiration',
 
 if observed_scenario:
     if one_area:
-        #results_folder = '2507_oneArea_observations_7reruns/results/'
-        #results_folder = 'land_onearea_observations_cali_xhr/'
         results_folder = 'land_obs_one/'
     else:
-        #results_folder = '2507_twoArea_observations_7reruns/'
-        #results_folder = 'land_twoareas_observations_cali_xhr/'
         results_folder = 'land_obs_two/'
+    if all_catch:
+        results_folder = results_folder + id + '/'
     scenario_directory = data_dir + results_folder 
 else:
     # No error in streamflow (replaced) and precipitation and temperature
@@ -117,6 +125,18 @@ else:
     #scenario_directory = data_dir + "kals_model_fit_on_arti_data_with_error/results/"
 
 figure_directory = "../figures/" + results_folder
+
+if all_catch:
+    # Create figure directory
+    try:
+        os.mkdir(figure_directory)
+        print(f"Directory '{figure_directory}' created successfully.")
+    except FileExistsError:
+        print(f"Directory '{figure_directory}' already exists.")
+    except PermissionError:
+        print(f"Permission denied: Unable to create '{figure_directory}'.")
+    except Exception as e:
+        print(f"An error occurred: {e}")
 
 
 # only nn scenarios
@@ -231,7 +251,10 @@ def full_extent(ax, pad=0.0):
 # only exp scenarios
 # scenarios_to_plot = ['fit_xva', 'fit_xno', 'fit_xub', 'fit_xne', 'fit_xue', 'fit_xus', 'fit_xhr']
 
-training_scenarios = ["1", "2", "3", "4"]
+if all_catch:
+    training_scenarios = ["1"]
+else:
+    training_scenarios = ["1", "2", "3", "4"]
 
 # rerun scenarios
 #number_of_rerun_scenarios = 2
@@ -306,24 +329,44 @@ for array in arrays:
 
 # add additional_validation_data
 # cosero model, sub_s groundwater
-coseroVariables = ["val_cosero_bw0", \
-                   "val_cosero_bw1", \
-                   "val_cosero_bw2", \
-                   "val_cosero_bw3", \
-                   "val_cosero_bw4", \
-                   "val_cosero_eva_f", \
-                   "val_cosero_glacmelt", \
-                   "val_cosero_melt", \
-                   "val_cosero_smelt", \
-                   "val_cosero_sub_s_gw", \
-                   "val_cosero_sub_s_soil"]
+if all_catch:
+    coseroVariables = ["cosero_bw0", \
+                       "cosero_bw1", \
+                       "cosero_bw2", \
+                       "cosero_bw3", \
+                       "cosero_bw4", \
+                       "cosero_eva_f", \
+                       "cosero_glacmelt", \
+                       "cosero_melt", \
+                       "cosero_smelt", \
+                       "cosero_sub_s_gw", \
+                       "cosero_sub_s_soil"]
+
+else:
+    coseroVariables = ["val_cosero_bw0", \
+                       "val_cosero_bw1", \
+                       "val_cosero_bw2", \
+                       "val_cosero_bw3", \
+                       "val_cosero_bw4", \
+                       "val_cosero_eva_f", \
+                       "val_cosero_glacmelt", \
+                       "val_cosero_melt", \
+                       "val_cosero_smelt", \
+                       "val_cosero_sub_s_gw", \
+                       "val_cosero_sub_s_soil"]
 
 for coseroVariable in coseroVariables:
     arrayContents = []
     for sc, ts, rs in product(scenarios, training_scenarios, rerun_scenarios):
-        arrayContent = numpy.load(data_dir + "additional_validation_data/" + coseroVariable + ".npy", allow_pickle=True)
+        if all_catch:
+            arrayContent = numpy.load(data_dir + results_folder + coseroVariable + ".npy", allow_pickle=True)
+        else:
+            arrayContent = numpy.load(data_dir + "additional_validation_data/" + coseroVariable + ".npy", allow_pickle=True)
         arrayContents.append(arrayContent)
-    df[coseroVariable] = arrayContents
+    if all_catch:
+        df["val_" + coseroVariable] = arrayContents
+    else:
+        df[coseroVariable] = arrayContents
 
 
 # loss values
@@ -941,8 +984,11 @@ def timeseries_plot_by_scenario(modelled_tss_es, observed_tss_es, scenario, star
     if best_fit_only:
         number_of_fits_to_plot = 1
     else:
-        #number_of_fits_to_plot = 4
-        number_of_fits_to_plot = 16
+        if all_catch:
+            number_of_fits_to_plot = 1
+        else:
+            #number_of_fits_to_plot = 4
+            number_of_fits_to_plot = 16
     for tss in modelled_tss_es:
         for i in range(0,number_of_fits_to_plot):
             a = (df[df["sc"] == scenario].sort_values(by="lossModelSelection")).iloc[i]
@@ -1099,7 +1145,10 @@ if create_timeseries:
     i = 0
     for scenario in scenarios_to_plot:
         timeseries_plot_by_scenario(modelled_tss_list, observed_tss_list, scenario, startTimeTss, endTimeTss, True)
-        timeseries_plot_by_scenario(modelled_tss_list, observed_tss_list, scenario, startTimeTss, endTimeTss, False)
+        if all_catch:
+            aa = 1
+        else:
+            timeseries_plot_by_scenario(modelled_tss_list, observed_tss_list, scenario, startTimeTss, endTimeTss, False)
         i = i + 1
 
 
@@ -1389,11 +1438,14 @@ def r2_by_variable(scenarios, tss_variables, start, end):
                       transform=axs[i].transAxes, size = font_size_axes)
         i = i + 1
     if observed_scenario:
-        axs[0].set_ylim(-1.0,0.2) # eva_f
-        axs[1].set_ylim(0.1,0.6) # sno_f 
-        axs[2].set_ylim(0.6,1.03)   # sno_s
-        axs[3].set_ylim(0.78,0.83)  # sub_f
-        axs[4].set_ylim(-1.6,0.8)  # sub_s
+        if all_catch:
+            aa = 1.9
+        else:
+            axs[0].set_ylim(-1.0,0.2) # eva_f
+            axs[1].set_ylim(0.1,0.6) # sno_f 
+            axs[2].set_ylim(0.6,1.03)   # sno_s
+            axs[3].set_ylim(0.78,0.83)  # sub_f
+            axs[4].set_ylim(-1.6,0.8)  # sub_s
     else:
         #axs[0].set_ylim(0.94,1.01)
         #axs[1].set_ylim(0.87,1.02)
