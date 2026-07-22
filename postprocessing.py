@@ -7,6 +7,11 @@ from matplotlib import pyplot as plt
 from itertools import product
 from matplotlib.transforms import Bbox
 from matplotlib.lines import Line2D
+from pathlib import Path
+
+
+pandas.set_option('display.max_columns', None)
+pandas.set_option('display.max_rows', None)
 
 #######################
 # main configurations #
@@ -30,21 +35,22 @@ if run == "obs_two":
     observed_scenario = True
     one_area = False
 
-all_catch = False
+all_catch = True
 
 # for all catch only
-id ='68'
+id ='68'    # 535 is kals Spottling
 
 create_scatter = False
 create_timeseries = False
 create_r2_by_variable = False
 create_r2_by_scenario = False
 create_nse = False
-print_stats = True
+print_stats = False
 print_budgets = False
 create_histogram = False
 create_act_melt_vs_temp = False
 create_epochs = False
+create_expert_parameters_table = True
 
 
 #figure_directory = "../figures/"
@@ -266,7 +272,7 @@ for s in aRange:
 folderWithArrays = (
     scenario_directory
     + "/"
-    + scenarios[0]
+    + scenarios[7]
     + "/"
     + training_scenarios[0]
     + "/"
@@ -303,8 +309,14 @@ for array in arrays:
     for sc, ts, rs in product(scenarios, training_scenarios, rerun_scenarios):
         folder = scenario_directory + sc + "/" + ts + "/" + rs + "/arrays/"
         arrayName = folder + array + ".npy"
-        arrayContent = numpy.load(arrayName, allow_pickle=True)
-        arrayContents.append(arrayContent)
+        the_file = Path(arrayName)
+        # eva_parameter.npy, sub_parameter.npy, and sno_parameter.npy only in xhr
+        # so check if it is there, else, write -9999 as missing value
+        if the_file.is_file():
+            arrayContent = numpy.load(arrayName, allow_pickle=True)
+            arrayContents.append(arrayContent)
+        else:
+            arrayContents.append(-9999)
     df[array] = arrayContents
 
 ## add additional_validation_data
@@ -1714,3 +1726,17 @@ def epochs_plot():
 
 if create_epochs:
     epochs_plot()
+
+def expert_parameters_table():
+    parameters = (df[df["sc"] == "fit_xhr"].sort_values(by="lossModelSelection")).iloc[0]
+    print('sub', parameters.sub_parameter, 'sno', parameters.sno_parameter, 'eva', parameters.eva_parameter)
+    expert_parameters_df = pandas.DataFrame()
+    expert_parameters_df["sub"] = parameters.sub_parameter
+    expert_parameters_df["sno"] = parameters.sno_parameter
+    expert_parameters_df["eva"] = parameters.eva_parameter
+    print(expert_parameters_df)
+    print(figure_directory)
+    expert_parameters_df.to_csv(figure_directory + "expert_parameters.csv", index=False)
+
+if create_expert_parameters_table:
+    expert_parameters_table()
