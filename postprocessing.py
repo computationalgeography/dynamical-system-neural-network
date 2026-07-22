@@ -18,6 +18,7 @@ pandas.set_option('display.max_rows', None)
 #######################
 
 run = sys.argv[1]
+id_from_command_line = sys.argv[2]
 
 if run == "art_one":
     observed_scenario = False
@@ -38,7 +39,7 @@ if run == "obs_two":
 all_catch = True
 
 # for all catch only
-id ='68'    # 535 is kals Spottling
+id = id_from_command_line    # 535 is kals Spottling
 
 create_scatter = False
 create_timeseries = False
