@@ -696,7 +696,10 @@ response_sno_y = numpy.array(df_first[df_first["sc"] == "fit_eva"]["response_sno
 response_sub_x = numpy.array(df_first[df_first["sc"] == "fit_eva"]["response_sub_x"])[0]
 response_sub_y = numpy.array(df_first[df_first["sc"] == "fit_eva"]["response_sub_y"])[0]
 
-line_width_best = 3.0
+if all_catch:
+    line_width_best = 1.0
+else:
+    line_width_best = 3.0
 line_width_other = 1.0
 
 rij = 0
