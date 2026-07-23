@@ -9,7 +9,6 @@ from matplotlib.transforms import Bbox
 from matplotlib.lines import Line2D
 from pathlib import Path
 
-
 pandas.set_option('display.max_columns', None)
 pandas.set_option('display.max_rows', None)
 
@@ -19,6 +18,7 @@ pandas.set_option('display.max_rows', None)
 
 run = sys.argv[1]
 id_from_command_line = sys.argv[2]
+all_catch = True
 
 if run == "art_one":
     observed_scenario = False
@@ -36,7 +36,6 @@ if run == "obs_two":
     observed_scenario = True
     one_area = False
 
-all_catch = True
 
 # for all catch only
 id = id_from_command_line    # 535 is kals Spottling
@@ -51,7 +50,9 @@ print_budgets = False
 create_histogram = False
 create_act_melt_vs_temp = False
 create_epochs = False
-create_expert_parameters_table = True
+create_expert_parameters_table = False
+create_expert_parameters_tables = False
+create_r2_by_variable_tables = True
 
 
 #figure_directory = "../figures/"
@@ -108,6 +109,13 @@ labels_variables_tight = ['evapotranspiration',
                     'subsurface storage'
                     ]
 
+labels_variables_codes = ['eva_f',
+                    'sno_f',
+                    'sno_s',
+                    'sub_f',
+                    'sub_s'
+                    ]
+
 
 if observed_scenario:
     if one_area:
@@ -131,7 +139,8 @@ else:
     # Note that the streamflow for validation is with error
     #scenario_directory = data_dir + "kals_model_fit_on_arti_data_with_error/results/"
 
-figure_directory = "../figures/" + results_folder
+figure_root_directory = "../figures/"
+figure_directory = figure_root_directory + results_folder
 
 if all_catch:
     # Create figure directory
@@ -1411,6 +1420,9 @@ def r2_by_variable(scenarios, tss_variables, start, end):
            ]
     fig.set_size_inches(8.27, 4.69)
     i = 0
+    var_names = (['id', 'variable'] + names[:-1])
+    nen_models_ns = pandas.DataFrame(columns = var_names)
+    exp_models_ns = pandas.DataFrame(columns = var_names)
     while i < tss_variables:
         modelled_tss = modelled_tss_list[i]
         observed_tss = observed_tss_list[i]
@@ -1430,6 +1442,8 @@ def r2_by_variable(scenarios, tss_variables, start, end):
             yVal.append(r_sq_for)
             rij += 1
         axs[i].plot(xVal,yVal, '.', markersize=size, color = colour)
+        var_values = ([id_from_command_line] + [labels_variables_codes[i]] + yVal)
+        nen_models_ns.loc[i] = var_values
         xValExp = []
         yValExp = []
         rij = 0
@@ -1448,10 +1462,13 @@ def r2_by_variable(scenarios, tss_variables, start, end):
                 yValExp.append(r_sq_for)
                 rij += 1
             axs[i].plot(xValExp,yValExp, '_', markersize=10, color = colour)
-                #plt.plot(names[i], nse, '_', color=color, label = label, markersize = 10)
+            var_values = ([id_from_command_line] + [labels_variables_codes[i]] + yValExp)
+            exp_models_ns.loc[i] = var_values
         axs[i].text(.05, .95, labels_variables_tight[i], ha='left', va='top', \
                       transform=axs[i].transAxes, size = font_size_axes)
         i = i + 1
+    nen_models_ns.to_csv(figure_directory + "nen_models_ns.csv", index=False)
+    exp_models_ns.to_csv(figure_directory + "exp_models_ns.csv", index=False)
     if observed_scenario:
         if all_catch:
             aa = 1.9
@@ -1729,15 +1746,59 @@ if create_epochs:
     epochs_plot()
 
 def expert_parameters_table():
+    """
+    Creates a table with the three parameters from the expert
+    model
+    """
     parameters = (df[df["sc"] == "fit_xhr"].sort_values(by="lossModelSelection")).iloc[0]
-    print('sub', parameters.sub_parameter, 'sno', parameters.sno_parameter, 'eva', parameters.eva_parameter)
     expert_parameters_df = pandas.DataFrame()
     expert_parameters_df["sub"] = parameters.sub_parameter
     expert_parameters_df["sno"] = parameters.sno_parameter
     expert_parameters_df["eva"] = parameters.eva_parameter
-    print(expert_parameters_df)
-    print(figure_directory)
     expert_parameters_df.to_csv(figure_directory + "expert_parameters.csv", index=False)
 
 if create_expert_parameters_table:
     expert_parameters_table()
+
+def expert_parameters_tables():
+    ids = [35,68,247,528,534,535,565,815,818]
+    expert_parameters_all_catch_df = pandas.DataFrame()
+    if one_area:
+        results_folder_table = 'land_obs_one/'
+    else:
+        results_folder_table = 'land_obs_two/'
+    list_of_tables = []
+    for the_id in ids:
+        directory_of_id = figure_root_directory + results_folder_table + str(the_id)
+        expert_parameters_df = pandas.read_csv(directory_of_id + "/expert_parameters.csv")
+        expert_parameters_df["id"] = the_id
+        col = expert_parameters_df.pop("id")
+        expert_parameters_df.insert(0, col.name, col)
+        list_of_tables.append(expert_parameters_df)
+    a = pandas.concat(list_of_tables)
+    directory_of_results = figure_root_directory + results_folder_table
+    a.to_csv(directory_of_results + "expert_parameters.csv", index=False)
+
+def r2_by_variable_tables(csv_file):
+    ids = [35,68,247,528,534,535,565,815,818]
+    if one_area:
+        results_folder_table = 'land_obs_one/'
+    else:
+        results_folder_table = 'land_obs_two/'
+    list_of_tables = []
+    for the_id in ids:
+        directory_of_id = figure_root_directory + results_folder_table + str(the_id)
+        df = pandas.read_csv(directory_of_id + "/" + csv_file + ".csv")
+        list_of_tables.append(df)
+    a = pandas.concat(list_of_tables)
+    print(a)
+    directory_of_results = figure_root_directory + results_folder_table
+    print(directory_of_results)
+    a.to_csv(directory_of_results + csv_file + ".csv", index=False)
+
+if create_expert_parameters_tables:
+    expert_parameters_tables()
+
+if r2_by_variable_tables:
+    r2_by_variable_tables('exp_models_ns')
+    r2_by_variable_tables('nen_models_ns')
