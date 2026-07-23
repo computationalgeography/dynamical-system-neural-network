@@ -28,7 +28,7 @@ df = pandas.concat([df_nen_one, df_nen_two, df_exp_one, df_exp_two], axis=1)
 green = "#4daf4a"
 blue = "#377eb8"
 
-df_mod = df[df["variable_nen_one"] == "sno_s"]
+df_mod = df[df["variable_nen_one"] == "sno_f"]
 print(df_mod)
 
 fig,ax = plt.subplots(figsize=(9,3))
@@ -90,7 +90,7 @@ ax.text(x + 3*step, 1.1, 'ES', transform=ax.transAxes, fontsize=fontje, va='top'
 ax.text(x + 4*step, 1.1, 'EG', transform=ax.transAxes, fontsize=fontje, va='top')
 ax.text(x + 5*step, 1.1, 'SG', transform=ax.transAxes, fontsize=fontje, va='top')
 ax.text(x + 6*step, 1.1, 'ESG', transform=ax.transAxes, fontsize=fontje, va='top')
-ax.set_ylim(-1, 1)
+ax.set_ylim(0.1, 1)
 
 
 plt.savefig('../figures/merged/boxplot_ns.pdf')

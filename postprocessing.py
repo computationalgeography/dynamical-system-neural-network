@@ -1442,6 +1442,7 @@ def r2_by_variable(scenarios, tss_variables, start, end):
             #    r_sq_for = rSquared(x, y)
             #else:
             r_sq_for = ns(x, y)
+            #r_sq_for = rSquared(x, y)
             xVal.append(names[rij])
             yVal.append(r_sq_for)
             rij += 1
