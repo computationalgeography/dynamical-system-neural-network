@@ -41,8 +41,8 @@ if run == "obs_two":
 id = id_from_command_line    # 535 is kals Spottling
 
 create_scatter = False
-create_timeseries = False
-create_r2_by_variable = False
+create_timeseries = True
+create_r2_by_variable = True
 create_r2_by_scenario = False
 create_nse = False
 print_stats = False
@@ -52,7 +52,7 @@ create_act_melt_vs_temp = False
 create_epochs = False
 create_expert_parameters_table = False
 create_expert_parameters_tables = False
-create_r2_by_variable_tables = True
+create_r2_by_variable_tables = False
 
 
 #figure_directory = "../figures/"
@@ -855,7 +855,7 @@ axs[0, 1].set_title("snow melt", fontsize=font_size_axes)
 axs[0, 2].set_title("outflow subsurf. storage\n(streamflow)", fontsize=font_size_axes)
 if not EGU:
     plt.subplots_adjust(wspace=0, hspace=0)
-fig.savefig(figure_directory + "response.pdf")
+fig.savefig(figure_directory + "response.pdf", transparent = True)
 plt.close(fig)
 
 ##################################################
@@ -872,12 +872,12 @@ modelled_tss_list = [
 
 if observed_scenario:
     observed_tss_list = [
-        #"val_lan_ts_eva_f",
-        "val_cosero_eva_f",
-        "val_cosero_sno_f_additional",
-        "val_lan_ts_sno_s",
-        "valid_ts_OBS",
-        "val_cosero_sub_s_additional"
+        "val_lan_ts_eva_f",                  # evapotranspiration from ERA5 Land
+        #"val_cosero_eva_f",                  # evapotranspiration from cosero
+        "val_cosero_sno_f_additional",       # idem, melt rate from cosero (is not available from ERA5)
+        "val_lan_ts_sno_s",                  # snow state from era5 land
+        "valid_ts_OBS",                      # streamflow observed
+        "val_cosero_sub_s_additional"        # subsurface storage from cosero
     ]
 else:
     observed_tss_list = [
@@ -1021,7 +1021,8 @@ def timeseries_plot_by_scenario(modelled_tss_es, observed_tss_es, scenario, star
                 observed_tss = observed_tss_es[tssNumber]
                 if not(observed_scenario) or (observed_tss == 'valid_ts_OBS') \
                                              or (observed_tss == 'val_lan_ts_sno_s') \
-                                             or (observed_tss == 'val_cosero_eva_f'): 
+                                             or (observed_tss == 'val_cosero_eva_f') \
+                                             or (observed_tss == 'val_lan_ts_eva_f'): 
                     axs[rij].plot(
                         a["valid_date"][start:end],
                         a[observed_tss][start:end],
@@ -1799,6 +1800,6 @@ def r2_by_variable_tables(csv_file):
 if create_expert_parameters_tables:
     expert_parameters_tables()
 
-if r2_by_variable_tables:
+if create_r2_by_variable_tables:
     r2_by_variable_tables('exp_models_ns')
     r2_by_variable_tables('nen_models_ns')
