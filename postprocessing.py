@@ -52,7 +52,7 @@ create_act_melt_vs_temp = False
 create_epochs = False
 create_expert_parameters_table = False
 create_expert_parameters_tables = False
-create_r2_by_variable_tables = False
+create_r2_by_variable_tables = True
 
 
 #figure_directory = "../figures/"
@@ -1795,9 +1795,7 @@ def r2_by_variable_tables(csv_file):
         df = pandas.read_csv(directory_of_id + "/" + csv_file + ".csv")
         list_of_tables.append(df)
     a = pandas.concat(list_of_tables)
-    print(a)
     directory_of_results = figure_root_directory + results_folder_table
-    print(directory_of_results)
     a.to_csv(directory_of_results + csv_file + ".csv", index=False)
 
 if create_expert_parameters_tables:
