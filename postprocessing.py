@@ -41,18 +41,18 @@ if run == "obs_two":
 id = id_from_command_line    # 535 is kals Spottling
 
 create_scatter = False
-create_timeseries = True
-create_r2_by_variable = True
+create_timeseries = False
+create_r2_by_variable = False
 create_r2_by_scenario = False
 create_nse = False
-print_stats = False
+print_stats = True
 print_budgets = False
 create_histogram = False
 create_act_melt_vs_temp = False
 create_epochs = False
-create_expert_parameters_table = False
-create_expert_parameters_tables = False
-create_r2_by_variable_tables = True
+create_expert_parameters_table = True   
+create_expert_parameters_tables = True
+create_r2_by_variable_tables = False
 
 
 #figure_directory = "../figures/"
@@ -66,7 +66,7 @@ GFS = False
 
 if all_catch:
     data_dir = '../data/results_temporary/' 
-    number_of_rerun_scenarios = 1  # CHANGE TO 4 FOR FINAL RUNS
+    number_of_rerun_scenarios = 4  # CHANGE TO 4 FOR FINAL RUNS
 else:
     data_dir = '../data/scenarios/LAND/final_runs/' 
     number_of_rerun_scenarios = 4  # CHANGE TO 4 FOR FINAL RUNS
@@ -636,7 +636,8 @@ if print_stats:
     totVarList = []
     for scen in scenariosStats:
         print(scen, '===========')
-        a = (df[df["sc"] == scen].loc[:, ["sc", "ts", "rs", "NSEVal", "lossModelSelection"]]).sort_values(by="lossModelSelection")
+        a = (df[df["sc"] == scen].loc[:, ["sc", "ts", "rs", "NSEVal", "lossModelSelection", 
+                                          "eva_parameter", "sno_parameter", "sub_parameter"]]).sort_values(by="lossModelSelection")
         # top 4
         b = a[0:number_of_fits]
         print(b)
@@ -1760,6 +1761,7 @@ def expert_parameters_table():
     expert_parameters_df["sub"] = parameters.sub_parameter
     expert_parameters_df["sno"] = parameters.sno_parameter
     expert_parameters_df["eva"] = parameters.eva_parameter
+    print(expert_parameters_df)
     expert_parameters_df.to_csv(figure_directory + "expert_parameters.csv", index=False)
 
 if create_expert_parameters_table:

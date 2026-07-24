@@ -44,8 +44,8 @@ run_in_batch = True
 
 # max number of epochs to run (will run for this number of epochs
 # if validation (stopping) does not make it stop
-#nr_epochs = 5000
-nr_epochs = 1000
+nr_epochs = 5000
+#nr_epochs = 1000
 #nr_epochs = 30
 
 # run one area or else two
@@ -168,6 +168,22 @@ def catchment_attributes(lama_id):
     elev_ran = float(selected.elev_ran.iloc[0])
     #txt = (f"{cosero_id:04d}")
     return area_calc, elev_ran
+
+def catchment_expert_parameters(lama_id):
+    catch_parameters = pandas.read_csv(input_data_directory + \
+                 "expert_parameters/expert_parameters_" + scenario + ".csv", \
+                 sep = ",")
+    selected = catch_parameters.loc[catch_parameters['id'] == lama_id]
+    # eva parameter
+    eva_parameter_expert_calibration = float(selected['eva'].iloc[0])
+    # sub parameter 
+    sub_parameter_expert_calibration = float(selected['sub'].iloc[0])
+    # sno parameter 
+    sno_parameter_expert_calibration = float(selected['sno'].iloc[0])
+    return eva_parameter_expert_calibration, sub_parameter_expert_calibration, \
+           sno_parameter_expert_calibration
+
+
 
 # define if an additional NN layer is used (typically True in runs thus far)
 # note that for true, it may need to be in the parameter list of the optimizer
@@ -612,18 +628,26 @@ class Net(nn.Module):
                 tem_par = -0.9351652
                 evp_par = 3.4553902
         else:
-            if one_area:
-                eva_par = 0.014076318
-                sub_par = 0.03213018
-                sno_par = 0.0029198169
+            if all_catch:
+                eva_calibrated, sub_calibrated, sno_calibrated = catchment_expert_parameters(int(ID))
+                eva_par = eva_calibrated
+                sub_par = sub_calibrated
+                sno_par = sno_calibrated
                 tem_par = 0.0  # assumed zero
                 evp_par = 3.5  # note input to sigmoid (evp [0,1]), 3.5 equals 0.97
             else:
-                eva_par = 0.072542064
-                sub_par = 0.113195494
-                sno_par = 0.0012788665
-                tem_par = 0.0  # assumed zero
-                evp_par = 3.5
+                if one_area:
+                    eva_par = 0.014076318
+                    sub_par = 0.03213018
+                    sno_par = 0.0029198169
+                    tem_par = 0.0  # assumed zero
+                    evp_par = 3.5  # note input to sigmoid (evp [0,1]), 3.5 equals 0.97
+                else:
+                    eva_par = 0.072542064
+                    sub_par = 0.113195494
+                    sno_par = 0.0012788665
+                    tem_par = 0.0  # assumed zero
+                    evp_par = 3.5
 
         self.eva_parameter_obs_creation = eva_par
         self.sub_parameter_obs_creation = sub_par
@@ -1388,6 +1412,10 @@ def training_loop(
                     sfdAr + "sub_parameter.npy",
                     hydromodel.sub_parameter.detach().numpy(),
                 )
+            else:
+                print('calibrated sub parameter used is: ', hydromodel.sub_parameter_obs_creation,
+                      end=" ",
+                )
             if modeSnoTrain == "fitExpert":
                 print(
                     "snow melt parameter:",
@@ -1398,6 +1426,10 @@ def training_loop(
                     sfdAr + "sno_parameter.npy",
                     hydromodel.sno_parameter.detach().numpy(),
                 )
+            else:
+                print('calibrated sno parameter used is: ', hydromodel.sno_parameter_obs_creation,
+                      end=" ",
+                )
             if mode_eva_train == "fitExpert":
                 print(
                     "eva parameter:",
@@ -1407,6 +1439,10 @@ def training_loop(
                 numpy.save(
                     sfdAr + "eva_parameter.npy",
                     hydromodel.eva_parameter.detach().numpy(),
+                )
+            else:
+                print('calibrated eva parameter used is: ', hydromodel.eva_parameter_obs_creation,
+                      end=" ",
                 )
             if modeTemTrain == "fitExpert":
                 print(
