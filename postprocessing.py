@@ -48,7 +48,7 @@ create_r2_by_scenario = False
 create_nse = False
 print_stats = False
 print_budgets = False
-print_stats_observed_data = True
+print_stats_observed_data = False
 create_histogram = False
 create_act_melt_vs_temp = False
 create_epochs = False
@@ -1029,7 +1029,6 @@ def timeseries_plot_by_scenario(modelled_tss_es, observed_tss_es, scenario, star
 #            number_of_fits_to_plot = 16
     for tss in modelled_tss_es:
         for i in range(0,number_of_fits_to_plot):
-            print(i)
             a = (df[df["sc"] == scenario].sort_values(by="lossModelSelection")).iloc[i]
             # Plot observed timeseries either from artificial data or from observations.
             if one_area or (number_of_fits_to_plot > 1):
@@ -1089,7 +1088,6 @@ def timeseries_plot_by_scenario(modelled_tss_es, observed_tss_es, scenario, star
                 line_width = line_width_other 
                 line_style = 'dashed'
                 z_order = -10
-            print(line_style)
             if best_fit_only:
                 if one_area:
                     theColor = green
@@ -1837,3 +1835,6 @@ def stats_timeseries_data(list_of_timeseries):
 
 if print_stats_observed_data:
     stats_timeseries_data(observed_tss_list)
+
+if print_cosero_results:
+print_cosero_results:
