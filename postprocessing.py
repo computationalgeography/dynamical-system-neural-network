@@ -40,10 +40,14 @@ if run == "obs_two":
 
 # for all catch only
 id = id_from_command_line    # 535 is kals Spottling
+ids = [35,68,247,528,534,535,565,815,818]
+
 
 create_scatter = False
-create_timeseries = True
-create_r2_by_variable = False
+create_timeseries = False
+# use this for create_r2_by_variable_tables as well
+# it will dump the data as a csv
+create_r2_by_variable = True
 create_r2_by_scenario = False
 create_nse = False
 print_stats = False
@@ -54,7 +58,11 @@ create_act_melt_vs_temp = False
 create_epochs = False
 create_expert_parameters_table = False   
 create_expert_parameters_tables = False
+# run first create_r2_by_variable and
+# note that below option needs to be run both for
+# one and two areas
 create_r2_by_variable_tables = False
+get_cosero_calibration_results = True
 
 
 #figure_directory = "../figures/"
@@ -1211,16 +1219,16 @@ def rmseFormatted(x, y):
     rmse_for = "{:.4f}".format(rmse)
     return rmse_for
 
-def rSquared(x, y):
+def corr_coeff(x, y):
     rM = numpy.corrcoef(x, y)
     r = rM[0][1]
     rSq = r * r
     return rSq
 
 def rSquaredFormatted(x, y):
-    rSq = rSquared(x, y)
-    r_sq_for = "{:.3f}".format(rSq)
-    return r_sq_for
+    rSq = corr_coeff(x, y)
+    ass_metric = "{:.3f}".format(rSq)
+    return ass_metric
 
 def scatter_plot_by_variable(scenarios, modelled_tss, observed_tss, start, end):
     fig = plt.figure(dpi=dpi_figures)
@@ -1247,11 +1255,11 @@ def scatter_plot_by_variable(scenarios, modelled_tss, observed_tss, start, end):
         ##fig.colorbar(hb, ax=axs[rij], pad=0.01)
         cbar = fig.colorbar(hb, ax=axs[rij], fraction=0.046, pad=0.04)
         axs[rij].plot([0, 10], [0, 10], color="black", linewidth=0.5)
-        #r_sq_for = rSquaredFormatted(x, y)
+        #ass_metric = rSquaredFormatted(x, y)
         #rmse_for = rmseFormatted(x, y)
         ns_for = nsFormatted(x, y)
         axs[rij].text(
-            #0.99, 0.01, r_sq_for, ha="right", va="bottom", transform=axs[rij].transAxes
+            #0.99, 0.01, ass_metric, ha="right", va="bottom", transform=axs[rij].transAxes
             #0.99, 0.01, rmse_for, ha="right", va="bottom", transform=axs[rij].transAxes
             0.99, 0.01, ns_for, ha="right", va="bottom", transform=axs[rij].transAxes
         )
@@ -1298,11 +1306,11 @@ def scatter_plot_by_scenario(modelled_tss_es, observed_tss_es, scenario, name, s
         cbar = fig.colorbar(hb, ax=axs[rij], fraction=0.046, pad=0.04)
         cbar.ax.tick_params(labelsize=font_size_axes)
         axs[rij].plot([0, 10], [0, 10], color="black", linewidth=1.0, linestyle = 'dashed')
-        r_sq_for = rSquaredFormatted(x, y)
+        ass_metric = rSquaredFormatted(x, y)
         #rmse_for = rmseFormatted(x, y)
         ns_for = nsFormatted(x, y)
         axs[rij].text(
-            #0.99, 0.01, '$r^2$ = ' + r_sq_for, ha="right", va="bottom", transform=axs[rij].transAxes, size = font_size_axes
+            #0.99, 0.01, '$r^2$ = ' + ass_metric, ha="right", va="bottom", transform=axs[rij].transAxes, size = font_size_axes
             #0.99, 0.01, '$r^2$ = ' + rmse_for, ha="right", va="bottom", transform=axs[rij].transAxes, size = font_size_axes
             0.99, 0.01, 'NSE = ' + ns_for, ha="right", va="bottom", transform=axs[rij].transAxes, size = font_size_axes
         )
@@ -1445,15 +1453,17 @@ def r2_by_variable(scenarios, tss_variables, start, end):
         # nn scenarios
         for sc in scenarios[:-1]:
             a = (df[df["sc"] == sc].sort_values(by="lossModelSelection")).iloc[0]
+            #print(a.sc, a.ts, a.rs, a.NSEVal)
             x = a[observed_tss][start:end]
             y = a[modelled_tss][start:end]
             #if (modelled_tss == 'valid_ts_sub_s') and (observed_scenario):
-            #    r_sq_for = rSquared(x, y)
+            #    ass_metric = corr_coeff(x, y)
             #else:
-            r_sq_for = ns(x, y)
-            #r_sq_for = rSquared(x, y)
+            # pick the metric, change it below as well
+            #ass_metric = ns(x, y)
+            ass_metric = corr_coeff(x, y)
             xVal.append(names[rij])
-            yVal.append(r_sq_for)
+            yVal.append(ass_metric)
             rij += 1
         axs[i].plot(xVal,yVal, '.', markersize=size, color = colour)
         var_values = ([id_from_command_line] + [labels_variables_codes[i]] + yVal)
@@ -1468,12 +1478,14 @@ def r2_by_variable(scenarios, tss_variables, start, end):
                 a = (df[df["sc"] == "fit_xhr"].sort_values(by="lossModelSelection")).iloc[0]
                 x = a[observed_tss][start:end]
                 y = a[modelled_tss][start:end]
-                if (modelled_tss == 'valid_ts_sub_s') and (observed_scenario):
-                    r_sq_for = rSquared(x, y)
-                else:
-                    r_sq_for = ns(x, y)
+                #if (modelled_tss == 'valid_ts_sub_s') and (observed_scenario):
+                #    ass_metric = corr_coeff(x, y)
+                #else:
+                #    ass_metric = ns(x, y)
+                #ass_metric = ns(x, y)
+                ass_metric = corr_coeff(x, y)
                 xValExp.append(names[rij])
-                yValExp.append(r_sq_for)
+                yValExp.append(ass_metric)
                 rij += 1
             axs[i].plot(xValExp,yValExp, '_', markersize=10, color = colour)
             var_values = ([id_from_command_line] + [labels_variables_codes[i]] + yValExp)
@@ -1537,10 +1549,10 @@ def r2_by_scenario(scenarios, tss_variables, start, end):
             observed_tss = observed_tss_list[i]
             x = a[observed_tss][start:end]
             y = a[modelled_tss][start:end]
-            #r_sq_for = rSquared(x, y)
-            r_sq_for = ns(x, y)
+            #ass_metric = corr_coeff(x, y)
+            ass_metric = ns(x, y)
             #xVal.append(names[i])
-            yVal.append(r_sq_for)
+            yVal.append(ass_metric)
             i = i + 1
         if one_area:
             axs[rij].plot(x_labels,yVal, '.', markersize=12)
@@ -1836,5 +1848,14 @@ def stats_timeseries_data(list_of_timeseries):
 if print_stats_observed_data:
     stats_timeseries_data(observed_tss_list)
 
-if print_cosero_results:
-print_cosero_results:
+def cosero_calibration_results():
+    cosero_calibration_results_df = pandas.read_csv( \
+            "../data/inputData/F_hydrol_model/4_output/statistics_val.csv", sep = ";")
+    selected_catch_df = cosero_calibration_results_df[cosero_calibration_results_df["ID"].isin(ids)]
+    #print(selected_catch_df)
+    print('Median NSE of Cosero is ', selected_catch_df["NSE"].median())
+    print('Median Correlation of Cosero is ', selected_catch_df["CORR"].median())
+ 
+
+if get_cosero_calibration_results:
+   cosero_calibration_results()
