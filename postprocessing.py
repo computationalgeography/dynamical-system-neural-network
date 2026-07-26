@@ -18,6 +18,7 @@ pandas.set_option('display.max_rows', None)
 
 run = sys.argv[1]
 id_from_command_line = sys.argv[2]
+
 all_catch = True
 
 if run == "art_one":
@@ -41,17 +42,18 @@ if run == "obs_two":
 id = id_from_command_line    # 535 is kals Spottling
 
 create_scatter = False
-create_timeseries = False
+create_timeseries = True
 create_r2_by_variable = False
 create_r2_by_scenario = False
 create_nse = False
-print_stats = True
+print_stats = False
 print_budgets = False
+print_stats_observed_data = True
 create_histogram = False
 create_act_melt_vs_temp = False
 create_epochs = False
-create_expert_parameters_table = True   
-create_expert_parameters_tables = True
+create_expert_parameters_table = False   
+create_expert_parameters_tables = False
 create_r2_by_variable_tables = False
 
 
@@ -390,6 +392,13 @@ for coseroVariable in coseroVariables:
     else:
         df[coseroVariable] = arrayContents
 
+# correct for error in LamaH data set, catchment 528 does not have zero snow cover
+# for the ERA5 Land data set
+# minimum is always, consistently, 0.9035. Substracted this value. The Cosero snow
+# for this catchment does go down to zero and this confirms there is an error in
+# LamaH.
+if id == '528':
+    df["val_lan_ts_sno_s"] = df['val_lan_ts_sno_s'].apply(lambda x: x - 0.9035)
 
 # loss values
 df["lossTrainingValue"] = df["lossTraining"].apply(lambda x: x[-1])
@@ -1012,13 +1021,15 @@ def timeseries_plot_by_scenario(modelled_tss_es, observed_tss_es, scenario, star
     if best_fit_only:
         number_of_fits_to_plot = 1
     else:
-        if all_catch:
-            number_of_fits_to_plot = 1
-        else:
-            #number_of_fits_to_plot = 4
-            number_of_fits_to_plot = 16
+        number_of_fits_to_plot = 4
+#        if all_catch:
+#            number_of_fits_to_plot = 1
+#        else:
+#            #number_of_fits_to_plot = 4
+#            number_of_fits_to_plot = 16
     for tss in modelled_tss_es:
         for i in range(0,number_of_fits_to_plot):
+            print(i)
             a = (df[df["sc"] == scenario].sort_values(by="lossModelSelection")).iloc[i]
             # Plot observed timeseries either from artificial data or from observations.
             if one_area or (number_of_fits_to_plot > 1):
@@ -1078,6 +1089,7 @@ def timeseries_plot_by_scenario(modelled_tss_es, observed_tss_es, scenario, star
                 line_width = line_width_other 
                 line_style = 'dashed'
                 z_order = -10
+            print(line_style)
             if best_fit_only:
                 if one_area:
                     theColor = green
@@ -1102,7 +1114,8 @@ def timeseries_plot_by_scenario(modelled_tss_es, observed_tss_es, scenario, star
             legend.set_bbox(dict(facecolor='white', alpha=0.0, edgecolor='white'))
             if observed_scenario:
                 if rij == 1:
-                    axs[rij].set_ylim(0,0.0043)
+                    axs[rij].set_ylim(-0.0001,0.0043)
+                    #axs[rij].set_ylim(0,0.0043)
                 if rij == 2:
                     axs[rij].set_ylim(0,0.024)
                 if rij == 3:
@@ -1174,10 +1187,7 @@ if create_timeseries:
     i = 0
     for scenario in scenarios_to_plot:
         timeseries_plot_by_scenario(modelled_tss_list, observed_tss_list, scenario, startTimeTss, endTimeTss, True)
-        if all_catch:
-            aa = 1
-        else:
-            timeseries_plot_by_scenario(modelled_tss_list, observed_tss_list, scenario, startTimeTss, endTimeTss, False)
+        timeseries_plot_by_scenario(modelled_tss_list, observed_tss_list, scenario, startTimeTss, endTimeTss, False)
         i = i + 1
 
 
@@ -1807,3 +1817,23 @@ if create_expert_parameters_tables:
 if create_r2_by_variable_tables:
     r2_by_variable_tables('exp_models_ns')
     r2_by_variable_tables('nen_models_ns')
+
+
+def stats_timeseries_data(list_of_timeseries):
+    """
+    prints stats of timeseries calculated over first
+    one in the complete data set, typically used for
+    observed data as these are the same over scenarios
+    and reruns
+    """
+    print('##########')
+    print('catchment is is ', id)
+    for timeseries in list_of_timeseries:
+        tss = (df[timeseries][0])
+        min_val = numpy.min(tss)
+        max_val = numpy.max(tss)
+        med_val = numpy.median(tss)
+        print(timeseries, 'minimum: ', min_val, 'median: ', med_val, 'maximum: ', max_val)
+
+if print_stats_observed_data:
+    stats_timeseries_data(observed_tss_list)
