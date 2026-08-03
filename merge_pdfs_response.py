@@ -1,7 +1,7 @@
 from pypdf import PdfWriter, PdfReader
 import sys
 
-scenario = "land_obs_one"
+scenario = "land_obs_two"
 
 figure_directory = "../figures/" + scenario + "/"
 

@@ -41,9 +41,10 @@ if run == "obs_two":
 # for all catch only
 id = id_from_command_line    # 535 is kals Spottling
 ids = [35,68,247,528,534,535,565,815,818]
+# for single reruns not equal to xhr read rerun 2, 3, 4 from rerun 1
+read_first_rerun_for_234 = True
 
-
-create_scatter = False
+create_scatter = True
 create_timeseries = False
 # use this for create_r2_by_variable_tables as well
 # it will dump the data as a csv
@@ -61,7 +62,7 @@ create_expert_parameters_tables = False
 # run first create_r2_by_variable and
 # note that below option needs to be run both for
 # one and two areas
-create_r2_by_variable_tables = False
+create_r2_by_variable_tables = True
 get_cosero_calibration_results = True
 
 
@@ -327,6 +328,9 @@ df["rs"] = rsList
 for array in arrays:
     arrayContents = []
     for sc, ts, rs in product(scenarios, training_scenarios, rerun_scenarios):
+        if all_catch & read_first_rerun_for_234:
+            if sc != 'fit_xhr':
+                rs = "1"
         folder = scenario_directory + sc + "/" + ts + "/" + rs + "/arrays/"
         arrayName = folder + array + ".npy"
         the_file = Path(arrayName)
@@ -338,6 +342,16 @@ for array in arrays:
         else:
             arrayContents.append(-9999)
     df[array] = arrayContents
+
+# explored approach to calculate snow melt from ERA5 Land
+# snow melt = (snow_s_previous - snow_s_current) - sno_fall
+df["val_lan_ts_sno_s_yesterday"] = df["val_lan_ts_sno_s"].apply(lambda x: numpy.roll(x,1))
+df["val_lan_ts_snowfall"] = df.apply(lambda x: numpy.where(x['valid_ts_temperature'] > 0.0, 0.0, x['valid_ts_precipitation']), axis=1)
+df["val_lan_ts_sno_f_temp"] = df["val_lan_ts_sno_s_yesterday"] - df["val_lan_ts_sno_s"] + df["val_lan_ts_snowfall"]
+df["val_lan_ts_sno_f"] = df.apply(lambda x: numpy.where(x["val_lan_ts_sno_f_temp"] < 0.0, 0.0, x["val_lan_ts_sno_f_temp"]), axis=1)
+df["val_lan_ts_sno_f"] = df.apply(lambda x: numpy.where(x["val_lan_ts_sno_f"] > 0.04, 0.04, x["val_lan_ts_sno_f_temp"]), axis=1)
+
+
 
 ## add additional_validation_data
 ## cosero model, sub_s groundwater
@@ -399,6 +413,7 @@ for coseroVariable in coseroVariables:
         df["val_" + coseroVariable] = arrayContents
     else:
         df[coseroVariable] = arrayContents
+
 
 # correct for error in LamaH data set, catchment 528 does not have zero snow cover
 # for the ERA5 Land data set
@@ -895,6 +910,7 @@ if observed_scenario:
     observed_tss_list = [
         "val_lan_ts_eva_f",                  # evapotranspiration from ERA5 Land
         #"val_cosero_eva_f",                  # evapotranspiration from cosero
+        #"val_lan_ts_sno_f",                   # melt rate from ERA5 Land (estimated)
         "val_cosero_sno_f_additional",       # idem, melt rate from cosero (is not available from ERA5)
         "val_lan_ts_sno_s",                  # snow state from era5 land
         "valid_ts_OBS",                      # streamflow observed
@@ -1123,13 +1139,15 @@ def timeseries_plot_by_scenario(modelled_tss_es, observed_tss_es, scenario, star
                     axs[rij].set_ylim(-0.0001,0.0043)
                     #axs[rij].set_ylim(0,0.0043)
                 if rij == 2:
-                    axs[rij].set_ylim(0,0.024)
+                    #axs[rij].set_ylim(0,0.024)
+                    axs[rij].set_ylim(0,0.043)
                 if rij == 3:
                     axs[rij].set_ylim(0,0.8)
                 if rij == 4:
                     axs[rij].set_ylim(0,0.025)
                 if rij == 5:
-                    axs[rij].set_ylim(0,0.46)
+                    #axs[rij].set_ylim(0,0.46)
+                    axs[rij].set_ylim(0,0.55)
 
         axs[rij].yaxis.set_tick_params(labelsize=font_size_axes)
         axs[rij].locator_params(axis='y', nbins=3)
@@ -1210,9 +1228,18 @@ def nsFormatted(x, y):
     ns_for = "{:.3f}".format(nsValue)
     return ns_for
 
+def bias(x, y):
+    """
+    absolute bias, x is observed
+    if positive modelled is higher
+    """
+    return (y - x).mean()
+
 def rmse_calc(x, y):
-    # normalized RMSE or coefficient of variation
-    return numpy.sqrt(((x - y) ** 2.0).mean())/y.mean()
+    # not normalized RMSE or coefficient of variation
+    # x is observed
+    #return numpy.sqrt(((x - y) ** 2.0).mean())/x.mean()
+    return numpy.sqrt(((x - y) ** 2.0).mean())
 
 def rmseFormatted(x, y):
     rmse = rmse_calc(x, y)
@@ -1224,6 +1251,21 @@ def corr_coeff(x, y):
     r = rM[0][1]
     rSq = r * r
     return rSq
+
+def kge(x, y):
+    """
+    kge where x is observed
+    """
+    r = corr_coeff(x, y)
+    alpha = numpy.std(y) / numpy.std(x) 
+    beta = numpy.mean(y) / numpy.mean(x)
+    kge = 1.0 - numpy.sqrt( \
+                         (r - 1.0)**2.0 + \
+                         (alpha - 1.0)**2.0 + \
+                         (beta - 1.0)**2.0 \
+                         )
+    return kge
+    
 
 def rSquaredFormatted(x, y):
     rSq = corr_coeff(x, y)
@@ -1460,8 +1502,11 @@ def r2_by_variable(scenarios, tss_variables, start, end):
             #    ass_metric = corr_coeff(x, y)
             #else:
             # pick the metric, change it below as well
-            #ass_metric = ns(x, y)
-            ass_metric = corr_coeff(x, y)
+            ass_metric = ns(x, y)
+            #ass_metric = corr_coeff(x, y)
+            #ass_metric = kge(x, y)
+            #ass_metric = rmse_calc(x, y)
+            #ass_metric = bias(x, y)
             xVal.append(names[rij])
             yVal.append(ass_metric)
             rij += 1
@@ -1482,8 +1527,11 @@ def r2_by_variable(scenarios, tss_variables, start, end):
                 #    ass_metric = corr_coeff(x, y)
                 #else:
                 #    ass_metric = ns(x, y)
-                #ass_metric = ns(x, y)
-                ass_metric = corr_coeff(x, y)
+                ass_metric = ns(x, y)
+                #ass_metric = corr_coeff(x, y)
+                #ass_metric = kge(x, y)
+                #ass_metric = rmse_calc(x, y)
+                #ass_metric = bias(x, y)
                 xValExp.append(names[rij])
                 yValExp.append(ass_metric)
                 rij += 1
@@ -1855,6 +1903,7 @@ def cosero_calibration_results():
     #print(selected_catch_df)
     print('Median NSE of Cosero is ', selected_catch_df["NSE"].median())
     print('Median Correlation of Cosero is ', selected_catch_df["CORR"].median())
+    print('Median KGE of Cosero is ', selected_catch_df["KGE"].median())
  
 
 if get_cosero_calibration_results:
