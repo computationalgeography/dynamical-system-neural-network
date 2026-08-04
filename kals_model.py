@@ -778,7 +778,10 @@ class Net(nn.Module):
             out_sno_f = m(self.sno_f_d((torch.tensor([temp]))))
             if deep_layer:
                 out_sno_f = m(self.sno_f_dd(out_sno_f))
-            potential_melt = torch.sigmoid(self.sno_f_c(out_sno_f)) / 50.0
+            # original value, devide by 50
+            #potential_melt = torch.sigmoid(self.sno_f_c(out_sno_f)) / 50.0
+            # new value, to allow somewhat larger range of snow melt
+            potential_melt = torch.sigmoid(self.sno_f_c(out_sno_f)) / 20.0
         if mode_sno == "fitExpert":
             melting = temp > 0.0
             if melting:

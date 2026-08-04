@@ -487,6 +487,7 @@ df["val_cosero_sub_s_additional"] = df["val_cosero_sub_s_additional"] - min_val_
 
 #df["val_cosero_sno_f_additional"] = df["val_cosero_smelt"] + df["val_cosero_glacmelt"]
 df["val_cosero_sno_f_additional"] = df["val_cosero_smelt"]
+print(df["val_cosero_sno_f_additional"][0].max())
 
 
 
@@ -1193,8 +1194,6 @@ def timeseries_plot_by_scenario(modelled_tss_es, observed_tss_es, scenario, star
 
 
 startTimeTss = 5 * 365
-#endTimeTss = 4 * 365
-#endTimeTss = 6 * 365
 endTimeTss = 10 * 365
 
 
@@ -1486,6 +1485,7 @@ def r2_by_variable(scenarios, tss_variables, start, end):
     var_names = (['id', 'variable'] + names[:-1])
     nen_models_ns = pandas.DataFrame(columns = var_names)
     exp_models_ns = pandas.DataFrame(columns = var_names)
+    metrics_over_longer_steps = False
     while i < tss_variables:
         modelled_tss = modelled_tss_list[i]
         observed_tss = observed_tss_list[i]
@@ -1502,6 +1502,12 @@ def r2_by_variable(scenarios, tss_variables, start, end):
             #    ass_metric = corr_coeff(x, y)
             #else:
             # pick the metric, change it below as well
+            if metrics_over_longer_steps:
+                m = 14
+                x = x[:-2]
+                y = y[:-2]
+                x = x.reshape(-1, m).mean(axis=1)
+                y = y.reshape(-1, m).mean(axis=1)
             ass_metric = ns(x, y)
             #ass_metric = corr_coeff(x, y)
             #ass_metric = kge(x, y)
@@ -1523,6 +1529,12 @@ def r2_by_variable(scenarios, tss_variables, start, end):
                 a = (df[df["sc"] == "fit_xhr"].sort_values(by="lossModelSelection")).iloc[0]
                 x = a[observed_tss][start:end]
                 y = a[modelled_tss][start:end]
+                if metrics_over_longer_steps:
+                    m = 14
+                    x = x[:-2]
+                    y = y[:-2]
+                    x = x.reshape(-1, m).mean(axis=1)
+                    y = y.reshape(-1, m).mean(axis=1)
                 #if (modelled_tss == 'valid_ts_sub_s') and (observed_scenario):
                 #    ass_metric = corr_coeff(x, y)
                 #else:
@@ -1829,7 +1841,6 @@ def expert_parameters_table():
     expert_parameters_df["sub"] = parameters.sub_parameter
     expert_parameters_df["sno"] = parameters.sno_parameter
     expert_parameters_df["eva"] = parameters.eva_parameter
-    print(expert_parameters_df)
     expert_parameters_df.to_csv(figure_directory + "expert_parameters.csv", index=False)
 
 if create_expert_parameters_table:
