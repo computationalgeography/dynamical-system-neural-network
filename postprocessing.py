@@ -44,7 +44,7 @@ ids = [35,68,247,528,534,535,565,815,818]
 # for single reruns not equal to xhr read rerun 2, 3, 4 from rerun 1
 read_first_rerun_for_234 = True
 
-create_scatter = True
+create_scatter = False
 create_timeseries = False
 # use this for create_r2_by_variable_tables as well
 # it will dump the data as a csv
@@ -487,7 +487,6 @@ df["val_cosero_sub_s_additional"] = df["val_cosero_sub_s_additional"] - min_val_
 
 #df["val_cosero_sno_f_additional"] = df["val_cosero_smelt"] + df["val_cosero_glacmelt"]
 df["val_cosero_sno_f_additional"] = df["val_cosero_smelt"]
-print(df["val_cosero_sno_f_additional"][0].max())
 
 
 
@@ -857,7 +856,10 @@ if observed_scenario:
     if one_area:
         axs[0, 2].set_xlim(0, 0.4)
     else:
-        axs[0, 2].set_xlim(0, 0.12)
+        if all_catch:
+            axs[0, 2].set_xlim(0, 0.40)
+        else:
+            axs[0, 2].set_xlim(0, 0.12)
 else:
     #axs[0, 2].set_xlim(0.0, 0.15)
     axs[0, 2].set_xlim(0, 0.18)
@@ -1056,7 +1058,8 @@ def timeseries_plot_by_scenario(modelled_tss_es, observed_tss_es, scenario, star
         for i in range(0,number_of_fits_to_plot):
             a = (df[df["sc"] == scenario].sort_values(by="lossModelSelection")).iloc[i]
             # Plot observed timeseries either from artificial data or from observations.
-            if one_area or (number_of_fits_to_plot > 1):
+            #if (number_of_fits_to_plot > 1):
+            if True:
                 observed_tss = observed_tss_es[tssNumber]
                 if not(observed_scenario) or (observed_tss == 'valid_ts_OBS') \
                                              or (observed_tss == 'val_lan_ts_sno_s') \
@@ -1233,6 +1236,13 @@ def bias(x, y):
     if positive modelled is higher
     """
     return (y - x).mean()
+
+def pBias(x, y):
+    """
+    absolute bias, x is observed
+    if positive modelled is higher
+    """
+    return ((y - x).mean()/x.mean()) * 100.0
 
 def rmse_calc(x, y):
     # not normalized RMSE or coefficient of variation
@@ -1513,6 +1523,7 @@ def r2_by_variable(scenarios, tss_variables, start, end):
             #ass_metric = kge(x, y)
             #ass_metric = rmse_calc(x, y)
             #ass_metric = bias(x, y)
+            #ass_metric = pBias(x, y)
             xVal.append(names[rij])
             yVal.append(ass_metric)
             rij += 1
@@ -1544,6 +1555,7 @@ def r2_by_variable(scenarios, tss_variables, start, end):
                 #ass_metric = kge(x, y)
                 #ass_metric = rmse_calc(x, y)
                 #ass_metric = bias(x, y)
+                #ass_metric = pBias(x, y)
                 xValExp.append(names[rij])
                 yValExp.append(ass_metric)
                 rij += 1
@@ -1915,6 +1927,7 @@ def cosero_calibration_results():
     print('Median NSE of Cosero is ', selected_catch_df["NSE"].median())
     print('Median Correlation of Cosero is ', selected_catch_df["CORR"].median())
     print('Median KGE of Cosero is ', selected_catch_df["KGE"].median())
+    print('Median pBias of Cosero is ', selected_catch_df["pBIAS"].median())
  
 
 if get_cosero_calibration_results:
