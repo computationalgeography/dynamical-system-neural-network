@@ -2,12 +2,12 @@ import pandas
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MultipleLocator
 import numpy
+import xlsxwriter
 
-
-metric = "NS"
+#metric = "NS"
 #metric = "bias"
 #metric = "CC"
-#metric = "pbias"
+metric = "pbias"
 
 folder_one = "../figures/land_obs_one/"
 folder_two = "../figures/land_obs_two/"
@@ -31,7 +31,6 @@ df_exp_one.columns = ["id_exp_one", "variable_exp_one","E_exp_one", "S_exp_one",
 df_exp_two.columns = ["id_exp_two", "variable_exp_two","E_exp_two", "S_exp_two", "G_exp_two", "ES_exp_two", "EG_exp_two", "SG_exp_two", "ESG_exp_two"]
 
 df = pandas.concat([df_nen_one, df_nen_two, df_exp_one, df_exp_two], axis=1)
-print(df)
 
 names = ["E", "S", "G", "ES", "EG", "SG", "ESG"]
 nn_one_scenarios = ([f'{i}_nen_one' for i in names])
@@ -39,29 +38,36 @@ pb_one_scenarios = ([f'{i}_exp_one' for i in names])
 nn_two_scenarios = ([f'{i}_nen_two' for i in names])
 pb_two_scenarios = ([f'{i}_exp_two' for i in names])
 
-print("lumped")
-print("nn models")
-print(df.groupby(["variable_nen_one"])[nn_one_scenarios].apply(numpy.median))    # this is what I need
-print("pb model")
-print(df.groupby(["variable_nen_one"])[pb_one_scenarios].apply(numpy.median))    # this is what I need
+def create_statistics(scenario):
+    scenarios = ([(f'{i}_' + scenario) for i in names])
+    a_series = df.groupby(["variable_nen_one"])[scenarios].apply(numpy.median)
+    a_df = a_series.to_frame()
+    a_df.columns = [scenario]
+    if metric == "NS":
+        rounded = a_df.round(2)
+    else:
+        rounded = a_df
+    if metric == "CC":
+        rounded = a_df.round(2)
+    else:
+        rounded = a_df
+    if metric == "pbias":
+        rounded = a_df.round(0)
+    else:
+        rounded = a_df
+    return rounded
 
-print("distributed")
-print("nn models")
-print(df.groupby(["variable_nen_one"])[nn_two_scenarios].apply(numpy.median))    # this is what I need
-print("pb model")
-print(df.groupby(["variable_nen_one"])[pb_two_scenarios].apply(numpy.median))    # this is what I need
+nen_one = create_statistics("nen_one")
+exp_one = create_statistics("exp_one")
+nen_two = create_statistics("nen_two")
+exp_two = create_statistics("exp_two")
+total = pandas.concat([nen_one, exp_one, nen_two, exp_two],axis = 1 )
+total.to_excel("../figures/merged/boxplot_statistics_" + metric + ".xlsx",  engine="xlsxwriter")
 
-#print(df.groupby(["variable_nen_one"])[["E_nen_one", "S_nen_one"]].median())
-#print(df[df["variable_nen_one"].isin(["eva_f", "sno_f"])][["variable_nen_one", "E_nen_one", "S_nen_one"]])
-#print(df[df["variable_nen_one"].isin(["eva_f", "sno_f"])][["variable_nen_one", "E_nen_one", "S_nen_one"]])
-#print(df[df["variable_nen_one"] == "eva_f"][["E_nen_one", "S_nen_one"]].median())
-#print(df[df["variable_nen_one"] == "eva_f"][["E_nen_one", "S_nen_one"]].to_numpy())
-#print(numpy.median(df[df["variable_nen_one"] == "eva_f"][["E_nen_one", "S_nen_one"]].to_numpy()))
 
 green = "#4daf4a"
 #blue = "#377eb8"
 blue = "#b0d6f5"
-
 
 dpi_figures = 600
 #fig = plt.figure(dpi=dpi_figures,figsize=(8.27, 11.69))
