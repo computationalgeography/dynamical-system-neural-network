@@ -77,8 +77,8 @@ modelSelectionWithTraining = False
 GFS = False
 
 if all_catch:
-    #data_dir = '../data/results_temporary/'  # used in aug 2026, all fine
-    data_dir = '../data/results_test/'        # used in aug 2026 test with other snow
+    data_dir = '../data/results_temporary/'  # used in aug 2026, all fine
+    #data_dir = '../data/results_test/'        # used in aug 2026 test with other snow
     number_of_rerun_scenarios = 4  # CHANGE TO 4 FOR FINAL RUNS
 else:
     data_dir = '../data/scenarios/LAND/final_runs/' 
@@ -704,7 +704,8 @@ if print_stats:
 
 ## colors and markers for curves in all_catch
 # see also https://stackoverflow.com/questions/61908021/how-to-get-n-easily-distinguishable-colors-with-matplotlib
-the_colors_all_catch = matplotlib.cm.tab10(range(20))
+#the_colors_all_catch = matplotlib.cm.tab10(range(20))
+the_colors_all_catch = matplotlib.cm.tab20(range(20))
 #the_markers_all_catch = matplotlib.lines.Line2D.markers.keys()
 #print(the_markers_all_catch)
 index_of_catch = ids.index(int(id))
@@ -884,8 +885,9 @@ else:
 if observed_scenario:
     if all_catch:
         axs[0, 0].set_ylim(0, 0.005)  # evapotranspiration
-        axs[0, 1].set_ylim(0, 0.05)   # snow
-        axs[0, 2].set_ylim(0, 0.05)   # subsurface water
+        #axs[0, 1].set_ylim(0, 0.03)   # snow
+        axs[0, 1].set_ylim(0, 0.02)   # snow
+        axs[0, 2].set_ylim(0, 0.02)   # subsurface water
     else:
         axs[0, 0].set_ylim(0, 0.04)
 else:
@@ -897,12 +899,12 @@ axs[0, 1].set_xlim(-2, 6)
 if observed_scenario:
     if one_area:
         if all_catch:
-            axs[0, 2].set_xlim(0, 0.50)
+            axs[0, 2].set_xlim(0, 0.4)
         else:
             axs[0, 2].set_xlim(0, 0.4)
     else:
         if all_catch:
-            axs[0, 2].set_xlim(0, 0.50)
+            axs[0, 2].set_xlim(0, 0.4)
         else:
             axs[0, 2].set_xlim(0, 0.12)
 else:
@@ -1189,12 +1191,12 @@ def timeseries_plot_by_scenario(modelled_tss_es, observed_tss_es, scenario, star
                     axs[rij].set_ylim(-0.0001,0.0043)
                     #axs[rij].set_ylim(0,0.0043)
                 if rij == 2:
-                    #axs[rij].set_ylim(0,0.024)
-                    axs[rij].set_ylim(0,0.043)
+                    axs[rij].set_ylim(0,0.024)
+                    #axs[rij].set_ylim(0,0.043)
                 if rij == 3:
                     axs[rij].set_ylim(0,0.8)
                 if rij == 4:
-                    axs[rij].set_ylim(0,0.025)
+                    axs[rij].set_ylim(0,0.024)
                 if rij == 5:
                     #axs[rij].set_ylim(0,0.46)
                     axs[rij].set_ylim(0,0.55)
@@ -1564,8 +1566,8 @@ def r2_by_variable(scenarios, tss_variables, start, end):
                 y = y[:-2]
                 x = x.reshape(-1, m).mean(axis=1)
                 y = y.reshape(-1, m).mean(axis=1)
-            #ass_metric = ns(x, y)
-            ass_metric = corr_coeff(x, y)
+            ass_metric = ns(x, y)
+            #ass_metric = corr_coeff(x, y)
             #ass_metric = kge(x, y)
             #ass_metric = rmse_calc(x, y)
             #ass_metric = bias(x, y)
@@ -1596,8 +1598,8 @@ def r2_by_variable(scenarios, tss_variables, start, end):
                 #    ass_metric = corr_coeff(x, y)
                 #else:
                 #    ass_metric = ns(x, y)
-                #ass_metric = ns(x, y)
-                ass_metric = corr_coeff(x, y)
+                ass_metric = ns(x, y)
+                #ass_metric = corr_coeff(x, y)
                 #ass_metric = kge(x, y)
                 #ass_metric = rmse_calc(x, y)
                 #ass_metric = bias(x, y)

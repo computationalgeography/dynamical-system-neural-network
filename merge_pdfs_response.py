@@ -1,14 +1,13 @@
 from pypdf import PdfWriter, PdfReader
 import sys
 
-scenario = "land_obs_two"
 
-figure_directory = "../figures/" + scenario + "/"
 
 output_sub_directory = "../figures/merged/"
 
 # 247 35  528 534 535 565 68  815 818
-def merge_pdfs(file_name):
+def merge_pdfs(file_name, scenario):
+    figure_directory = "../figures/" + scenario + "/"
     first_pdf = figure_directory + "247/" + file_name
     writer = PdfWriter(clone_from = first_pdf)
 
@@ -22,4 +21,8 @@ def merge_pdfs(file_name):
 
     writer.write(output_sub_directory + scenario + "_" + file_name)
 
-merge_pdfs("response.pdf")
+scenario = "land_obs_one"
+merge_pdfs("response.pdf", scenario)
+
+scenario = "land_obs_two"
+merge_pdfs("response.pdf", scenario)

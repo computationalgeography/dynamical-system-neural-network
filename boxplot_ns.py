@@ -6,8 +6,8 @@ import xlsxwriter
 
 #metric = "NS"
 #metric = "bias"
-metric = "CC"
-#metric = "pbias"
+#metric = "CC"
+metric = "pbias"
 
 folder_one = "../figures/land_obs_one/"
 folder_two = "../figures/land_obs_two/"
@@ -45,22 +45,20 @@ def create_statistics(scenario):
     a_df.columns = [scenario]
     if metric == "NS":
         rounded = a_df.round(2)
-    else:
-        rounded = a_df
     if metric == "CC":
         rounded = a_df.round(2)
-    else:
-        rounded = a_df
     if metric == "pbias":
         rounded = a_df.round(0)
-    else:
+    if metric == "bias":
         rounded = a_df
     return rounded
+
 
 nen_one = create_statistics("nen_one")
 exp_one = create_statistics("exp_one")
 nen_two = create_statistics("nen_two")
 exp_two = create_statistics("exp_two")
+print(nen_one)
 total = pandas.concat([nen_one, exp_one, nen_two, exp_two],axis = 1 )
 total.to_excel("../figures/merged/boxplot_statistics_" + metric + ".xlsx",  engine="xlsxwriter")
 
@@ -176,11 +174,13 @@ def box_lumped_or_distributed(lumped):
                                        patch_artist=True,
                                        grid = False,
                                        return_type = "both",
-                                       medianprops=dict(color="black", lw=1.5),
+                                       medianprops=dict(color="black", lw=2.0),
                                        rot=0,
                                        ax = axs[i],
                                        color = colors,
                                        fontsize = 8,
+                                       showmeans = False,
+                                       meanprops=dict(color="red", lw=1.5, marker = '.'),
                                        showfliers = False)
 
         if (metric == "bias") or (metric == "pbias") or (metric == "NS"):
