@@ -8,6 +8,7 @@ from itertools import product
 from matplotlib.transforms import Bbox
 from matplotlib.lines import Line2D
 from pathlib import Path
+import matplotlib
 
 pandas.set_option('display.max_columns', None)
 pandas.set_option('display.max_rows', None)
@@ -76,7 +77,8 @@ modelSelectionWithTraining = False
 GFS = False
 
 if all_catch:
-    data_dir = '../data/results_temporary/' 
+    #data_dir = '../data/results_temporary/'  # used in aug 2026, all fine
+    data_dir = '../data/results_test/'        # used in aug 2026 test with other snow
     number_of_rerun_scenarios = 4  # CHANGE TO 4 FOR FINAL RUNS
 else:
     data_dir = '../data/scenarios/LAND/final_runs/' 
@@ -559,10 +561,10 @@ green = "#4daf4a"
 blue = "#377eb8"
 red = "#e41a1c"
 purple = "#984ea3"
-df["color"] = numpy.where(df["ts"] == 1, purple, "1")
+df["color"] = numpy.where(df["ts"] == 1, blue, "1")
 df["color"] = numpy.where(df["ts"] == 2, red, df.color)
 df["color"] = numpy.where(df["ts"] == 3, green, df.color)
-df["color"] = numpy.where(df["ts"] == 4, blue, df.color)
+df["color"] = numpy.where(df["ts"] == 4, purple, df.color)
 
 def set_share_axes(axs, target=None, sharex=False, sharey=False):
     if target is None:
@@ -700,6 +702,14 @@ if print_stats:
     proportionStoppedEarly = numberOfTimesStoppedEarly / df.shape[0]
     print("proportionStoppedEarly is ", proportionStoppedEarly)
 
+## colors and markers for curves in all_catch
+the_colors_all_catch = matplotlib.cm.tab10(range(20))
+#the_markers_all_catch = matplotlib.lines.Line2D.markers.keys()
+#print(the_markers_all_catch)
+index_of_catch = ids.index(int(id))
+the_color_all_catch = the_colors_all_catch[index_of_catch]
+#the_marker_all_catch = the_markers_all_catch[index_of_catch]
+
 
 ###################
 # response curves #
@@ -716,7 +726,10 @@ else:
     response_nr_rows = 7
 
 gs = fig.add_gridspec(response_nr_rows, 3, hspace=0, wspace=0)
-fig, axs = plt.subplots(response_nr_rows, 3, sharex="col", sharey=True)
+if all_catch:
+    fig, axs = plt.subplots(response_nr_rows, 3, sharex="col", sharey="col")
+else:
+    fig, axs = plt.subplots(response_nr_rows, 3, sharex="col", sharey=True)
 fig.set_size_inches(8.27, 11.69)
 rij = 0
 
@@ -730,7 +743,7 @@ response_sub_x = numpy.array(df_first[df_first["sc"] == "fit_eva"]["response_sub
 response_sub_y = numpy.array(df_first[df_first["sc"] == "fit_eva"]["response_sub_y"])[0]
 
 if all_catch:
-    line_width_best = 1.0
+    line_width_best = 1.7
 else:
     line_width_best = 3.0
 line_width_other = 1.0
@@ -743,6 +756,10 @@ for sc in response_scenarios_to_plot:
     i = 0
     for index, row in a.iterrows():
         if i < number_of_fits_to_plot:
+            if all_catch:
+                colour_in_response = the_color_all_catch
+            else:
+                colour_in_response = row["color"]
             if i == 1:
                 label_to_print = 'modelled (2nd - 4th), all colours'
             else:
@@ -757,18 +774,18 @@ for sc in response_scenarios_to_plot:
                 line_width = line_width_other 
                 line_style = 'dashed'
             axs[rij, 0].plot(
-                row["response_eva_x"], row["response_eva_y"], color=row["color"],
+                row["response_eva_x"], row["response_eva_y"], color=colour_in_response,
                 linewidth = line_width,
                 linestyle = line_style,
                 label = label_to_print 
             )
             axs[rij, 1].plot(
-                row["response_sno_x"], row["response_sno_y"], color=row["color"],
+                row["response_sno_x"], row["response_sno_y"], color=colour_in_response,
                 linewidth = line_width,
                 linestyle = line_style
             )
             axs[rij, 2].plot(
-                row["response_sub_x"], row["response_sub_y"], color=row["color"],
+                row["response_sub_x"], row["response_sub_y"], color=colour_in_response,
                 linewidth = line_width,
                 linestyle = line_style
             )
@@ -792,81 +809,106 @@ for sc in response_scenarios_to_plot:
             i += 1
 
 
+    # Plot the reference response curves.
+    if all_catch:
+        linewidth_reference = line_width_best 
+        #linecolor_reference = blue
+        linecolor_reference = the_color_all_catch
+    else:
+        linewidth_reference = 2
+        linecolor_reference = 'black'
     i = 0
     for index, row in a.iterrows():
         if i == 0:
-            # Plot the reference response curves.
             n = names[rij]
             o = observed_scenario == True
             if not ((n == "E") or (n == "ES") or (n == "EG") or (n == "ESG") or (n == "Exp")) & o:
                 axs[rij, 0].plot(
                     response_eva_x, response_eva_y,
-                    linewidth = 2,
+                    linewidth = linewidth_reference,
                     linestyle = 'solid',
-                    color='black',
+                    color = linecolor_reference,
                     zorder = -10,
                     label = 'synthetic'
                 )
             if not ((n == "S") or (n == "ES") or (n == "SG") or (n == "ESG") or (n == "Exp")) & o:
                     axs[rij, 1].plot(
                     response_sno_x, response_sno_y,
-                    linewidth = 2,
+                    linewidth = linewidth_reference,
                     linestyle = 'solid',
-                    color='black',
+                    color = linecolor_reference,
                     zorder = -10
                 )
             if not ((n == "G") or (n == "EG") or (n == "SG") or (n == "ESG") or (n == "Exp")) & o:
                 axs[rij, 2].plot(
                     response_sub_x, response_sub_y,
-                    linewidth = 2,
+                    linewidth = linewidth_reference,
                     linestyle = 'solid',
-                    color='black',
+                    color = linecolor_reference,
                     zorder = -10
                 )
             if not EGU:
                 # Plot the panel labels
-                axs[rij,0].text(.05, .93, n, ha='left', va='top', transform=axs[rij,0].transAxes, size = font_size_axes * 1.5)
+                axs[rij,0].text(.05, .93, n, ha='left', va='top', transform=axs[rij,0].transAxes, \
+                                size = font_size_axes * 1.5)
 
-
-        axs[rij, 0].set_yticks([0.0, 0.010])
-        axs[rij, 0].set_yticklabels([0.0, 0.010], size=font_size_axes)
+        if all_catch:
+            aaa = 4
+        else:
+            axs[rij, 0].set_yticks([0.0, 0.010])
+            axs[rij, 0].set_yticklabels([0.0, 0.010], size=font_size_axes)
         i += 1
     rij += 1
 custom_lines = [Line2D([0], [0], color=green, lw=line_width_best, ls='solid'),
                 Line2D([0], [0], color=green, lw=line_width_other, ls='dashed'),
                 Line2D([0], [0], color='black', lw=1)]
-if observed_scenario:
-    legend_text = ['model, best (all colours)', 'model, 2nd-4th best (all colours)', 'expert']
+if all_catch:
+    the_colors_all_catch[0]
+    custom_lines = []
+    i = 0
+    for id in ids:
+        custom_lines.append(Line2D([0], [0], color=the_colors_all_catch[i], lw=line_width_best, ls='solid')),
+        i += 1
+    legend_text = map(str,ids) 
+    axs[response_nr_rows - 1,0].legend(custom_lines, legend_text, loc = 'upper center', \
+                            bbox_to_anchor = (1.5, -0.5), ncol = 9)
 else:
-    legend_text = ['model, best (all colours)', 'model, 2nd-4th best (all colours)', 'synthetic']
-#axs[7,0].legend(custom_lines, legend_text, loc = 'upper center', bbox_to_anchor = (1.5, -0.5), ncol = 3)
-axs[response_nr_rows - 1,0].legend(custom_lines, legend_text, loc = 'upper center', bbox_to_anchor = (1.5, -0.5), ncol = 3)
+    if observed_scenario:
+        legend_text = ['model, best (all colours)', 'model, 2nd-4th best (all colours)', 'expert']
+    else:
+        legend_text = ['model, best (all colours)', 'model, 2nd-4th best (all colours)', 'synthetic']
+    axs[response_nr_rows - 1,0].legend(custom_lines, legend_text, loc = 'upper center', \
+                            bbox_to_anchor = (1.5, -0.5), ncol = 3)
 
 if observed_scenario:
-    axs[0, 0].set_ylim(0, 0.0205)
+    if all_catch:
+        axs[0, 0].set_ylim(0, 0.005)  # evapotranspiration
+        axs[0, 1].set_ylim(0, 0.05)   # snow
+        axs[0, 2].set_ylim(0, 0.05)   # subsurface water
+    else:
+        axs[0, 0].set_ylim(0, 0.04)
 else:
     axs[0, 0].set_ylim(0, 0.013)
 
 # x axis 
-#axs[0, 0].set_xlim(-10, 15)
 axs[0, 0].set_xlim(-10, 12)
-#axs[0, 1].set_xlim(-2, 8)
 axs[0, 1].set_xlim(-2, 6)
 if observed_scenario:
     if one_area:
-        axs[0, 2].set_xlim(0, 0.4)
+        if all_catch:
+            axs[0, 2].set_xlim(0, 0.50)
+        else:
+            axs[0, 2].set_xlim(0, 0.4)
     else:
         if all_catch:
-            axs[0, 2].set_xlim(0, 0.40)
+            axs[0, 2].set_xlim(0, 0.50)
         else:
             axs[0, 2].set_xlim(0, 0.12)
 else:
     #axs[0, 2].set_xlim(0.0, 0.15)
     axs[0, 2].set_xlim(0, 0.18)
 
-#axs[7, 0].set_xticks([-10, -5, 0, 5, 10])
 axs[response_nr_rows - 1, 0].set_xticks([-10, -5, 0, 5, 10])
-#axs[7, 0].set_xticklabels([-10, -5, 0, 5, 10], size=font_size_axes)
 axs[response_nr_rows - 1, 0].set_xticklabels([-10, -5, 0, 5, 10], size=font_size_axes)
 
 labels = [-2, 0, 2, 4]
@@ -893,7 +935,10 @@ axs[0, 0].set_title("evapotranspiration\nincluding sublimation", fontsize=font_s
 axs[0, 1].set_title("snow melt", fontsize=font_size_axes)
 axs[0, 2].set_title("outflow subsurf. storage\n(streamflow)", fontsize=font_size_axes)
 if not EGU:
-    plt.subplots_adjust(wspace=0, hspace=0)
+    if all_catch:
+        plt.subplots_adjust(wspace=0.25, hspace=0.1)
+    else:
+        plt.subplots_adjust(wspace=0, hspace=0)
 fig.savefig(figure_directory + "response.pdf", transparent = True)
 plt.close(fig)
 
@@ -1212,7 +1257,7 @@ if create_timeseries:
     # Plot for each scenario all variables
     i = 0
     for scenario in scenarios_to_plot:
-        timeseries_plot_by_scenario(modelled_tss_list, observed_tss_list, scenario, startTimeTss, endTimeTss, True)
+        #timeseries_plot_by_scenario(modelled_tss_list, observed_tss_list, scenario, startTimeTss, endTimeTss, True)
         timeseries_plot_by_scenario(modelled_tss_list, observed_tss_list, scenario, startTimeTss, endTimeTss, False)
         i = i + 1
 
@@ -1519,11 +1564,11 @@ def r2_by_variable(scenarios, tss_variables, start, end):
                 x = x.reshape(-1, m).mean(axis=1)
                 y = y.reshape(-1, m).mean(axis=1)
             #ass_metric = ns(x, y)
-            #ass_metric = corr_coeff(x, y)
+            ass_metric = corr_coeff(x, y)
             #ass_metric = kge(x, y)
             #ass_metric = rmse_calc(x, y)
             #ass_metric = bias(x, y)
-            ass_metric = pBias(x, y)
+            #ass_metric = pBias(x, y)
             xVal.append(names[rij])
             yVal.append(ass_metric)
             rij += 1
@@ -1551,11 +1596,11 @@ def r2_by_variable(scenarios, tss_variables, start, end):
                 #else:
                 #    ass_metric = ns(x, y)
                 #ass_metric = ns(x, y)
-                #ass_metric = corr_coeff(x, y)
+                ass_metric = corr_coeff(x, y)
                 #ass_metric = kge(x, y)
                 #ass_metric = rmse_calc(x, y)
                 #ass_metric = bias(x, y)
-                ass_metric = pBias(x, y)
+                #ass_metric = pBias(x, y)
                 xValExp.append(names[rij])
                 yValExp.append(ass_metric)
                 rij += 1
@@ -1569,7 +1614,7 @@ def r2_by_variable(scenarios, tss_variables, start, end):
     exp_models_ns.to_csv(figure_directory + "exp_models_ns.csv", index=False)
     if observed_scenario:
         if all_catch:
-            aa = 1.9
+            aaa = 1.9
         else:
             axs[0].set_ylim(-1.0,0.2) # eva_f
             axs[1].set_ylim(0.1,0.6) # sno_f 

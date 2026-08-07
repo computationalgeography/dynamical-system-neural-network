@@ -6,8 +6,8 @@ import xlsxwriter
 
 #metric = "NS"
 #metric = "bias"
-#metric = "CC"
-metric = "pbias"
+metric = "CC"
+#metric = "pbias"
 
 folder_one = "../figures/land_obs_one/"
 folder_two = "../figures/land_obs_two/"
@@ -114,7 +114,8 @@ for variable in variables:
     if metric == "pbias":
         a = 2
     else:
-        axs[i].yaxis.set_major_locator(MultipleLocator(0.05))
+        a = 2
+        #axs[i].yaxis.set_major_locator(MultipleLocator(0.05))
 
     seq = [green, blue]
     colors = 8 * seq
@@ -182,7 +183,7 @@ def box_lumped_or_distributed(lumped):
                                        fontsize = 8,
                                        showfliers = False)
 
-        if (metric == "bias") or (metric == "pbias"):
+        if (metric == "bias") or (metric == "pbias") or (metric == "NS"):
             a = 2
         else:
             axs[i].yaxis.set_major_locator(MultipleLocator(0.1))
@@ -193,6 +194,7 @@ def box_lumped_or_distributed(lumped):
         i += 1
 
     plt.xticks([*range(1,9)], ["E", "S", "G", "ES", "EG", "SG", "ESG", "pb"])
+    axs[4].set_xticklabels(axs[4].get_xticklabels(), rotation=45)
     #fig.set_size_inches(8.27, 11.69)
     fig.set_size_inches((8.27-1.0)/3.0, 11.69)
     plt.subplots_adjust(left = 0.45, hspace=0.05)
