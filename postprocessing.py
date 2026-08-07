@@ -703,6 +703,7 @@ if print_stats:
     print("proportionStoppedEarly is ", proportionStoppedEarly)
 
 ## colors and markers for curves in all_catch
+# see also https://stackoverflow.com/questions/61908021/how-to-get-n-easily-distinguishable-colors-with-matplotlib
 the_colors_all_catch = matplotlib.cm.tab10(range(20))
 #the_markers_all_catch = matplotlib.lines.Line2D.markers.keys()
 #print(the_markers_all_catch)
