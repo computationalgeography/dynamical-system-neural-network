@@ -895,7 +895,10 @@ else:
 
 # x axis 
 axs[0, 0].set_xlim(-10, 12)
-axs[0, 1].set_xlim(-2, 6)
+if all_catch:
+    axs[0, 1].set_xlim(-4, 6)
+else:
+    axs[0, 1].set_xlim(-2, 6)
 if observed_scenario:
     if one_area:
         if all_catch:
@@ -914,16 +917,17 @@ else:
 axs[response_nr_rows - 1, 0].set_xticks([-10, -5, 0, 5, 10])
 axs[response_nr_rows - 1, 0].set_xticklabels([-10, -5, 0, 5, 10], size=font_size_axes)
 
-labels = [-2, 0, 2, 4]
+labels = [-4, -2, 0, 2, 4, 6]
 axs[response_nr_rows - 1, 1].set_xticks(labels)
 axs[response_nr_rows - 1, 1].set_xticklabels(labels, size=font_size_axes)
 
-#axs[7, 0].set_xlabel("temperature ($\degree$C)", fontsize=font_size_axes)
-#axs[7,0].xaxis.set_tick_params(labelsize=font_size_axes)
-#axs[7,1].xaxis.set_tick_params(labelsize=font_size_axes)
-#axs[7,2].xaxis.set_tick_params(labelsize=font_size_axes)
-#axs[7, 1].set_xlabel("temperature ($\degree$C)", fontsize=font_size_axes)
-#axs[7, 2].set_xlabel("subsurface storage (m)", fontsize=font_size_axes)
+labels = [0.0, 0.009, 0.018]
+axs[response_nr_rows - 1, 1].set_yticks(labels)
+#axs[response_nr_rows - 1, 1].set_yticklabels(labels, size=font_size_axes)
+
+labels = [0.0, 0.009, 0.018]
+axs[response_nr_rows - 1, 2].set_yticks(labels)
+#axs[response_nr_rows - 1, 2].set_yticklabels(labels, size=font_size_axes)
 
 axs[response_nr_rows - 1, 0].set_xlabel("temperature ($\degree$C)", fontsize=font_size_axes)
 axs[response_nr_rows - 1,0].xaxis.set_tick_params(labelsize=font_size_axes)
@@ -939,7 +943,7 @@ axs[0, 1].set_title("snow melt", fontsize=font_size_axes)
 axs[0, 2].set_title("outflow subsurf. storage\n(streamflow)", fontsize=font_size_axes)
 if not EGU:
     if all_catch:
-        plt.subplots_adjust(wspace=0.25, hspace=0.1)
+        plt.subplots_adjust(wspace=0.27, hspace=0.1)
     else:
         plt.subplots_adjust(wspace=0, hspace=0)
 fig.savefig(figure_directory + "response.pdf", transparent = True)
@@ -1566,12 +1570,12 @@ def r2_by_variable(scenarios, tss_variables, start, end):
                 y = y[:-2]
                 x = x.reshape(-1, m).mean(axis=1)
                 y = y.reshape(-1, m).mean(axis=1)
-            ass_metric = ns(x, y)
+            #ass_metric = ns(x, y)
             #ass_metric = corr_coeff(x, y)
             #ass_metric = kge(x, y)
             #ass_metric = rmse_calc(x, y)
             #ass_metric = bias(x, y)
-            #ass_metric = pBias(x, y)
+            ass_metric = pBias(x, y)
             xVal.append(names[rij])
             yVal.append(ass_metric)
             rij += 1
@@ -1598,12 +1602,12 @@ def r2_by_variable(scenarios, tss_variables, start, end):
                 #    ass_metric = corr_coeff(x, y)
                 #else:
                 #    ass_metric = ns(x, y)
-                ass_metric = ns(x, y)
+                #ass_metric = ns(x, y)
                 #ass_metric = corr_coeff(x, y)
                 #ass_metric = kge(x, y)
                 #ass_metric = rmse_calc(x, y)
                 #ass_metric = bias(x, y)
-                #ass_metric = pBias(x, y)
+                ass_metric = pBias(x, y)
                 xValExp.append(names[rij])
                 yValExp.append(ass_metric)
                 rij += 1
