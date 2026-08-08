@@ -46,7 +46,7 @@ ids = [35,68,247,528,534,535,565,815,818]
 read_first_rerun_for_234 = True
 
 create_scatter = False
-create_timeseries = False
+create_timeseries = True
 # use this for create_r2_by_variable_tables as well
 # it will dump the data as a csv
 create_r2_by_variable = True
@@ -255,7 +255,7 @@ names = [
            "EG",
            "SG",
            "ESG",
-           "Exp"
+           "pb"
         ]
 
 #if EGU:
@@ -823,7 +823,7 @@ for sc in response_scenarios_to_plot:
         if i == 0:
             n = names[rij]
             o = observed_scenario == True
-            if not ((n == "E") or (n == "ES") or (n == "EG") or (n == "ESG") or (n == "Exp")) & o:
+            if not ((n == "E") or (n == "ES") or (n == "EG") or (n == "ESG") or (n == "pb")) & o:
                 axs[rij, 0].plot(
                     response_eva_x, response_eva_y,
                     linewidth = linewidth_reference,
@@ -832,7 +832,7 @@ for sc in response_scenarios_to_plot:
                     zorder = -10,
                     label = 'synthetic'
                 )
-            if not ((n == "S") or (n == "ES") or (n == "SG") or (n == "ESG") or (n == "Exp")) & o:
+            if not ((n == "S") or (n == "ES") or (n == "SG") or (n == "ESG") or (n == "pb")) & o:
                     axs[rij, 1].plot(
                     response_sno_x, response_sno_y,
                     linewidth = linewidth_reference,
@@ -840,7 +840,7 @@ for sc in response_scenarios_to_plot:
                     color = linecolor_reference,
                     zorder = -10
                 )
-            if not ((n == "G") or (n == "EG") or (n == "SG") or (n == "ESG") or (n == "Exp")) & o:
+            if not ((n == "G") or (n == "EG") or (n == "SG") or (n == "ESG") or (n == "pb")) & o:
                 axs[rij, 2].plot(
                     response_sub_x, response_sub_y,
                     linewidth = linewidth_reference,
@@ -1157,8 +1157,8 @@ def timeseries_plot_by_scenario(modelled_tss_es, observed_tss_es, scenario, star
 #                )
             # Plot modelled timeseries.
             if i == 0:
-                #line_width_best = 1.5
-                line_width_best = 0.5
+                #line_width_best = 0.5
+                line_width_best = 1.0
                 line_width = line_width_best 
                 line_style = 'solid'
                 z_order = 10
@@ -1171,6 +1171,8 @@ def timeseries_plot_by_scenario(modelled_tss_es, observed_tss_es, scenario, star
                 if one_area:
                     theColor = green
                 else:
+                    theColor = blue
+                if all_catch:
                     theColor = blue
             else:
                 theColor = a["color"]
@@ -1221,14 +1223,20 @@ def timeseries_plot_by_scenario(modelled_tss_es, observed_tss_es, scenario, star
     if best_fit_only:
         custom_lines = [Line2D([0], [0], color=green, lw=line_width_best, ls='solid'),
                         Line2D([0], [0], color=blue, lw=line_width_best, ls='solid'),
-                        Line2D([0], [0], color='black', lw=1)]
+                        Line2D([0], [0], color='black', lw=0.5)]
+        if all_catch:
+            custom_lines = [Line2D([0], [0], color=blue, lw=line_width_best, ls='solid'),
+                            Line2D([0], [0], color='black', lw=0.5)]
+
     else:
         custom_lines = [Line2D([0], [0], color=green, lw=line_width_best, ls='solid'),
                         Line2D([0], [0], color=green, lw=line_width_other, ls='dashed'),
-                        Line2D([0], [0], color='black', lw=1)]
+                        Line2D([0], [0], color='black', lw=0.5)]
     if observed_scenario:
         if best_fit_only:
             legend_text = ['lumped model', 'distributed model', 'observed/reference']
+            if all_catch:
+                legend_text = ['modelled', 'observed/reference']
         else:
             legend_text = ['model, best (all colours)', 'model, 2nd-4th best (all colours)', 'observed/reference']
     else:
@@ -1247,8 +1255,14 @@ def timeseries_plot_by_scenario(modelled_tss_es, observed_tss_es, scenario, star
     plt.close(fig)
 
 
-startTimeTss = 5 * 365
-endTimeTss = 10 * 365
+short_time_span = False
+
+if short_time_span:
+    startTimeTss = 5 * 365
+    endTimeTss = 8 * 365
+else:
+    startTimeTss = 5 * 365
+    endTimeTss = 10 * 365
 
 
 if create_timeseries:
@@ -1263,8 +1277,8 @@ if create_timeseries:
     # Plot for each scenario all variables
     i = 0
     for scenario in scenarios_to_plot:
-        #timeseries_plot_by_scenario(modelled_tss_list, observed_tss_list, scenario, startTimeTss, endTimeTss, True)
-        timeseries_plot_by_scenario(modelled_tss_list, observed_tss_list, scenario, startTimeTss, endTimeTss, False)
+        timeseries_plot_by_scenario(modelled_tss_list, observed_tss_list, scenario, startTimeTss, endTimeTss, True)
+        #timeseries_plot_by_scenario(modelled_tss_list, observed_tss_list, scenario, startTimeTss, endTimeTss, False)
         i = i + 1
 
 
@@ -1278,7 +1292,7 @@ def ns(x, y):
 
 def nsFormatted(x, y):
     nsValue = ns(x, y)
-    ns_for = "{:.3f}".format(nsValue)
+    ns_for = "{:.2f}".format(nsValue)
     return ns_for
 
 def bias(x, y):
@@ -1294,6 +1308,11 @@ def pBias(x, y):
     if positive modelled is higher
     """
     return ((y - x).mean()/x.mean()) * 100.0
+
+def pBiasFormatted(x, y):
+    pbias_value = pBias(x, y)
+    pbias_for = "{:.0f}".format(pbias_value)
+    return pbias_for
 
 def rmse_calc(x, y):
     # not normalized RMSE or coefficient of variation
@@ -1311,6 +1330,11 @@ def corr_coeff(x, y):
     r = rM[0][1]
     rSq = r * r
     return rSq
+
+def corr_coeffFormatted(x, y):
+    corr_coeff_value = corr_coeff(x, y)
+    corr_coeff_for = "{:.2f}".format(corr_coeff_value)
+    return corr_coeff_for
 
 def kge(x, y):
     """
@@ -1403,18 +1427,24 @@ def scatter_plot_by_scenario(modelled_tss_es, observed_tss_es, scenario, name, s
         hb = axs[rij].hexbin(
             x, y, gridsize=15, cmap="Greens", bins="log", linewidths=0.0
         )
-        axs[rij].set_ylim(0, max(x))
-        axs[rij].set_xlim(0, max(x))
+        axs[rij].set_ylim(0, 0.9 * max(x))
+        axs[rij].set_xlim(0,  0.9 * max(x))
         cbar = fig.colorbar(hb, ax=axs[rij], fraction=0.046, pad=0.04)
         cbar.ax.tick_params(labelsize=font_size_axes)
         axs[rij].plot([0, 10], [0, 10], color="black", linewidth=1.0, linestyle = 'dashed')
-        ass_metric = rSquaredFormatted(x, y)
+        #ass_metric = rSquaredFormatted(x, y)
         #rmse_for = rmseFormatted(x, y)
         ns_for = nsFormatted(x, y)
+        corr_coeff_for = corr_coeffFormatted(x, y)
+        pbias_for = pBiasFormatted(x, y)
         axs[rij].text(
-            #0.99, 0.01, '$r^2$ = ' + ass_metric, ha="right", va="bottom", transform=axs[rij].transAxes, size = font_size_axes
-            #0.99, 0.01, '$r^2$ = ' + rmse_for, ha="right", va="bottom", transform=axs[rij].transAxes, size = font_size_axes
-            0.99, 0.01, 'NSE = ' + ns_for, ha="right", va="bottom", transform=axs[rij].transAxes, size = font_size_axes
+            0.99, 0.01, 'CC = ' + corr_coeff_for, ha="right", va="bottom", transform=axs[rij].transAxes, size = font_size_axes
+        )
+        axs[rij].text(
+            0.99, 0.11, 'pBias = ' + pbias_for, ha="right", va="bottom", transform=axs[rij].transAxes, size = font_size_axes
+        )
+        axs[rij].text(
+            0.99, 0.21, 'NS = ' + ns_for, ha="right", va="bottom", transform=axs[rij].transAxes, size = font_size_axes
         )
         #if rij < len(scenarios) - 1:
         #    axs[rij].set(xticklabels=[])
@@ -1569,12 +1599,12 @@ def r2_by_variable(scenarios, tss_variables, start, end):
                 y = y[:-2]
                 x = x.reshape(-1, m).mean(axis=1)
                 y = y.reshape(-1, m).mean(axis=1)
-            ass_metric = ns(x, y)
+            #ass_metric = ns(x, y)
             #ass_metric = corr_coeff(x, y)
             #ass_metric = kge(x, y)
             #ass_metric = rmse_calc(x, y)
             #ass_metric = bias(x, y)
-            #ass_metric = pBias(x, y)
+            ass_metric = pBias(x, y)
             xVal.append(names[rij])
             yVal.append(ass_metric)
             rij += 1
@@ -1601,12 +1631,12 @@ def r2_by_variable(scenarios, tss_variables, start, end):
                 #    ass_metric = corr_coeff(x, y)
                 #else:
                 #    ass_metric = ns(x, y)
-                ass_metric = ns(x, y)
+                #ass_metric = ns(x, y)
                 #ass_metric = corr_coeff(x, y)
                 #ass_metric = kge(x, y)
                 #ass_metric = rmse_calc(x, y)
                 #ass_metric = bias(x, y)
-                #ass_metric = pBias(x, y)
+                ass_metric = pBias(x, y)
                 xValExp.append(names[rij])
                 yValExp.append(ass_metric)
                 rij += 1
