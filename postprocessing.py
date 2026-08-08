@@ -77,8 +77,7 @@ modelSelectionWithTraining = False
 GFS = False
 
 if all_catch:
-    data_dir = '../data/results_temporary/'  # used in aug 2026, all fine
-    #data_dir = '../data/results_test/'        # used in aug 2026 test with other snow
+    data_dir = '../data/results_all_catch/'  # used in aug 2026, all fine
     number_of_rerun_scenarios = 4  # CHANGE TO 4 FOR FINAL RUNS
 else:
     data_dir = '../data/scenarios/LAND/final_runs/' 
@@ -1570,12 +1569,12 @@ def r2_by_variable(scenarios, tss_variables, start, end):
                 y = y[:-2]
                 x = x.reshape(-1, m).mean(axis=1)
                 y = y.reshape(-1, m).mean(axis=1)
-            #ass_metric = ns(x, y)
+            ass_metric = ns(x, y)
             #ass_metric = corr_coeff(x, y)
             #ass_metric = kge(x, y)
             #ass_metric = rmse_calc(x, y)
             #ass_metric = bias(x, y)
-            ass_metric = pBias(x, y)
+            #ass_metric = pBias(x, y)
             xVal.append(names[rij])
             yVal.append(ass_metric)
             rij += 1
@@ -1602,12 +1601,12 @@ def r2_by_variable(scenarios, tss_variables, start, end):
                 #    ass_metric = corr_coeff(x, y)
                 #else:
                 #    ass_metric = ns(x, y)
-                #ass_metric = ns(x, y)
+                ass_metric = ns(x, y)
                 #ass_metric = corr_coeff(x, y)
                 #ass_metric = kge(x, y)
                 #ass_metric = rmse_calc(x, y)
                 #ass_metric = bias(x, y)
-                ass_metric = pBias(x, y)
+                #ass_metric = pBias(x, y)
                 xValExp.append(names[rij])
                 yValExp.append(ass_metric)
                 rij += 1
