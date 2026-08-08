@@ -46,10 +46,10 @@ ids = [35,68,247,528,534,535,565,815,818]
 read_first_rerun_for_234 = True
 
 create_scatter = False
-create_timeseries = True
+create_timeseries = False
 # use this for create_r2_by_variable_tables as well
 # it will dump the data as a csv
-create_r2_by_variable = True
+create_r2_by_variable = True    # for boxplot
 create_r2_by_scenario = False
 create_nse = False
 print_stats = False

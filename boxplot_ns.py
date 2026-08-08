@@ -124,6 +124,7 @@ for variable in variables:
                                [2.5, 4.5, 6.5, 8.5, 10.5, 12.5, 14.5]]
     axs[i].get_xaxis().set_ticks([])
     axs[i].text(-0.11,0.5,names[i],transform=axs[i].transAxes, va='center', ha='right')
+
     i += 1
 
 a = ([*range(1,17)])
@@ -191,6 +192,14 @@ def box_lumped_or_distributed(lumped):
         if metric == "cc":
             axs[i].text(-0.38,0.5,names[i],transform=axs[i].transAxes, va='center', ha='right', size = 9)
         axs[i].grid(True, axis="y")
+
+        # https://towardsdatascience.com/how-to-fetch-the-exact-values-from-a-boxplot-python-8b8a648fc813/
+        medians = [item.get_ydata()[0] for item in props['medians']]
+        #axs[i].scatter([*range(1,9)], medians, color="blue", zorder=3)
+        k = 0
+        for j in medians:
+            axs[i].text([*range(1,9)][k], medians[k], "{:.2f}\n".format(medians[k]), size = 3, verticalalignment='bottom', horizontalalignment='center')
+            k += 1
         i += 1
 
     plt.xticks([*range(1,9)], ["E", "S", "G", "ES", "EG", "SG", "ESG", "pb"])
