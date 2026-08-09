@@ -1852,7 +1852,7 @@ def training_loop(
                 timeSeriesPlot_rich(
                     sfd,
                     "valid_ts_sno_s_areas",
-                    date_time_series,
+                    date_time_series_val,
                     [a[0], a[1]],
                     "time",
                     "storage (m)",
@@ -1862,7 +1862,7 @@ def training_loop(
                 timeSeriesPlot_rich(
                     sfd,
                     "valid_ts_sub_s_areas",
-                    date_time_series,
+                    date_time_series_val,
                     [a[0], a[1]],
                     "time",
                     "storage (m)",
@@ -1872,7 +1872,7 @@ def training_loop(
                 timeSeriesPlot_rich(
                     sfd,
                     "valid_ts_sno_f_areas",
-                    date_time_series,
+                    date_time_series_val,
                     [a[0], a[1]],
                     "time",
                     "flux (m/day)",
@@ -1882,7 +1882,7 @@ def training_loop(
                 timeSeriesPlot_rich(
                     sfd,
                     "valid_ts_sub_f_areas",
-                    date_time_series,
+                    date_time_series_val,
                     [a[0], a[1]],
                     "time",
                     "flux (m/day)",
@@ -1892,7 +1892,7 @@ def training_loop(
                 timeSeriesPlot_rich(
                     sfd,
                     "valid_ts_eva_f_areas",
-                    date_time_series,
+                    date_time_series_val,
                     [a[0], a[1]],
                     "time",
                     "flux (m/day)",

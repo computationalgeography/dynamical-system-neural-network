@@ -33,7 +33,6 @@ g_a["no_impact"] = g_a.impact_u | g_a.impact_l
 
 # proper time span
 g_a["start_early_enough"] = g_a["obsbeg_day"] == 1981
-#g_a["start_early_enough"] = g_a["obsbeg_day"] < 1999
 
 # no gaps in hourly time series
 g_a["no_gaps"] = g_a["gaps_post"] == 0
@@ -71,5 +70,9 @@ b_a_selected = b_a.loc[b_a.total_selection == 1]
 joined = pandas.merge(g_a_selected,b_a_selected, how = "inner", left_on="ID", right_on="ID")
 print(joined)
 
-print(joined[["ID", "country", "area_gov", "elev", "urban_fra","frac_snow", "glac_fra", \
-              "name", "river", "region", "lon", "lat", "area_calc", "obsbeg_day", "obsend", "slope_mean", "bedrk_dep", "gc_su_fra", "geol_perme"]])
+# area calc is used for area in the model
+df_info = (joined[["ID", "elev", "elev_ran", "area_calc", "slope_mean", "urban_fra","frac_snow", "glac_fra", \
+              "bedrk_dep", "lon", "lat", "country", "name", "river"]])
+print(df_info)
+
+df_info.to_excel("../figures/merged/catchments_info.xlsx",  engine="xlsxwriter")
