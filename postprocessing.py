@@ -69,7 +69,7 @@ get_cosero_calibration_results = True
 cosero_validation_comparison = False
 
 if cosero_validation_comparison:
-    print('running for cosero validation time span')
+    print('!!!!!!!! running for cosero validation time span !!!!!!!!')
 
 #figure_directory = "../figures/"
 
@@ -1608,8 +1608,8 @@ def r2_by_variable(scenarios, tss_variables, start, end):
                 y = y[:-2]
                 x = x.reshape(-1, m).mean(axis=1)
                 y = y.reshape(-1, m).mean(axis=1)
-            #ass_metric = ns(x, y)
-            ass_metric = corr_coeff(x, y)
+            ass_metric = ns(x, y)
+            #ass_metric = corr_coeff(x, y)
             #ass_metric = kge(x, y)
             #ass_metric = rmse_calc(x, y)
             #ass_metric = bias(x, y)
@@ -1640,8 +1640,8 @@ def r2_by_variable(scenarios, tss_variables, start, end):
                 #    ass_metric = corr_coeff(x, y)
                 #else:
                 #    ass_metric = ns(x, y)
-                #ass_metric = ns(x, y)
-                ass_metric = corr_coeff(x, y)
+                ass_metric = ns(x, y)
+                #ass_metric = corr_coeff(x, y)
                 #ass_metric = kge(x, y)
                 #ass_metric = rmse_calc(x, y)
                 #ass_metric = bias(x, y)

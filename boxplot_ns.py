@@ -4,9 +4,9 @@ from matplotlib.ticker import MultipleLocator
 import numpy
 import xlsxwriter
 
-#metric = "NS"
+metric = "NS"
 #metric = "bias"
-metric = "CC"
+#metric = "CC"
 #metric = "pbias"
 
 folder_one = "../figures/land_obs_one/"
@@ -198,7 +198,8 @@ def box_lumped_or_distributed(lumped):
         #axs[i].scatter([*range(1,9)], medians, color="blue", zorder=3)
         k = 0
         for j in medians:
-            axs[i].text([*range(1,9)][k], medians[k], "{:.2f}\n".format(medians[k]), size = 3, verticalalignment='bottom', horizontalalignment='center')
+            axs[i].text([*range(1,9)][k], medians[k], "{:.2f}\n".format(medians[k]), \
+                    size = 3, verticalalignment='bottom', horizontalalignment='center')
             k += 1
         i += 1
 
