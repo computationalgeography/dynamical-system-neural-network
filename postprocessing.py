@@ -66,6 +66,10 @@ create_expert_parameters_tables = False
 create_r2_by_variable_tables = True
 get_cosero_calibration_results = True
 
+cosero_validation_comparison = False
+
+if cosero_validation_comparison:
+    print('running for cosero validation time span')
 
 #figure_directory = "../figures/"
 
@@ -1470,9 +1474,14 @@ def scatter_plot_by_scenario(modelled_tss_es, observed_tss_es, scenario, name, s
     fig.savefig(figure_directory + "sca_modartcomp_" + scenario + ".pdf")
     plt.close(fig)
 
-
-startTimeTss = 1 * 365
-endTimeTss = len(df['val_art_ts_eva_f'].iloc[0])
+if cosero_validation_comparison:
+    # start in 2000
+    startTimeTss = 1 * 365 + 2 * 365              
+    # end in 2007
+    endTimeTss = startTimeTss + 7 * 365
+else:
+    startTimeTss = 1 * 365
+    endTimeTss = len(df['val_art_ts_eva_f'].iloc[0])
 
 if create_scatter:
     # Plot for each variable all scenarios
@@ -1600,11 +1609,11 @@ def r2_by_variable(scenarios, tss_variables, start, end):
                 x = x.reshape(-1, m).mean(axis=1)
                 y = y.reshape(-1, m).mean(axis=1)
             #ass_metric = ns(x, y)
-            #ass_metric = corr_coeff(x, y)
+            ass_metric = corr_coeff(x, y)
             #ass_metric = kge(x, y)
             #ass_metric = rmse_calc(x, y)
             #ass_metric = bias(x, y)
-            ass_metric = pBias(x, y)
+            #ass_metric = pBias(x, y)
             xVal.append(names[rij])
             yVal.append(ass_metric)
             rij += 1
@@ -1632,11 +1641,11 @@ def r2_by_variable(scenarios, tss_variables, start, end):
                 #else:
                 #    ass_metric = ns(x, y)
                 #ass_metric = ns(x, y)
-                #ass_metric = corr_coeff(x, y)
+                ass_metric = corr_coeff(x, y)
                 #ass_metric = kge(x, y)
                 #ass_metric = rmse_calc(x, y)
                 #ass_metric = bias(x, y)
-                ass_metric = pBias(x, y)
+                #ass_metric = pBias(x, y)
                 xValExp.append(names[rij])
                 yValExp.append(ass_metric)
                 rij += 1

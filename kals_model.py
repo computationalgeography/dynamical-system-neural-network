@@ -1995,8 +1995,13 @@ if all_catch:
 # data for validation, ie testing
 ########
 
-startVal = datetime.date(1995 + yearIncrease, 10, 1)
-endVal = datetime.date(2012 + yearIncrease, 9, 26)
+if all_catch:
+    # run it somewhat longer for comparison with Mosaffa
+    startVal = datetime.date(1995 + yearIncrease, 10, 1)   # yearIncrease is 2
+    endVal = datetime.date(2017, 12, 30)                   # last day in meteo forcing data
+else:
+    startVal = datetime.date(1995 + yearIncrease, 10, 1)   # yearIncrease is 2
+    endVal = datetime.date(2012 + yearIncrease, 9, 26)     # yearIncrease is 2
 
 (
     temperature_time_series_val,
