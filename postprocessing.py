@@ -49,11 +49,11 @@ create_scatter = False
 create_timeseries = False
 # use this for create_r2_by_variable_tables as well
 # it will dump the data as a csv
-create_r2_by_variable = True    # for boxplot
+create_r2_by_variable = False    # for boxplot
 metric = "pbias"                   # metric to be used for boxplot also
 create_r2_by_scenario = False
 create_nse = False
-print_stats = False
+print_stats = True
 print_budgets = False
 print_stats_observed_data = False
 create_histogram = False
@@ -612,9 +612,12 @@ def anova(a):
     totSD = numpy.sqrt(totVar)
     return scenario, varBetGroups, varWithGroups, totVar
 
+print('CHECK THIS OUT')
+exit()
 def varianceOverReal(modelled_tss_es, scenario, number_of_fits):
     numpy.set_printoptions(threshold=numpy.inf)
     a = df[df["sc"] == scenario].sort_values(by="lossModelSelection")
+#    a = df[df["rs"] == 1]
     for tss in modelled_tss_es:
         arr = []
         for i in range(0,number_of_fits):
@@ -679,9 +682,11 @@ if print_stats:
         print(scen, '===========')
         a = (df[df["sc"] == scen].loc[:, ["sc", "ts", "rs", "NSEVal", "lossModelSelection", 
                                           "eva_parameter", "sno_parameter", "sub_parameter"]]).sort_values(by="lossModelSelection")
+#        a = (df[df["sc"] == scen].loc[:, ["sc", "ts", "rs", "NSEVal", "lossModelSelection", 
+#                                          "eva_parameter", "sno_parameter", "sub_parameter"]]).sort_values(by="lossModelSelection")
+#        a = df[df["rs"] == 1]
         # top 4
         b = a[0:number_of_fits]
-        print(b)
         coeff = 100.0 * numpy.sqrt(numpy.var(b['lossModelSelection']))/numpy.mean(b['lossModelSelection'])
         print('coefficient of variation lossModelSelection', f"{coeff:.1f}")
         scenario, varBetweenGroups, varWithinGroups, totVar = anova(a)
