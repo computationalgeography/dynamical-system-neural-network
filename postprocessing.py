@@ -50,6 +50,7 @@ create_timeseries = False
 # use this for create_r2_by_variable_tables as well
 # it will dump the data as a csv
 create_r2_by_variable = True    # for boxplot
+metric = "pbias"                   # metric to be used for boxplot also
 create_r2_by_scenario = False
 create_nse = False
 print_stats = False
@@ -620,11 +621,14 @@ def varianceOverReal(modelled_tss_es, scenario, number_of_fits):
             b = a.iloc[i]
             timeS = b[tss]
             arr.append(timeS)
-        mean = numpy.mean(arr)
-        std = numpy.sqrt(numpy.var(arr, axis=0))
-        std_mean = numpy.mean(std)
-        coeff = 100*(std_mean/mean)
-        print(tss, f"{coeff:.1f}")
+        #mean = numpy.mean(arr)
+        mean = numpy.maximum(numpy.mean(arr, axis = 0),0.00001)
+        std = numpy.sqrt(numpy.var(arr, axis = 0))
+        std_mean = std/mean
+        coeff = 100 * (numpy.mean(std_mean))
+        #std_mean = numpy.mean(std)
+        #coeff = 100*(std_mean/mean)
+        print('cv', tss, f"{coeff:.1f}")
 
 if print_stats:
     # number of top fits to be used
@@ -1608,12 +1612,15 @@ def r2_by_variable(scenarios, tss_variables, start, end):
                 y = y[:-2]
                 x = x.reshape(-1, m).mean(axis=1)
                 y = y.reshape(-1, m).mean(axis=1)
-            ass_metric = ns(x, y)
-            #ass_metric = corr_coeff(x, y)
+            if metric == 'NS':
+                ass_metric = ns(x, y)
+            if metric == 'CC':
+                ass_metric = corr_coeff(x, y)
             #ass_metric = kge(x, y)
             #ass_metric = rmse_calc(x, y)
             #ass_metric = bias(x, y)
-            #ass_metric = pBias(x, y)
+            if metric == 'pbias':
+                ass_metric = pBias(x, y)
             xVal.append(names[rij])
             yVal.append(ass_metric)
             rij += 1
@@ -1640,12 +1647,15 @@ def r2_by_variable(scenarios, tss_variables, start, end):
                 #    ass_metric = corr_coeff(x, y)
                 #else:
                 #    ass_metric = ns(x, y)
-                ass_metric = ns(x, y)
-                #ass_metric = corr_coeff(x, y)
+                if metric == 'NS':
+                    ass_metric = ns(x, y)
+                if metric == 'CC':
+                    ass_metric = corr_coeff(x, y)
                 #ass_metric = kge(x, y)
                 #ass_metric = rmse_calc(x, y)
                 #ass_metric = bias(x, y)
-                #ass_metric = pBias(x, y)
+                if metric == 'pbias':
+                    ass_metric = pBias(x, y)
                 xValExp.append(names[rij])
                 yValExp.append(ass_metric)
                 rij += 1

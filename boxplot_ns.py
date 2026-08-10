@@ -4,10 +4,10 @@ from matplotlib.ticker import MultipleLocator
 import numpy
 import xlsxwriter
 
-metric = "NS"
+#metric = "NS"
 #metric = "bias"
 #metric = "CC"
-#metric = "pbias"
+metric = "pbias"
 
 folder_one = "../figures/land_obs_one/"
 folder_two = "../figures/land_obs_two/"
@@ -198,8 +198,17 @@ def box_lumped_or_distributed(lumped):
         #axs[i].scatter([*range(1,9)], medians, color="blue", zorder=3)
         k = 0
         for j in medians:
-            axs[i].text([*range(1,9)][k], medians[k], "{:.2f}\n".format(medians[k]), \
-                    size = 3, verticalalignment='bottom', horizontalalignment='center')
+            #axs[i].text([*range(1,9)][k], medians[k], "{:.2f}\n".format(medians[k]), \
+            #        size = 3, verticalalignment='bottom', horizontalalignment='center')
+            if metric == "pbias":
+                formatting = "{:.0f}"
+            else:
+                formatting = "{:.2f}"
+            txt = axs[i].text([*range(1,9)][k]/8.0 - 1/16, 0.03, formatting.format(medians[k]), \
+                    size = 7, verticalalignment='bottom', horizontalalignment='center',
+                    transform=axs[i].transAxes, rotation = 90, \
+                    bbox=dict(boxstyle='square,pad=0.01', fc='white', ec='none', alpha=0.8))
+            #txt.set_bbox(dict(facecolor='red', alpha=0.5, edgecolor='red'))
             k += 1
         i += 1
 
