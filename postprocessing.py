@@ -681,7 +681,8 @@ if print_stats:
                   ]
 
     # scenarios for calculation of stats
-    scenariosStats = ['fit_eva', 'fit_thr', 'fit_xhr', 'fit_sub']
+    #scenariosStats = ['fit_eva', 'fit_thr', 'fit_xhr', 'fit_sub']
+    scenariosStats = ['fit_thr']
 
     for scenario in scenariosStats:
         print(scenario, '===========')
