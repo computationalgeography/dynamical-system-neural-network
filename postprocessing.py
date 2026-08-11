@@ -20,7 +20,7 @@ pandas.set_option('display.max_rows', None)
 run = sys.argv[1]
 id_from_command_line = sys.argv[2]
 
-all_catch = True
+all_catch = False
 
 if run == "art_one":
     observed_scenario = False
@@ -46,7 +46,7 @@ ids = [35,68,247,528,534,535,565,815,818]
 read_first_rerun_for_234 = True
 
 create_scatter = False
-create_timeseries = False
+create_timeseries = True
 # use this for create_r2_by_variable_tables as well
 # it will dump the data as a csv
 create_r2_by_variable = False    # for boxplot
@@ -612,8 +612,6 @@ def anova(a):
     totSD = numpy.sqrt(totVar)
     return scenario, varBetGroups, varWithGroups, totVar
 
-print('CHECK THIS OUT')
-exit()
 def varianceOverReal(modelled_tss_es, scenario, number_of_fits):
     numpy.set_printoptions(threshold=numpy.inf)
     a = df[df["sc"] == scenario].sort_values(by="lossModelSelection")
@@ -632,6 +630,36 @@ def varianceOverReal(modelled_tss_es, scenario, number_of_fits):
         #std_mean = numpy.mean(std)
         #coeff = 100*(std_mean/mean)
         print('cv', tss, f"{coeff:.1f}")
+
+def varianceOverRealPooled(modelled_tss_es, scenario, number_of_fits):
+    numpy.set_printoptions(threshold=numpy.inf)
+    # rs is rerun, ts is fold #    a = df[df["rs"] == 1]
+    # select the scenario
+    a = df[df["sc"] == scenario]
+    # for each variable
+    for tss in modelled_tss_es:
+        # for each fold
+        var_of_folds = [] 
+        for fold in range(1,5):
+            a_fold = a[a["ts"] == fold]
+            arr = []
+            # for each rerun
+            for rerun in range(1,5):
+                b = a_fold[a_fold["rs"] == rerun]
+                timeS = b[tss]
+                arr.append(timeS)
+            var_of_fold = numpy.var(arr, axis = 0)
+            #print(scenario, tss, fold, numpy.sqrt(numpy.mean(list(var_of_fold))))
+            var_of_folds.append(list(var_of_fold))
+        mean_var_per_time_step = numpy.mean(var_of_folds,axis=0)[0][366:]
+        mean_std_per_timestep = numpy.sqrt(mean_var_per_time_step)
+        mean_std = numpy.mean(mean_std_per_timestep)
+        coeff = mean_std
+        #mean_per_time_step = numpy.mean(list(a[tss]),axis=0)[366:]
+        #cv_per_time_step = numpy.sqrt(mean_var_per_time_step)/numpy.maximum(mean_per_time_step,0.0001)
+        #mean_cv = numpy.mean(cv_per_time_step)
+        #coeff = mean_cv * 100
+        print('cv', tss, f"{coeff:.5f}")
 
 if print_stats:
     # number of top fits to be used
@@ -657,7 +685,8 @@ if print_stats:
 
     for scenario in scenariosStats:
         print(scenario, '===========')
-        varianceOverReal(tss_for_var, scenario, number_of_fits)
+        #varianceOverReal(tss_for_var, scenario, number_of_fits)
+        varianceOverRealPooled(tss_for_var, scenario, number_of_fits)
 
     # performance metrics
     variables = [
@@ -682,9 +711,6 @@ if print_stats:
         print(scen, '===========')
         a = (df[df["sc"] == scen].loc[:, ["sc", "ts", "rs", "NSEVal", "lossModelSelection", 
                                           "eva_parameter", "sno_parameter", "sub_parameter"]]).sort_values(by="lossModelSelection")
-#        a = (df[df["sc"] == scen].loc[:, ["sc", "ts", "rs", "NSEVal", "lossModelSelection", 
-#                                          "eva_parameter", "sno_parameter", "sub_parameter"]]).sort_values(by="lossModelSelection")
-#        a = df[df["rs"] == 1]
         # top 4
         b = a[0:number_of_fits]
         coeff = 100.0 * numpy.sqrt(numpy.var(b['lossModelSelection']))/numpy.mean(b['lossModelSelection'])
@@ -697,10 +723,10 @@ if print_stats:
     meanVarWithinGroups = (sum(varWithinGroupsList)/len(varWithinGroupsList))
     meanTotVar = (sum(totVarList)/len(totVarList))
     mult = 100000.0
-    #print("var between, var within, total var, between + within")
-    #print(f"{meanVarBetweenGroups * mult:.2f}", f"{meanVarWithinGroups * mult:.2f}", f"{meanTotVar * mult:.2f}", f"{(meanVarBetweenGroups + meanVarWithinGroups) * mult:.2f}")
-    #print("std between, std within, tot std")
-    #print(f"{numpy.sqrt(meanVarBetweenGroups):.3f}", f"{numpy.sqrt(meanVarWithinGroups):.3f}", f"{numpy.sqrt(meanTotVar):.3f}")
+    print("var between, var within, total var, between + within")
+    print(f"{meanVarBetweenGroups * mult:.2f}", f"{meanVarWithinGroups * mult:.2f}", f"{meanTotVar * mult:.2f}", f"{(meanVarBetweenGroups + meanVarWithinGroups) * mult:.2f}")
+    print("std between, std within, tot std")
+    print(f"{numpy.sqrt(meanVarBetweenGroups):.3f}", f"{numpy.sqrt(meanVarWithinGroups):.3f}", f"{numpy.sqrt(meanTotVar):.3f}")
 
     # calculate lowest NSE before stopping as percentage of NSE at stopping
     mean = (df[df["sc"] != "fit_xhr"].lossRatioValidationValue).mean()
@@ -760,6 +786,7 @@ if all_catch:
     line_width_best = 1.7
 else:
     line_width_best = 3.0
+    #line_width_best = 1.0
 line_width_other = 1.0
 
 rij = 0
@@ -1113,16 +1140,15 @@ def timeseries_plot_by_scenario(modelled_tss_es, observed_tss_es, scenario, star
         number_of_fits_to_plot = 1
     else:
         number_of_fits_to_plot = 4
-#        if all_catch:
-#            number_of_fits_to_plot = 1
-#        else:
-#            #number_of_fits_to_plot = 4
-#            number_of_fits_to_plot = 16
+
+    # select a particular fold or rerun
+    df_fold = df[df["ts"] == 1]   # rs is rerun, ts is fold
+#    df_fold = df
+
     for tss in modelled_tss_es:
         for i in range(0,number_of_fits_to_plot):
-            a = (df[df["sc"] == scenario].sort_values(by="lossModelSelection")).iloc[i]
+            a = (df_fold[df_fold["sc"] == scenario].sort_values(by="lossModelSelection")).iloc[i]
             # Plot observed timeseries either from artificial data or from observations.
-            #if (number_of_fits_to_plot > 1):
             if True:
                 observed_tss = observed_tss_es[tssNumber]
                 if not(observed_scenario) or (observed_tss == 'valid_ts_OBS') \
@@ -1153,21 +1179,6 @@ def timeseries_plot_by_scenario(modelled_tss_es, observed_tss_es, scenario, star
                         #color=green
                         color='black'
                     )
-#                axs[rij].plot(
-#                    a["valid_date"][start:end],
-#                    a["val_cosero_sub_s_soil"][start:end],
-#                    linewidth = 0.5,
-#                    #color=green
-#                    color='black'
-#                )
-#                axs[rij].plot(
-#                    a["valid_date"][start:end],
-#                    a["val_cosero_sub_s_gw"][start:end],
-#                    linewidth = 0.5,
-#                    #color=green
-#                    color='black',
-#                    linestyle = (0, (1,5))
-#                )
             # Plot modelled timeseries.
             if i == 0:
                 #line_width_best = 0.5
@@ -1192,8 +1203,8 @@ def timeseries_plot_by_scenario(modelled_tss_es, observed_tss_es, scenario, star
             axs[rij].plot(
                 a["valid_date"][start:end],
                 a[tss][start:end],
-                #linewidth=1.0,
-                linewidth = line_width,
+                linewidth=0.2,
+                #linewidth = line_width,
                 linestyle = line_style,
                 #color="black"
                 #color = a["color"],
@@ -1290,8 +1301,8 @@ if create_timeseries:
     # Plot for each scenario all variables
     i = 0
     for scenario in scenarios_to_plot:
-        timeseries_plot_by_scenario(modelled_tss_list, observed_tss_list, scenario, startTimeTss, endTimeTss, True)
-        #timeseries_plot_by_scenario(modelled_tss_list, observed_tss_list, scenario, startTimeTss, endTimeTss, False)
+        #timeseries_plot_by_scenario(modelled_tss_list, observed_tss_list, scenario, startTimeTss, endTimeTss, True)
+        timeseries_plot_by_scenario(modelled_tss_list, observed_tss_list, scenario, startTimeTss, endTimeTss, False)
         i = i + 1
 
 
