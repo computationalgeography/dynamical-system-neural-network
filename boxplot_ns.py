@@ -6,8 +6,8 @@ import xlsxwriter
 
 #metric = "NS"
 #metric = "bias"
-#metric = "CC"
-metric = "pbias"
+metric = "CC"
+#metric = "pbias"
 
 folder_one = "../figures/land_obs_one/"
 folder_two = "../figures/land_obs_two/"

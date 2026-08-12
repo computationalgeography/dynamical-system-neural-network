@@ -9,6 +9,7 @@ from matplotlib.transforms import Bbox
 from matplotlib.lines import Line2D
 from pathlib import Path
 import matplotlib
+import datetime
 
 pandas.set_option('display.max_columns', None)
 pandas.set_option('display.max_rows', None)
@@ -46,15 +47,16 @@ ids = [35,68,247,528,534,535,565,815,818]
 read_first_rerun_for_234 = True
 
 create_scatter = False
-create_timeseries = True
+create_timeseries = False
 # use this for create_r2_by_variable_tables as well
 # it will dump the data as a csv
-create_r2_by_variable = False    # for boxplot
-metric = "pbias"                   # metric to be used for boxplot also
+create_r2_by_variable = True       # for boxplot
+metric = "CC"                      # metric to be used for boxplot also
 create_r2_by_scenario = False
 create_nse = False
-print_stats = True
+print_stats = False
 print_budgets = False
+print_timespans_comparison_studies = False
 print_stats_observed_data = False
 create_histogram = False
 create_act_melt_vs_temp = False
@@ -64,8 +66,8 @@ create_expert_parameters_tables = False
 # run first create_r2_by_variable and
 # note that below option needs to be run both for
 # one and two areas
-create_r2_by_variable_tables = True
-get_cosero_calibration_results = True
+create_r2_by_variable_tables = False
+get_cosero_calibration_results = False
 
 cosero_validation_comparison = False
 
@@ -615,7 +617,6 @@ def anova(a):
 def varianceOverReal(modelled_tss_es, scenario, number_of_fits):
     numpy.set_printoptions(threshold=numpy.inf)
     a = df[df["sc"] == scenario].sort_values(by="lossModelSelection")
-#    a = df[df["rs"] == 1]
     for tss in modelled_tss_es:
         arr = []
         for i in range(0,number_of_fits):
@@ -631,7 +632,29 @@ def varianceOverReal(modelled_tss_es, scenario, number_of_fits):
         #coeff = 100*(std_mean/mean)
         print('cv', tss, f"{coeff:.1f}")
 
-def varianceOverRealPooled(modelled_tss_es, scenario, number_of_fits):
+def varianceOverRealPooled_by_number_of_best_fits(modelled_tss_es, scenario, number_of_fits):
+    numpy.set_printoptions(threshold=numpy.inf)
+    a = df[df["sc"] == scenario].sort_values(by="lossModelSelection")
+    for tss in modelled_tss_es:
+        arr = []
+        for i in range(0,number_of_fits):
+            b = a.iloc[i]
+            timeS = b[tss][366:]
+            arr.append(timeS)
+        var_of_best_fits_per_timestep = numpy.var(arr, axis = 0)
+        mean_var = numpy.mean(var_of_best_fits_per_timestep)
+        mean_std = numpy.sqrt(mean_var)
+        mean_per_time_step = numpy.mean(list(a[tss]),axis=0)
+        mean = numpy.mean(mean_per_time_step)
+        coeff = 100 * mean_std / mean
+        #cv_per_time_step = std_per_timestep/numpy.maximum(mean_per_time_step,0.0001)
+        #mean_cv = numpy.mean(cv_per_time_step)
+        ##coeff = mean_cv * 100
+        #mean_std = numpy.mean(std_per_timestep)
+        #coeff = mean_std / numpy.mean(mean_per_time_step)*100
+        print('cv', tss, f"{coeff:.0f}")
+
+def varianceOverRealPooled_by_fold(modelled_tss_es, scenario):
     numpy.set_printoptions(threshold=numpy.inf)
     # rs is rerun, ts is fold #    a = df[df["rs"] == 1]
     # select the scenario
@@ -639,7 +662,7 @@ def varianceOverRealPooled(modelled_tss_es, scenario, number_of_fits):
     # for each variable
     for tss in modelled_tss_es:
         # for each fold
-        var_of_folds = [] 
+        var_of_folds_per_timestep = [] 
         for fold in range(1,5):
             a_fold = a[a["ts"] == fold]
             arr = []
@@ -647,18 +670,17 @@ def varianceOverRealPooled(modelled_tss_es, scenario, number_of_fits):
             for rerun in range(1,5):
                 b = a_fold[a_fold["rs"] == rerun]
                 timeS = b[tss]
+                #print(timeS)
+                #exit()
                 arr.append(timeS)
-            var_of_fold = numpy.var(arr, axis = 0)
-            #print(scenario, tss, fold, numpy.sqrt(numpy.mean(list(var_of_fold))))
-            var_of_folds.append(list(var_of_fold))
-        mean_var_per_time_step = numpy.mean(var_of_folds,axis=0)[0][366:]
-        mean_std_per_timestep = numpy.sqrt(mean_var_per_time_step)
-        mean_std = numpy.mean(mean_std_per_timestep)
-        coeff = mean_std
-        #mean_per_time_step = numpy.mean(list(a[tss]),axis=0)[366:]
-        #cv_per_time_step = numpy.sqrt(mean_var_per_time_step)/numpy.maximum(mean_per_time_step,0.0001)
-        #mean_cv = numpy.mean(cv_per_time_step)
-        #coeff = mean_cv * 100
+            var_of_fold_per_timestep = numpy.var(arr, axis = 0)
+            var_of_folds_per_timestep.append(var_of_fold_per_timestep[0])
+        mean_var_per_time_step = numpy.mean(var_of_folds_per_timestep,axis=0)
+        mean_var = numpy.mean(mean_var_per_time_step)
+        mean_std = numpy.sqrt(mean_var)
+        mean_per_time_step = numpy.mean(list(a[tss]),axis=0)
+        mean = numpy.mean(mean_per_time_step)
+        coeff = 100 * mean_std / mean
         print('cv', tss, f"{coeff:.5f}")
 
 if print_stats:
@@ -682,12 +704,14 @@ if print_stats:
 
     # scenarios for calculation of stats
     #scenariosStats = ['fit_eva', 'fit_thr', 'fit_xhr', 'fit_sub']
-    scenariosStats = ['fit_thr']
+    scenariosStats = ['fit_sub', 'fit_thr']
 
     for scenario in scenariosStats:
         print(scenario, '===========')
-        #varianceOverReal(tss_for_var, scenario, number_of_fits)
-        varianceOverRealPooled(tss_for_var, scenario, number_of_fits)
+        #print("by fold")
+        #varianceOverRealPooled_by_fold(tss_for_var, scenario)
+        print("by best fits")
+        varianceOverRealPooled_by_number_of_best_fits(tss_for_var, scenario, number_of_fits)
 
     # performance metrics
     variables = [
@@ -724,10 +748,10 @@ if print_stats:
     meanVarWithinGroups = (sum(varWithinGroupsList)/len(varWithinGroupsList))
     meanTotVar = (sum(totVarList)/len(totVarList))
     mult = 100000.0
-    print("var between, var within, total var, between + within")
-    print(f"{meanVarBetweenGroups * mult:.2f}", f"{meanVarWithinGroups * mult:.2f}", f"{meanTotVar * mult:.2f}", f"{(meanVarBetweenGroups + meanVarWithinGroups) * mult:.2f}")
-    print("std between, std within, tot std")
-    print(f"{numpy.sqrt(meanVarBetweenGroups):.3f}", f"{numpy.sqrt(meanVarWithinGroups):.3f}", f"{numpy.sqrt(meanTotVar):.3f}")
+    #print("var between, var within, total var, between + within")
+    #print(f"{meanVarBetweenGroups * mult:.2f}", f"{meanVarWithinGroups * mult:.2f}", f"{meanTotVar * mult:.2f}", f"{(meanVarBetweenGroups + meanVarWithinGroups) * mult:.2f}")
+    #print("std between, std within, tot std")
+    #print(f"{numpy.sqrt(meanVarBetweenGroups):.3f}", f"{numpy.sqrt(meanVarWithinGroups):.3f}", f"{numpy.sqrt(meanTotVar):.3f}")
 
     # calculate lowest NSE before stopping as percentage of NSE at stopping
     mean = (df[df["sc"] != "fit_xhr"].lossRatioValidationValue).mean()
@@ -1143,8 +1167,8 @@ def timeseries_plot_by_scenario(modelled_tss_es, observed_tss_es, scenario, star
         number_of_fits_to_plot = 4
 
     # select a particular fold or rerun
-    df_fold = df[df["ts"] == 1]   # rs is rerun, ts is fold
-#    df_fold = df
+#    df_fold = df[df["ts"] == 3]   # rs is rerun, ts is fold
+    df_fold = df
 
     for tss in modelled_tss_es:
         for i in range(0,number_of_fits_to_plot):
@@ -1497,9 +1521,11 @@ def scatter_plot_by_scenario(modelled_tss_es, observed_tss_es, scenario, name, s
 
 if cosero_validation_comparison:
     # start in 2000
-    startTimeTss = 1 * 365 + 2 * 365              
+    #startTimeTss = 1 * 365 + 2 * 365              
+    startTimeTss = 1096    # from print_timespans_comparison_studies
     # end in 2007
-    endTimeTss = startTimeTss + 7 * 365
+    #endTimeTss = startTimeTss + 7 * 365
+    endTimeTss = 7304      # from print_timespans_comparison_studies
 else:
     startTimeTss = 1 * 365
     endTimeTss = len(df['val_art_ts_eva_f'].iloc[0])
@@ -2049,3 +2075,49 @@ def cosero_calibration_results():
 
 if get_cosero_calibration_results:
    cosero_calibration_results()
+
+
+if print_timespans_comparison_studies:
+    # karssenberg 2026
+    print("##### time spans for this study")
+    yearIncrease = 2
+    startVal = datetime.date(1995 + yearIncrease, 10, 1)
+    endVal = datetime.date(2017, 12, 30)
+    duration_testing = endVal - startVal
+    print("start date of testing", startVal)
+    print("end date of testing", endVal)
+    print("duration testing", duration_testing)
+
+    # mosaffa 2026
+    print("##### time spans for mosaffa 2026")
+    start_all_data = datetime.date(1987,1,1)
+    end_all_data = datetime.date(2017,12,31)
+    duration_all_data = end_all_data - start_all_data
+    duration_training_and_validation = 0.85 * duration_all_data
+    end_date_training_and_validation = start_all_data + duration_training_and_validation
+    start_date_testing = end_date_training_and_validation + datetime.timedelta(1)
+    duration_testing = end_all_data - start_date_testing
+    start_ts_test_in_this_study = start_date_testing - startVal
+    end_ts_test_in_this_study = end_all_data - startVal
+    print("duration all data", duration_all_data)
+    print("duration training and validation", duration_training_and_validation)
+    print("start date training and validation", start_all_data)
+    print("end date training and validation", end_date_training_and_validation)
+    print("start date testing", start_date_testing)
+    print("end date testing", end_all_data)
+    print("duration testing (days)", duration_testing)
+    print("start and end time step of testing in this study", \
+           start_ts_test_in_this_study, end_ts_test_in_this_study)
+
+
+    # klingler 2021
+    # 1 October 2000 to 30 September 2017
+    print("##### time spans for klinger 2021")
+    start_date_testing = datetime.date(2000,10,1)
+    end_all_data = datetime.date(2017,9,30)
+    start_ts_test_in_this_study = start_date_testing - startVal
+    end_ts_test_in_this_study = end_all_data - startVal
+    print("start date testing", start_date_testing)
+    print("end date testing", end_all_data)
+    print("start and end time step of testing in this study", \
+           start_ts_test_in_this_study, end_ts_test_in_this_study)
