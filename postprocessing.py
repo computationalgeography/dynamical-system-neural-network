@@ -21,7 +21,7 @@ pandas.set_option('display.max_rows', None)
 run = sys.argv[1]
 id_from_command_line = sys.argv[2]
 
-all_catch = True
+all_catch = False
 
 if run == "art_one":
     observed_scenario = False
@@ -51,10 +51,10 @@ create_timeseries = False
 # use this for create_r2_by_variable_tables as well
 # it will dump the data as a csv
 create_r2_by_variable = True       # for boxplot
-metric = "NS"                      # metric to be used for boxplot also
+metric = "CC"                      # metric to be used for boxplot also
 create_r2_by_scenario = False
 create_nse = False
-print_stats = False
+print_stats = True
 print_budgets = False
 print_timespans_comparison_studies = False
 print_stats_observed_data = False
@@ -71,8 +71,8 @@ get_cosero_calibration_results = True
 
 #cosero_validation_comparison = True
 #other_model_validation_comparison = "cosero"  
-other_model_validation_comparison = "lstm-gat"  
-#other_model_validation_comparison = "none"  
+#other_model_validation_comparison = "lstm-gat"  
+other_model_validation_comparison = "none"  
 
 if other_model_validation_comparison == "cosero":
     print('!!!!!!!! running for cosero validation time span !!!!!!!!')
@@ -708,8 +708,8 @@ if print_stats:
                   ]
 
     # scenarios for calculation of stats
-    #scenariosStats = ['fit_eva', 'fit_thr', 'fit_xhr', 'fit_sub']
-    scenariosStats = ['fit_sub', 'fit_thr']
+    scenariosStats = ['fit_eva', 'fit_thr', 'fit_xhr', 'fit_sub']
+    #scenariosStats = ['fit_sub', 'fit_thr']
 
     for scenario in scenariosStats:
         print(scenario, '===========')
