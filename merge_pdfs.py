@@ -23,8 +23,9 @@ def merge_pdfs(file_name):
 
     writer.write(figure_directory + "merged/" + output_sub_directory + "/" + file_name)
 
-merge_pdfs("r2_by_variable.pdf")
-merge_pdfs("tss_modartcomp_best_fit_only_fit_thr.pdf")
+#merge_pdfs("r2_by_variable.pdf")
+#merge_pdfs("tss_modartcomp_best_fit_only_fit_thr.pdf")
+merge_pdfs("stability.pdf")
 
 #first_pdf = figure_directory + output_sub_directory + "_one" + "/r2_by_variable.pdf"
 #second_pdf = figure_directory + output_sub_directory + "_two" + "/r2_by_variable.pdf"

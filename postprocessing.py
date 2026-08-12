@@ -658,6 +658,7 @@ def varianceOverRealPooled_by_number_of_best_fits(modelled_tss_es, scenario, num
         #mean_std = numpy.mean(std_per_timestep)
         #coeff = mean_std / numpy.mean(mean_per_time_step)*100
         print('cv', tss, f"{coeff:.0f}")
+        return coeff
 
 def varianceOverRealPooled_by_fold(modelled_tss_es, scenario):
     numpy.set_printoptions(threshold=numpy.inf)
@@ -688,6 +689,38 @@ def varianceOverRealPooled_by_fold(modelled_tss_es, scenario):
         coeff = 100 * mean_std / mean
         print('cv', tss, f"{coeff:.5f}")
 
+def plotStability(tss_for_var):
+    #def r2_by_variable(scenarios, tss_variables, start, end):
+    if one_area:
+        colour = green
+        size = 12
+    else:
+        colour = blue
+        size = 8
+    fig, axen = plt.subplots(2, 3)
+    axs = [axen[0,0], axen[0,1], axen[0,2],
+           axen[1,0], axen[1,1], axen[1,2],
+           ]
+    fig.set_size_inches(8.27, 4.69)
+    var_names = names[:-1]
+    i = 0
+    for variable in tss_for_var:
+        values = []
+        for sc in scenarios[:-1]:
+            value = varianceOverRealPooled_by_number_of_best_fits([variable], sc, 4)
+            values.append(value)
+            print(variable, sc, value)
+        axs[i].plot(var_names,values, '.', markersize=size, color = colour)
+        axs[i].text(.05, .95, labels_variables_tight[i], ha='left', va='top', \
+                      transform=axs[i].transAxes, size = font_size_axes)
+        axs[i].set_ylim(0,50)
+        i = i + 1
+    plt.tight_layout()
+    axs[5].remove()
+    fig.savefig(figure_directory + "stability.pdf", transparent = True)
+    plt.close(fig)
+    exit()
+
 if print_stats:
     # number of top fits to be used
     number_of_fits = 4
@@ -695,6 +728,7 @@ if print_stats:
     # overfitting
     df["minLossValidationValue"] = df["lossValidation"].apply(lambda x: x.min())
     df["lossRatioValidationValue"] = df["minLossValidationValue"]/df["lossValidationValue"]
+
 
     ##############
     # coefficient of variation of timeseries in top runs
@@ -707,16 +741,20 @@ if print_stats:
         "valid_ts_sub_s"
                   ]
 
+    plotStability(tss_for_var)
+
     # scenarios for calculation of stats
     scenariosStats = ['fit_eva', 'fit_thr', 'fit_xhr', 'fit_sub']
     #scenariosStats = ['fit_sub', 'fit_thr']
+
+    plotStability(tss_for_var)
 
     for scenario in scenariosStats:
         print(scenario, '===========')
         #print("by fold")
         #varianceOverRealPooled_by_fold(tss_for_var, scenario)
         print("by best fits")
-        varianceOverRealPooled_by_number_of_best_fits(tss_for_var, scenario, number_of_fits)
+        value = varianceOverRealPooled_by_number_of_best_fits(tss_for_var, scenario, number_of_fits)
 
     # performance metrics
     variables = [
@@ -1625,7 +1663,6 @@ if create_act_melt_vs_temp:
 
 
 def r2_by_variable(scenarios, tss_variables, start, end):
-    print(start, end)
     if one_area:
         colour = green
         size = 12
