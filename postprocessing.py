@@ -21,7 +21,7 @@ pandas.set_option('display.max_rows', None)
 run = sys.argv[1]
 id_from_command_line = sys.argv[2]
 
-all_catch = False
+all_catch = True
 
 if run == "art_one":
     observed_scenario = False
@@ -51,7 +51,7 @@ create_timeseries = False
 # use this for create_r2_by_variable_tables as well
 # it will dump the data as a csv
 create_r2_by_variable = True       # for boxplot
-metric = "CC"                      # metric to be used for boxplot also
+metric = "NS"                      # metric to be used for boxplot also
 create_r2_by_scenario = False
 create_nse = False
 print_stats = False
@@ -66,13 +66,18 @@ create_expert_parameters_tables = False
 # run first create_r2_by_variable and
 # note that below option needs to be run both for
 # one and two areas
-create_r2_by_variable_tables = False
-get_cosero_calibration_results = False
+create_r2_by_variable_tables = True
+get_cosero_calibration_results = True
 
-cosero_validation_comparison = False
+#cosero_validation_comparison = True
+#other_model_validation_comparison = "cosero"  
+other_model_validation_comparison = "lstm-gat"  
+#other_model_validation_comparison = "none"  
 
-if cosero_validation_comparison:
+if other_model_validation_comparison == "cosero":
     print('!!!!!!!! running for cosero validation time span !!!!!!!!')
+if other_model_validation_comparison == "lstm-gat":
+    print('!!!!!!!! running for lstm-gat validation time span !!!!!!!!')
 
 #figure_directory = "../figures/"
 
@@ -1519,13 +1524,16 @@ def scatter_plot_by_scenario(modelled_tss_es, observed_tss_es, scenario, name, s
     fig.savefig(figure_directory + "sca_modartcomp_" + scenario + ".pdf")
     plt.close(fig)
 
-if cosero_validation_comparison:
-    # start in 2000
-    #startTimeTss = 1 * 365 + 2 * 365              
+if other_model_validation_comparison == "cosero":
     startTimeTss = 1096    # from print_timespans_comparison_studies
-    # end in 2007
-    #endTimeTss = startTimeTss + 7 * 365
     endTimeTss = 7304      # from print_timespans_comparison_studies
+    print("length of available data is", len(df['val_art_ts_eva_f'].iloc[0]))
+    print("required length is", endTimeTss)
+elif other_model_validation_comparison == "lstm-gat":
+    startTimeTss = 5698    # from print_timespans_comparison_studies
+    endTimeTss = 7396      # from print_timespans_comparison_studies
+    print("length of available data is", len(df['val_art_ts_eva_f'].iloc[0]))
+    print("required length is", endTimeTss)
 else:
     startTimeTss = 1 * 365
     endTimeTss = len(df['val_art_ts_eva_f'].iloc[0])
@@ -1617,6 +1625,7 @@ if create_act_melt_vs_temp:
 
 
 def r2_by_variable(scenarios, tss_variables, start, end):
+    print(start, end)
     if one_area:
         colour = green
         size = 12
@@ -1642,7 +1651,6 @@ def r2_by_variable(scenarios, tss_variables, start, end):
         # nn scenarios
         for sc in scenarios[:-1]:
             a = (df[df["sc"] == sc].sort_values(by="lossModelSelection")).iloc[0]
-            #print(a.sc, a.ts, a.rs, a.NSEVal)
             x = a[observed_tss][start:end]
             y = a[modelled_tss][start:end]
             #if (modelled_tss == 'valid_ts_sub_s') and (observed_scenario):
