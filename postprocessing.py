@@ -54,11 +54,11 @@ create_r2_by_variable = True       # for boxplot
 metric = "CC"                      # metric to be used for boxplot also
 create_r2_by_scenario = False
 create_nse = False
-print_stats = False
+print_stats = True
 print_budgets = False
 print_timespans_comparison_studies = False
 print_stats_observed_data = False
-create_histogram = True
+create_histogram = False
 create_act_melt_vs_temp = False
 create_epochs = False
 create_expert_parameters_table = False   
@@ -720,6 +720,7 @@ def plotStability(tss_for_var):
                       transform=axs[i].transAxes, size = font_size_axes)
         if observed_scenario:
            axs[i].set_ylim(0,76)
+           #axs[i].set_ylim(0,50)
         else:
            axs[i].set_ylim(0,40)
         i = i + 1
@@ -931,7 +932,7 @@ for sc in response_scenarios_to_plot:
         #linecolor_reference = blue
         linecolor_reference = the_color_all_catch
     else:
-        linewidth_reference = 2
+        linewidth_reference = 1.5
         linecolor_reference = 'black'
     i = 0
     for index, row in a.iterrows():
@@ -977,7 +978,7 @@ for sc in response_scenarios_to_plot:
     rij += 1
 custom_lines = [Line2D([0], [0], color=green, lw=line_width_best, ls='solid'),
                 Line2D([0], [0], color=green, lw=line_width_other, ls='dashed'),
-                Line2D([0], [0], color='black', lw=1)]
+                Line2D([0], [0], color='black', lw=1.5)]
 if all_catch:
     the_colors_all_catch[0]
     custom_lines = []
@@ -998,14 +999,18 @@ else:
 
 if observed_scenario:
     if all_catch or adjusted_for_revision:
-        axs[0, 0].set_ylim(0, 0.005)  # evapotranspiration
-        #axs[0, 1].set_ylim(0, 0.03)   # snow
+        axs[0, 0].set_ylim(0, 0.006)  # evapotranspiration
         axs[0, 1].set_ylim(0, 0.02)   # snow
         axs[0, 2].set_ylim(0, 0.02)   # subsurface water
     else:
         axs[0, 0].set_ylim(0, 0.04)
 else:
-    axs[0, 0].set_ylim(0, 0.013)
+    if adjusted_for_revision:
+        axs[0, 0].set_ylim(0, 0.006)  # evapotranspiration
+        axs[0, 1].set_ylim(0, 0.02)   # snow
+        axs[0, 2].set_ylim(0, 0.02)   # subsurface water
+    else:
+        axs[0, 0].set_ylim(0, 0.013)
 
 # x axis 
 axs[0, 0].set_xlim(-10, 12)
