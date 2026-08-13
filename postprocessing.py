@@ -54,11 +54,11 @@ create_r2_by_variable = True       # for boxplot
 metric = "CC"                      # metric to be used for boxplot also
 create_r2_by_scenario = False
 create_nse = False
-print_stats = True
+print_stats = False
 print_budgets = False
 print_timespans_comparison_studies = False
 print_stats_observed_data = False
-create_histogram = False
+create_histogram = True
 create_act_melt_vs_temp = False
 create_epochs = False
 create_expert_parameters_table = False   
@@ -829,6 +829,7 @@ the_color_all_catch = the_colors_all_catch[index_of_catch]
 # response curves #
 ###################
 
+adjusted_for_revision = True
 
 fig = plt.figure(dpi=dpi_figures)
 
@@ -840,7 +841,7 @@ else:
     response_nr_rows = 7
 
 gs = fig.add_gridspec(response_nr_rows, 3, hspace=0, wspace=0)
-if all_catch:
+if all_catch or adjusted_for_revision:
     fig, axs = plt.subplots(response_nr_rows, 3, sharex="col", sharey="col")
 else:
     fig, axs = plt.subplots(response_nr_rows, 3, sharex="col", sharey=True)
@@ -856,7 +857,7 @@ response_sno_y = numpy.array(df_first[df_first["sc"] == "fit_eva"]["response_sno
 response_sub_x = numpy.array(df_first[df_first["sc"] == "fit_eva"]["response_sub_x"])[0]
 response_sub_y = numpy.array(df_first[df_first["sc"] == "fit_eva"]["response_sub_y"])[0]
 
-if all_catch:
+if all_catch or adjusted_for_revision:
     line_width_best = 1.7
 else:
     line_width_best = 3.0
@@ -967,7 +968,7 @@ for sc in response_scenarios_to_plot:
                 axs[rij,0].text(.05, .93, n, ha='left', va='top', transform=axs[rij,0].transAxes, \
                                 size = font_size_axes * 1.5)
 
-        if all_catch:
+        if all_catch or adjusted_for_revision:
             aaa = 4
         else:
             axs[rij, 0].set_yticks([0.0, 0.010])
@@ -996,7 +997,7 @@ else:
                             bbox_to_anchor = (1.5, -0.5), ncol = 3)
 
 if observed_scenario:
-    if all_catch:
+    if all_catch or adjusted_for_revision:
         axs[0, 0].set_ylim(0, 0.005)  # evapotranspiration
         #axs[0, 1].set_ylim(0, 0.03)   # snow
         axs[0, 1].set_ylim(0, 0.02)   # snow
@@ -1014,12 +1015,12 @@ else:
     axs[0, 1].set_xlim(-2, 6)
 if observed_scenario:
     if one_area:
-        if all_catch:
+        if all_catch or adjusted_for_revision:
             axs[0, 2].set_xlim(0, 0.4)
         else:
             axs[0, 2].set_xlim(0, 0.4)
     else:
-        if all_catch:
+        if all_catch or adjusted_for_revision:
             axs[0, 2].set_xlim(0, 0.4)
         else:
             axs[0, 2].set_xlim(0, 0.12)
@@ -1055,7 +1056,7 @@ axs[0, 0].set_title("evapotranspiration\nincluding sublimation", fontsize=font_s
 axs[0, 1].set_title("snow melt", fontsize=font_size_axes)
 axs[0, 2].set_title("outflow subsurf. storage\n(streamflow)", fontsize=font_size_axes)
 if not EGU:
-    if all_catch:
+    if all_catch or adjusted_for_revision:
         plt.subplots_adjust(wspace=0.27, hspace=0.1)
     else:
         plt.subplots_adjust(wspace=0, hspace=0)
@@ -1606,13 +1607,21 @@ def histogram_by_scenario(hist_tss, scenario, name, start, end):
     fig.set_size_inches(8.27, 5.0)
     a = (df[df["sc"] == scenario].sort_values(by="lossModelSelection")).iloc[0]
     #snow = (a["valid_ts_sno_s"][start:end] > 0.0001)
-    snow = (a["val_art_ts_sno_s"][start:end] > 0.0001)
+    snow = (a["val_lan_ts_sno_s"][start:end] > 0.0001)
+    #snow = (a["val_art_ts_sno_s"][start:end] > 0.0001)
     temperature = (a["valid_ts_temperature"][start:end])
+    totdays = numpy.shape(temperature)[0]
     temp_with_snow = temperature[snow]
     daysWithTempAboveThreshold = numpy.sum(temp_with_snow > 4.0)
     daysWithTempBelowThreshold = numpy.sum(temp_with_snow <= 4.0)
     proportionDays = daysWithTempAboveThreshold / (daysWithTempAboveThreshold + daysWithTempBelowThreshold)
-    print(proportionDays)
+    #print(proportionDays)
+    print('days with snow and temp above threshold: ', daysWithTempAboveThreshold)
+    print('days with snow and temp below threshold: ', daysWithTempBelowThreshold)
+    print('total number of days: ', totdays)
+    #print(daysWithTempBelowThreshold)
+    print('proportion of all days that have snow and >4 degrees: ', daysWithTempAboveThreshold/totdays)
+    print('proportion of all days that have snow and <= 4 degrees: ', daysWithTempBelowThreshold/totdays)
     label = ['temp', 'temp with snow', 'sub_s', 'sno_s']
     rij = 0
     tssNumber = 0
