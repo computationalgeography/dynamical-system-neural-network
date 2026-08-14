@@ -6,7 +6,8 @@ re_run_s='1'
 #directory='68'
 directory=$1
 
-batch_scenarios='thr xhr'
+batch_scenarios='xhr'
+#batch_scenarios='thr xhr'
 
 ##############################
 # observational data fitting #

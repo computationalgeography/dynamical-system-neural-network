@@ -11,6 +11,8 @@ from pathlib import Path
 import matplotlib
 import datetime
 
+
+
 pandas.set_option('display.max_columns', None)
 pandas.set_option('display.max_rows', None)
 
@@ -21,7 +23,7 @@ pandas.set_option('display.max_rows', None)
 run = sys.argv[1]
 id_from_command_line = sys.argv[2]
 
-all_catch = False
+all_catch = True
 
 if run == "art_one":
     observed_scenario = False
@@ -54,11 +56,12 @@ create_r2_by_variable = True       # for boxplot
 metric = "CC"                      # metric to be used for boxplot also
 create_r2_by_scenario = False
 create_nse = False
-print_stats = True
+print_stats = False
 print_budgets = False
 print_timespans_comparison_studies = False
 print_stats_observed_data = False
 create_histogram = False
+create_scatter_response_observed = True
 create_act_melt_vs_temp = False
 create_epochs = False
 create_expert_parameters_table = False   
@@ -896,6 +899,8 @@ for sc in response_scenarios_to_plot:
                 linestyle = line_style,
                 label = label_to_print 
             )
+            print('temperature for snow melt', row["response_sno_x"][0])
+            print('snow melt at temperature', row["response_sno_y"][0])
             axs[rij, 1].plot(
                 row["response_sno_x"], row["response_sno_y"], color=colour_in_response,
                 linewidth = line_width,
@@ -2186,3 +2191,153 @@ if print_timespans_comparison_studies:
     print("end date testing", end_all_data)
     print("start and end time step of testing in this study", \
            start_ts_test_in_this_study, end_ts_test_in_this_study)
+
+def scatter_response_observed(observed_tss_list):
+    numpy.set_printoptions(threshold=numpy.inf)
+    window_size = 400 
+    line_width = 1
+    plot_hexbin = False
+    eva_f = df[observed_tss_list[0]].iloc[0]
+    sno_f = df[observed_tss_list[1]].iloc[0]
+    sno_s = df[observed_tss_list[2]].iloc[0]
+    sub_f = df[observed_tss_list[3]].iloc[0]
+    sub_s = df[observed_tss_list[4]].iloc[0]
+    t = df["valid_ts_temperature"].iloc[0]
+    p = df["valid_ts_precipitation"].iloc[0]/1000.0  # m
+
+    # test to create sno_f from sno_s
+    #df["val_lan_ts_snowfall"] = df.apply(lambda x: numpy.where(x['valid_ts_temperature'] > 0.0, 0.0, x['valid_ts_precipitation']), axis=1)
+    p_yesterday = numpy.roll(p,1)
+    p_tomorrow = numpy.roll(p,-1)
+    p_threshold = 1.0/10000.0 # 0.1 mm
+    no_precipitation_in_window = (p_yesterday < p_threshold) & (p < p_threshold) & (p_tomorrow < p_threshold)
+    s_yesterday = numpy.roll(sno_s,1)
+    s_tomorrow = numpy.roll(sno_s,-1)
+    s_threshold = 0.05
+    s_in_window = (s_yesterday > s_threshold) & (s > s_threshold) & (s_tomorrow > s_threshold)
+    condition = no_precipitation_in_window & s_in_window
+    #no_precipitation_in_window = numpy.where(no_precipitation_in_window, True, numpy.NAN)
+    #print(no_precipitation_in_window)
+    sno_s_yesterday = numpy.roll(sno_s,1)
+    sno_s_tomorrow = numpy.roll(sno_s,-1)
+    sno_melt_prev = sno_s_yesterday - sno_s
+    sno_melt_next = sno_s - sno_s_tomorrow
+    sno_melt = (sno_melt_prev + sno_melt_next)/2.0
+    #sno_melt = sno_melt_prev
+    sno_melt_corrected_sublim = sno_melt + eva_f
+    sno_melt_known = numpy.where(condition, sno_melt_corrected_sublim, numpy.NAN)
+    #print(sno_melt_known)
+
+    there_is_snow = sno_s > 0.01
+    #totdays = numpy.shape(temperature)[0]
+    t_with_snow = t[there_is_snow]
+    sno_f_with_snow = sno_f[there_is_snow]
+
+    newfig = plt.figure(dpi=dpi_figures)
+    newfig, axen = plt.subplots(1, 3)
+    axs = [axen[0], axen[1], axen[2]]
+    #newfig.set_size_inches(8.27, 5.2 * 1.5)
+    newfig.set_size_inches(8.27, 3.2)
+
+    ## evapotranspiration
+    if plot_hexbin:
+        hb = axs[0].hexbin(
+                t, eva_f, gridsize=30, cmap="Greens", bins="log", linewidths=0.0
+            )
+    # Sort by x
+    idx = numpy.argsort(t)
+    x_sorted = t[idx]
+    y_sorted = eva_f[idx]
+    
+    # Moving average
+    window = window_size
+    y_ma = numpy.convolve(y_sorted, numpy.ones(window) / window, mode="valid")
+
+    # Plot moving average
+    axs[0].plot(
+    #x_sorted[window - 1:],
+    x_sorted[int(window/2) - 1:-int(window/2)],
+    y_ma,
+    color = the_color_all_catch,
+    linewidth = line_width,
+    )
+    axs[0].set_ylim(-0.001,0.005)
+    axs[0].set_xlim(-10,10)
+
+    ###############
+    ## snow melt
+    ###############
+    #the_t = t_with_snow
+    #the_sno_f = sno_f_with_snow
+    the_t = t
+    the_sno_f = sno_melt_known
+    #the_t = t_melt_known[~numpy.isnan(t_melt_known)
+    #the_sno_f = s
+    the_t = t[~numpy.isnan(sno_melt_known)]
+    the_sno_f = the_sno_f[~numpy.isnan(sno_melt_known)]
+
+    if plot_hexbin:
+        #hb = axs[1].hexbin(
+        #        the_t, the_sno_f, gridsize=30, cmap="Greens", bins="log", linewidths=0.0
+        #    )
+        hb = axs[1].plot(
+                the_t, the_sno_f, '.'
+            )
+
+    # Sort by x
+    idx = numpy.argsort(the_t)
+    x_sorted = the_t[idx]
+    y_sorted = the_sno_f[idx]
+    
+    # Moving average
+    #window = window_size
+    window = 20
+    y_ma = numpy.convolve(y_sorted, numpy.ones(window) / window, mode="valid")
+
+    # Plot moving average
+    axs[1].plot(
+    #x_sorted[window - 1:],
+    x_sorted[int(window/2) - 1:-int(window/2)],
+    y_ma,
+    color = the_color_all_catch,
+    linewidth = line_width,
+    )
+    axs[1].set_ylim(0,0.019)
+    axs[1].set_xlim(-4,6)
+
+    ###############
+    ## streamflow 
+    ###############
+    if plot_hexbin:
+        hb = axs[2].hexbin(
+                sub_s, sub_f, gridsize=30, cmap="Greens", bins="log", linewidths=0.0
+            )
+    # Sort by x
+    idx = numpy.argsort(sub_s)
+    x_sorted = sub_s[idx]
+    y_sorted = sub_f[idx]
+    
+    # Moving average
+    window = window_size
+    y_ma = numpy.convolve(y_sorted, numpy.ones(window) / window, mode="valid")
+
+    # Plot moving average
+    axs[2].plot(
+    #x_sorted[window - 1:],
+    x_sorted[int(window/2) - 1:-int(window/2)],
+    y_ma,
+    color = the_color_all_catch,
+    linewidth = line_width,
+    )
+    axs[2].set_ylim(0,0.019)
+    axs[2].set_xlim(0,0.4)
+
+    plt.subplots_adjust(wspace=0.35)
+
+    newfig.savefig(figure_directory + "scatter_response_observed.pdf", transparent = True)
+    plt.close(newfig)
+
+
+
+if create_scatter_response_observed:
+    scatter_response_observed(observed_tss_list)

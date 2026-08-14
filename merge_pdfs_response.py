@@ -21,8 +21,14 @@ def merge_pdfs(file_name, scenario):
 
     writer.write(output_sub_directory + scenario + "_" + file_name)
 
+#scenario = "land_obs_one"
+#merge_pdfs("response.pdf", scenario)
+#
+#scenario = "land_obs_two"
+#merge_pdfs("response.pdf", scenario)
+
 scenario = "land_obs_one"
-merge_pdfs("response.pdf", scenario)
+merge_pdfs("scatter_response_observed.pdf", scenario)
 
 scenario = "land_obs_two"
-merge_pdfs("response.pdf", scenario)
+merge_pdfs("scatter_response_observed.pdf", scenario)
