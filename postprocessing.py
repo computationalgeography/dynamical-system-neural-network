@@ -368,6 +368,38 @@ df["val_lan_ts_sno_f"] = df.apply(lambda x: numpy.where(x["val_lan_ts_sno_f_temp
 df["val_lan_ts_sno_f"] = df.apply(lambda x: numpy.where(x["val_lan_ts_sno_f"] > 0.04, 0.04, x["val_lan_ts_sno_f_temp"]), axis=1)
 
 
+############# TEST
+
+t = df["valid_ts_temperature"].iloc[0]
+p = df["valid_ts_precipitation"].iloc[0]/1000.0  # m
+sno_s = df["val_lan_ts_sno_s"].iloc[0]
+eva_f = df["val_lan_ts_eva_f"].iloc[0]
+# test to create sno_f from sno_s
+p_yesterday = numpy.roll(p,1)
+p_tomorrow = numpy.roll(p,-1)
+p_threshold = 1.0/10000.0 # 0.1 mm
+no_precipitation_in_window = (p_yesterday < p_threshold) & (p < p_threshold) & (p_tomorrow < p_threshold)
+s_yesterday = numpy.roll(sno_s,1)
+s_tomorrow = numpy.roll(sno_s,-1)
+s_threshold = 0.05
+s_in_window = (s_yesterday > s_threshold) & (s > s_threshold) & (s_tomorrow > s_threshold)
+condition = no_precipitation_in_window & s_in_window
+#no_precipitation_in_window = numpy.where(no_precipitation_in_window, True, numpy.NAN)
+#print(no_precipitation_in_window)
+sno_s_yesterday = numpy.roll(sno_s,1)
+sno_s_tomorrow = numpy.roll(sno_s,-1)
+sno_melt_prev = sno_s_yesterday - sno_s
+sno_melt_next = sno_s - sno_s_tomorrow
+sno_melt = (sno_melt_prev + sno_melt_next)/2.0
+#sno_melt = sno_melt_prev
+sno_melt_corrected_sublim = sno_melt + eva_f
+sno_melt_known = numpy.where(condition, sno_melt_corrected_sublim, numpy.NAN)
+df["val_lan_ts_sno_f"] = df.apply(lambda x: sno_melt_known, axis = 1)
+
+
+############### TEST
+
+
 
 ## add additional_validation_data
 ## cosero model, sub_s groundwater
@@ -1089,8 +1121,8 @@ if observed_scenario:
     observed_tss_list = [
         "val_lan_ts_eva_f",                  # evapotranspiration from ERA5 Land
         #"val_cosero_eva_f",                  # evapotranspiration from cosero
-        #"val_lan_ts_sno_f",                   # melt rate from ERA5 Land (estimated)
-        "val_cosero_sno_f_additional",       # idem, melt rate from cosero (is not available from ERA5)
+        "val_lan_ts_sno_f",                   # melt rate from ERA5 Land (estimated)
+        #"val_cosero_sno_f_additional",       # idem, melt rate from cosero (is not available from ERA5)
         "val_lan_ts_sno_s",                  # snow state from era5 land
         "valid_ts_OBS",                      # streamflow observed
         "val_cosero_sub_s_additional"        # subsurface storage from cosero
@@ -1251,15 +1283,17 @@ def timeseries_plot_by_scenario(modelled_tss_es, observed_tss_es, scenario, star
                 if observed_scenario and (observed_tss == 'val_cosero_sub_s_additional'):
                     axs[rij].plot(
                         a["valid_date"][start:end],
-                        a["val_cosero_sub_s_additional"][start:end],
+                        #a["val_cosero_sub_s_additional"][start:end],
+                        a[observed_tss][start:end],
                         linewidth = 0.5,
                         #color=green
                         color='black'
                     )
-                if observed_scenario and (observed_tss == 'val_cosero_sno_f_additional'):
+                if observed_scenario and ((observed_tss == 'val_cosero_sno_f_additional') or (observed_tss == 'val_lan_ts_sno_f')):
                     axs[rij].plot(
                         a["valid_date"][start:end],
-                        a["val_cosero_sno_f_additional"][start:end],
+                        #a["val_cosero_sno_f_additional"][start:end],
+                        a[observed_tss][start:end],
                         linewidth = 0.5,
                         #color=green
                         color='black'
@@ -1726,13 +1760,19 @@ def r2_by_variable(scenarios, tss_variables, start, end):
                 x = x.reshape(-1, m).mean(axis=1)
                 y = y.reshape(-1, m).mean(axis=1)
             if metric == 'NS':
+                y = y[~numpy.isnan(x)]
+                x = x[~numpy.isnan(x)]
                 ass_metric = ns(x, y)
             if metric == 'CC':
+                y = y[~numpy.isnan(x)]
+                x = x[~numpy.isnan(x)]
                 ass_metric = corr_coeff(x, y)
             #ass_metric = kge(x, y)
             #ass_metric = rmse_calc(x, y)
             #ass_metric = bias(x, y)
             if metric == 'pbias':
+                y = y[~numpy.isnan(x)]
+                x = x[~numpy.isnan(x)]
                 ass_metric = pBias(x, y)
             xVal.append(names[rij])
             yVal.append(ass_metric)
