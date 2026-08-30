@@ -49,11 +49,11 @@ ids = [35,68,247,528,534,535,565,815,818]
 read_first_rerun_for_234 = True
 
 create_scatter = False
-create_timeseries = False
+create_timeseries = True
 # use this for create_r2_by_variable_tables as well
 # it will dump the data as a csv
 create_r2_by_variable = True       # for boxplot
-metric = "NS"                      # metric to be used for boxplot also
+metric = "CC"                      # metric to be used for boxplot also
 create_r2_by_scenario = False
 create_nse = False
 print_stats = False
@@ -359,40 +359,61 @@ for array in arrays:
             arrayContents.append(-9999)
     df[array] = arrayContents
 
-# explored approach to calculate snow melt from ERA5 Land
-# snow melt = (snow_s_previous - snow_s_current) - sno_fall
-df["val_lan_ts_sno_s_yesterday"] = df["val_lan_ts_sno_s"].apply(lambda x: numpy.roll(x,1))
-df["val_lan_ts_snowfall"] = df.apply(lambda x: numpy.where(x['valid_ts_temperature'] > 0.0, 0.0, x['valid_ts_precipitation']), axis=1)
-df["val_lan_ts_sno_f_temp"] = df["val_lan_ts_sno_s_yesterday"] - df["val_lan_ts_sno_s"] + df["val_lan_ts_snowfall"]
-df["val_lan_ts_sno_f"] = df.apply(lambda x: numpy.where(x["val_lan_ts_sno_f_temp"] < 0.0, 0.0, x["val_lan_ts_sno_f_temp"]), axis=1)
-df["val_lan_ts_sno_f"] = df.apply(lambda x: numpy.where(x["val_lan_ts_sno_f"] > 0.04, 0.04, x["val_lan_ts_sno_f_temp"]), axis=1)
+## explored approach to calculate snow melt from ERA5 Land
+## does not work
+## snow melt = (snow_s_previous - snow_s_current) - sno_fall
+#df["val_lan_ts_sno_s_yesterday"] = df["val_lan_ts_sno_s"].apply(lambda x: numpy.roll(x,1))
+#df["val_lan_ts_snowfall"] = df.apply(lambda x: numpy.where(x['valid_ts_temperature'] > 0.0, 0.0, x['valid_ts_precipitation']), axis=1)
+#df["val_lan_ts_sno_f_temp"] = df["val_lan_ts_sno_s_yesterday"] - df["val_lan_ts_sno_s"] + df["val_lan_ts_snowfall"]
+#df["val_lan_ts_sno_f"] = df.apply(lambda x: numpy.where(x["val_lan_ts_sno_f_temp"] < 0.0, 0.0, x["val_lan_ts_sno_f_temp"]), axis=1)
+#df["val_lan_ts_sno_f"] = df.apply(lambda x: numpy.where(x["val_lan_ts_sno_f"] > 0.04, 0.04, x["val_lan_ts_sno_f_temp"]), axis=1)
 
 
 ############# TEST
 
+## using previous day, today, and yesterday
+#t = df["valid_ts_temperature"].iloc[0]
+#p = df["valid_ts_precipitation"].iloc[0]/1000.0  # m
+#sno_s = df["val_lan_ts_sno_s"].iloc[0]
+#eva_f = df["val_lan_ts_eva_f"].iloc[0]
+## test to create sno_f from sno_s
+#p_yesterday = numpy.roll(p,1)
+#p_tomorrow = numpy.roll(p,-1)
+#p_threshold = 1.0/10000.0 # 0.1 mm
+#no_precipitation_in_window = (p_yesterday < p_threshold) & (p < p_threshold) & (p_tomorrow < p_threshold)
+#s_yesterday = numpy.roll(sno_s,1)
+#s_tomorrow = numpy.roll(sno_s,-1)
+#s_threshold = 0.05
+#s_in_window = (s_yesterday > s_threshold) & (s > s_threshold) & (s_tomorrow > s_threshold)
+#condition = no_precipitation_in_window & s_in_window
+##no_precipitation_in_window = numpy.where(no_precipitation_in_window, True, numpy.NAN)
+##print(no_precipitation_in_window)
+#sno_s_yesterday = numpy.roll(sno_s,1)
+#sno_s_tomorrow = numpy.roll(sno_s,-1)
+#sno_melt_prev = sno_s_yesterday - sno_s
+#sno_melt_next = sno_s - sno_s_tomorrow
+#sno_melt = (sno_melt_prev + sno_melt_next)/2.0
+#sno_melt_corrected_sublim = sno_melt - eva_f
+#sno_melt_known = numpy.where(condition, sno_melt_corrected_sublim, numpy.NAN)
+#df["val_lan_ts_sno_f"] = df.apply(lambda x: sno_melt_known, axis = 1)
+
+# using previous day and today
 t = df["valid_ts_temperature"].iloc[0]
 p = df["valid_ts_precipitation"].iloc[0]/1000.0  # m
 sno_s = df["val_lan_ts_sno_s"].iloc[0]
 eva_f = df["val_lan_ts_eva_f"].iloc[0]
 # test to create sno_f from sno_s
 p_yesterday = numpy.roll(p,1)
-p_tomorrow = numpy.roll(p,-1)
-p_threshold = 1.0/10000.0 # 0.1 mm
-no_precipitation_in_window = (p_yesterday < p_threshold) & (p < p_threshold) & (p_tomorrow < p_threshold)
+p_threshold = 2.0*(1.0/10000.0) # 0.2 mm
+no_precipitation_in_window = (p_yesterday < p_threshold) & (p < p_threshold)
 s_yesterday = numpy.roll(sno_s,1)
-s_tomorrow = numpy.roll(sno_s,-1)
-s_threshold = 0.05
-s_in_window = (s_yesterday > s_threshold) & (s > s_threshold) & (s_tomorrow > s_threshold)
+s_threshold = 0.02
+s_in_window = (s_yesterday > s_threshold) & (s > s_threshold)
 condition = no_precipitation_in_window & s_in_window
 #no_precipitation_in_window = numpy.where(no_precipitation_in_window, True, numpy.NAN)
 #print(no_precipitation_in_window)
-sno_s_yesterday = numpy.roll(sno_s,1)
-sno_s_tomorrow = numpy.roll(sno_s,-1)
-sno_melt_prev = sno_s_yesterday - sno_s
-sno_melt_next = sno_s - sno_s_tomorrow
-sno_melt = (sno_melt_prev + sno_melt_next)/2.0
-#sno_melt = sno_melt_prev
-sno_melt_corrected_sublim = sno_melt + eva_f
+sno_melt = s_yesterday - sno_s
+sno_melt_corrected_sublim = sno_melt - eva_f
 sno_melt_known = numpy.where(condition, sno_melt_corrected_sublim, numpy.NAN)
 df["val_lan_ts_sno_f"] = df.apply(lambda x: sno_melt_known, axis = 1)
 
@@ -1295,8 +1316,9 @@ def timeseries_plot_by_scenario(modelled_tss_es, observed_tss_es, scenario, star
                         #a["val_cosero_sno_f_additional"][start:end],
                         a[observed_tss][start:end],
                         linewidth = 0.5,
-                        #color=green
-                        color='black'
+                        color='black',
+                        marker = '.',
+                        markersize = 0.01
                     )
             # Plot modelled timeseries.
             if i == 0:
@@ -1339,7 +1361,8 @@ def timeseries_plot_by_scenario(modelled_tss_es, observed_tss_es, scenario, star
                     axs[rij].set_ylim(-0.0001,0.0043)
                     #axs[rij].set_ylim(0,0.0043)
                 if rij == 2:
-                    axs[rij].set_ylim(0,0.024)
+                    #axs[rij].set_ylim(0,0.024)
+                    axs[rij].set_ylim(-0.0005,0.024)
                     #axs[rij].set_ylim(0,0.043)
                 if rij == 3:
                     axs[rij].set_ylim(0,0.8)
@@ -1420,7 +1443,7 @@ if create_timeseries:
     # Plot for each scenario all variables
     i = 0
     for scenario in scenarios_to_plot:
-        #timeseries_plot_by_scenario(modelled_tss_list, observed_tss_list, scenario, startTimeTss, endTimeTss, True)
+        timeseries_plot_by_scenario(modelled_tss_list, observed_tss_list, scenario, startTimeTss, endTimeTss, True)
         timeseries_plot_by_scenario(modelled_tss_list, observed_tss_list, scenario, startTimeTss, endTimeTss, False)
         i = i + 1
 
@@ -2245,33 +2268,33 @@ def scatter_response_observed(observed_tss_list):
     t = df["valid_ts_temperature"].iloc[0]
     p = df["valid_ts_precipitation"].iloc[0]/1000.0  # m
 
-    # test to create sno_f from sno_s
-    #df["val_lan_ts_snowfall"] = df.apply(lambda x: numpy.where(x['valid_ts_temperature'] > 0.0, 0.0, x['valid_ts_precipitation']), axis=1)
-    p_yesterday = numpy.roll(p,1)
-    p_tomorrow = numpy.roll(p,-1)
-    p_threshold = 1.0/10000.0 # 0.1 mm
-    no_precipitation_in_window = (p_yesterday < p_threshold) & (p < p_threshold) & (p_tomorrow < p_threshold)
-    s_yesterday = numpy.roll(sno_s,1)
-    s_tomorrow = numpy.roll(sno_s,-1)
-    s_threshold = 0.05
-    s_in_window = (s_yesterday > s_threshold) & (s > s_threshold) & (s_tomorrow > s_threshold)
-    condition = no_precipitation_in_window & s_in_window
-    #no_precipitation_in_window = numpy.where(no_precipitation_in_window, True, numpy.NAN)
-    #print(no_precipitation_in_window)
-    sno_s_yesterday = numpy.roll(sno_s,1)
-    sno_s_tomorrow = numpy.roll(sno_s,-1)
-    sno_melt_prev = sno_s_yesterday - sno_s
-    sno_melt_next = sno_s - sno_s_tomorrow
-    sno_melt = (sno_melt_prev + sno_melt_next)/2.0
-    #sno_melt = sno_melt_prev
-    sno_melt_corrected_sublim = sno_melt + eva_f
-    sno_melt_known = numpy.where(condition, sno_melt_corrected_sublim, numpy.NAN)
-    #print(sno_melt_known)
-
-    there_is_snow = sno_s > 0.01
-    #totdays = numpy.shape(temperature)[0]
-    t_with_snow = t[there_is_snow]
-    sno_f_with_snow = sno_f[there_is_snow]
+#    # test to create sno_f from sno_s
+#    #df["val_lan_ts_snowfall"] = df.apply(lambda x: numpy.where(x['valid_ts_temperature'] > 0.0, 0.0, x['valid_ts_precipitation']), axis=1)
+#    p_yesterday = numpy.roll(p,1)
+#    p_tomorrow = numpy.roll(p,-1)
+#    p_threshold = 1.0/10000.0 # 0.1 mm
+#    no_precipitation_in_window = (p_yesterday < p_threshold) & (p < p_threshold) & (p_tomorrow < p_threshold)
+#    s_yesterday = numpy.roll(sno_s,1)
+#    s_tomorrow = numpy.roll(sno_s,-1)
+#    s_threshold = 0.05
+#    s_in_window = (s_yesterday > s_threshold) & (s > s_threshold) & (s_tomorrow > s_threshold)
+#    condition = no_precipitation_in_window & s_in_window
+#    #no_precipitation_in_window = numpy.where(no_precipitation_in_window, True, numpy.NAN)
+#    #print(no_precipitation_in_window)
+#    sno_s_yesterday = numpy.roll(sno_s,1)
+#    sno_s_tomorrow = numpy.roll(sno_s,-1)
+#    sno_melt_prev = sno_s_yesterday - sno_s
+#    sno_melt_next = sno_s - sno_s_tomorrow
+#    sno_melt = (sno_melt_prev + sno_melt_next)/2.0
+#    #sno_melt = sno_melt_prev
+#    sno_melt_corrected_sublim = sno_melt + eva_f
+#    sno_melt_known = numpy.where(condition, sno_melt_corrected_sublim, numpy.NAN)
+#    #print(sno_melt_known)
+#
+#    there_is_snow = sno_s > 0.01
+#    #totdays = numpy.shape(temperature)[0]
+#    t_with_snow = t[there_is_snow]
+#    sno_f_with_snow = sno_f[there_is_snow]
 
     newfig = plt.figure(dpi=dpi_figures)
     newfig, axen = plt.subplots(1, 3)
@@ -2307,13 +2330,10 @@ def scatter_response_observed(observed_tss_list):
     ###############
     ## snow melt
     ###############
-    #the_t = t_with_snow
-    #the_sno_f = sno_f_with_snow
-    the_t = t
-    the_sno_f = sno_melt_known
-    #the_t = t_melt_known[~numpy.isnan(t_melt_known)
-    #the_sno_f = s
-    the_t = t[~numpy.isnan(sno_melt_known)]
+    t_average = (t + numpy.roll(t,1))/2.0
+    the_sno_f = sno_f
+    #the_t = t[~numpy.isnan(sno_melt_known)]
+    the_t = t_average[~numpy.isnan(sno_melt_known)]
     the_sno_f = the_sno_f[~numpy.isnan(sno_melt_known)]
 
     if plot_hexbin:
@@ -2330,7 +2350,6 @@ def scatter_response_observed(observed_tss_list):
     y_sorted = the_sno_f[idx]
     
     # Moving average
-    #window = window_size
     window = 20
     y_ma = numpy.convolve(y_sorted, numpy.ones(window) / window, mode="valid")
 
