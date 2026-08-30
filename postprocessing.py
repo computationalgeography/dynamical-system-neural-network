@@ -54,7 +54,7 @@ create_timeseries = False
 # use this for create_r2_by_variable_tables as well
 # it will dump the data as a csv
 create_r2_by_variable = True       # for boxplot
-metric = "pbias"                      # metric to be used for boxplot also
+metric = "pbias"                   # metric to be used for boxplot also
 create_r2_by_scenario = False
 create_nse = False
 print_stats = False
@@ -62,7 +62,7 @@ print_budgets = False
 print_timespans_comparison_studies = False
 print_stats_observed_data = False
 create_histogram = False
-create_scatter_response_observed = False
+create_scatter_response_observed = True
 create_act_melt_vs_temp = False
 create_epochs = False
 create_expert_parameters_table = False   
@@ -2279,39 +2279,11 @@ def scatter_response_observed(observed_tss_list):
     t = df["valid_ts_temperature"].iloc[0]
     p = df["valid_ts_precipitation"].iloc[0]/1000.0  # m
 
-#    # test to create sno_f from sno_s
-#    #df["val_lan_ts_snowfall"] = df.apply(lambda x: numpy.where(x['valid_ts_temperature'] > 0.0, 0.0, x['valid_ts_precipitation']), axis=1)
-#    p_yesterday = numpy.roll(p,1)
-#    p_tomorrow = numpy.roll(p,-1)
-#    p_threshold = 1.0/10000.0 # 0.1 mm
-#    no_precipitation_in_window = (p_yesterday < p_threshold) & (p < p_threshold) & (p_tomorrow < p_threshold)
-#    s_yesterday = numpy.roll(sno_s,1)
-#    s_tomorrow = numpy.roll(sno_s,-1)
-#    s_threshold = 0.05
-#    s_in_window = (s_yesterday > s_threshold) & (s > s_threshold) & (s_tomorrow > s_threshold)
-#    condition = no_precipitation_in_window & s_in_window
-#    #no_precipitation_in_window = numpy.where(no_precipitation_in_window, True, numpy.NAN)
-#    #print(no_precipitation_in_window)
-#    sno_s_yesterday = numpy.roll(sno_s,1)
-#    sno_s_tomorrow = numpy.roll(sno_s,-1)
-#    sno_melt_prev = sno_s_yesterday - sno_s
-#    sno_melt_next = sno_s - sno_s_tomorrow
-#    sno_melt = (sno_melt_prev + sno_melt_next)/2.0
-#    #sno_melt = sno_melt_prev
-#    sno_melt_corrected_sublim = sno_melt + eva_f
-#    sno_melt_known = numpy.where(condition, sno_melt_corrected_sublim, numpy.NAN)
-#    #print(sno_melt_known)
-#
-#    there_is_snow = sno_s > 0.01
-#    #totdays = numpy.shape(temperature)[0]
-#    t_with_snow = t[there_is_snow]
-#    sno_f_with_snow = sno_f[there_is_snow]
-
     newfig = plt.figure(dpi=dpi_figures)
     newfig, axen = plt.subplots(1, 3)
     axs = [axen[0], axen[1], axen[2]]
     #newfig.set_size_inches(8.27, 5.2 * 1.5)
-    newfig.set_size_inches(8.27, 3.2)
+    newfig.set_size_inches(8.27, 1.5)
 
     ## evapotranspiration
     if plot_hexbin:
@@ -2361,7 +2333,7 @@ def scatter_response_observed(observed_tss_list):
     y_sorted = the_sno_f[idx]
     
     # Moving average
-    window = 20
+    window = 50
     y_ma = numpy.convolve(y_sorted, numpy.ones(window) / window, mode="valid")
 
     # Plot moving average
