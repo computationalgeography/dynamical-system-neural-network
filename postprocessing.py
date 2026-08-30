@@ -10,6 +10,7 @@ from matplotlib.lines import Line2D
 from pathlib import Path
 import matplotlib
 import datetime
+import numpy.ma as ma
 
 
 
@@ -49,11 +50,11 @@ ids = [35,68,247,528,534,535,565,815,818]
 read_first_rerun_for_234 = True
 
 create_scatter = False
-create_timeseries = True
+create_timeseries = False
 # use this for create_r2_by_variable_tables as well
 # it will dump the data as a csv
 create_r2_by_variable = True       # for boxplot
-metric = "CC"                      # metric to be used for boxplot also
+metric = "pbias"                      # metric to be used for boxplot also
 create_r2_by_scenario = False
 create_nse = False
 print_stats = False
@@ -61,7 +62,7 @@ print_budgets = False
 print_timespans_comparison_studies = False
 print_stats_observed_data = False
 create_histogram = False
-create_scatter_response_observed = True
+create_scatter_response_observed = False
 create_act_melt_vs_temp = False
 create_epochs = False
 create_expert_parameters_table = False   
@@ -369,7 +370,7 @@ for array in arrays:
 #df["val_lan_ts_sno_f"] = df.apply(lambda x: numpy.where(x["val_lan_ts_sno_f"] > 0.04, 0.04, x["val_lan_ts_sno_f_temp"]), axis=1)
 
 
-############# TEST
+## Calculate snow melt from ERA5 LAND
 
 ## using previous day, today, and yesterday
 #t = df["valid_ts_temperature"].iloc[0]
@@ -417,8 +418,7 @@ sno_melt_corrected_sublim = sno_melt - eva_f
 sno_melt_known = numpy.where(condition, sno_melt_corrected_sublim, numpy.NAN)
 df["val_lan_ts_sno_f"] = df.apply(lambda x: sno_melt_known, axis = 1)
 
-
-############### TEST
+## End of calculate snow melt from ERA5 LAND
 
 
 
@@ -952,8 +952,8 @@ for sc in response_scenarios_to_plot:
                 linestyle = line_style,
                 label = label_to_print 
             )
-            print('temperature for snow melt', row["response_sno_x"][0])
-            print('snow melt at temperature', row["response_sno_y"][0])
+            #print('temperature for snow melt', row["response_sno_x"][0])
+            #print('snow melt at temperature', row["response_sno_y"][0])
             axs[rij, 1].plot(
                 row["response_sno_x"], row["response_sno_y"], color=colour_in_response,
                 linewidth = line_width,
@@ -1454,6 +1454,9 @@ def ns(x, y):
     # nash sutcliffe
     # x is observed
     # y is modelled
+    # ignore values with mv in x (observed)
+    y = y[~numpy.isnan(x)]
+    x = x[~numpy.isnan(x)]
     return 1 - (((x - y) ** 2.0).mean() / ((x - x.mean()) ** 2.0).mean())
 
 def nsFormatted(x, y):
@@ -1473,6 +1476,9 @@ def pBias(x, y):
     absolute bias, x is observed
     if positive modelled is higher
     """
+    # ignore values with mv in x (observed)
+    y = y[~numpy.isnan(x)]
+    x = x[~numpy.isnan(x)]
     return ((y - x).mean()/x.mean()) * 100.0
 
 def pBiasFormatted(x, y):
@@ -1492,6 +1498,9 @@ def rmseFormatted(x, y):
     return rmse_for
 
 def corr_coeff(x, y):
+    # ignore values with mv in x (observed)
+    y = y[~numpy.isnan(x)]
+    x = x[~numpy.isnan(x)]
     rM = numpy.corrcoef(x, y)
     r = rM[0][1]
     rSq = r * r
@@ -1506,6 +1515,9 @@ def kge(x, y):
     """
     kge where x is observed
     """
+    # ignore values with mv in x (observed)
+    y = y[~numpy.isnan(x)]
+    x = x[~numpy.isnan(x)]
     r = corr_coeff(x, y)
     alpha = numpy.std(y) / numpy.std(x) 
     beta = numpy.mean(y) / numpy.mean(x)
@@ -1518,6 +1530,9 @@ def kge(x, y):
     
 
 def rSquaredFormatted(x, y):
+    # ignore values with mv in x (observed)
+    y = y[~numpy.isnan(x)]
+    x = x[~numpy.isnan(x)]
     rSq = corr_coeff(x, y)
     ass_metric = "{:.3f}".format(rSq)
     return ass_metric
@@ -1772,10 +1787,6 @@ def r2_by_variable(scenarios, tss_variables, start, end):
             a = (df[df["sc"] == sc].sort_values(by="lossModelSelection")).iloc[0]
             x = a[observed_tss][start:end]
             y = a[modelled_tss][start:end]
-            #if (modelled_tss == 'valid_ts_sub_s') and (observed_scenario):
-            #    ass_metric = corr_coeff(x, y)
-            #else:
-            # pick the metric, change it below as well
             if metrics_over_longer_steps:
                 m = 14
                 x = x[:-2]
@@ -1783,19 +1794,19 @@ def r2_by_variable(scenarios, tss_variables, start, end):
                 x = x.reshape(-1, m).mean(axis=1)
                 y = y.reshape(-1, m).mean(axis=1)
             if metric == 'NS':
-                y = y[~numpy.isnan(x)]
-                x = x[~numpy.isnan(x)]
+                #y = y[~numpy.isnan(x)]
+                #x = x[~numpy.isnan(x)]
                 ass_metric = ns(x, y)
             if metric == 'CC':
-                y = y[~numpy.isnan(x)]
-                x = x[~numpy.isnan(x)]
+                #y = y[~numpy.isnan(x)]
+                #x = x[~numpy.isnan(x)]
                 ass_metric = corr_coeff(x, y)
             #ass_metric = kge(x, y)
             #ass_metric = rmse_calc(x, y)
             #ass_metric = bias(x, y)
             if metric == 'pbias':
-                y = y[~numpy.isnan(x)]
-                x = x[~numpy.isnan(x)]
+                #y = y[~numpy.isnan(x)]
+                #x = x[~numpy.isnan(x)]
                 ass_metric = pBias(x, y)
             xVal.append(names[rij])
             yVal.append(ass_metric)

@@ -6,8 +6,8 @@ import xlsxwriter
 
 #metric = "NS"
 #metric = "bias"
-metric = "CC"
-#metric = "pbias"
+#metric = "CC"
+metric = "pbias"
 
 folder_one = "../figures/land_obs_one/"
 folder_two = "../figures/land_obs_two/"
@@ -218,12 +218,12 @@ def box_lumped_or_distributed(lumped):
     fig.set_size_inches((8.27-1.0)/3.0, 11.69)
     plt.subplots_adjust(left = 0.45, hspace=0.05)
     if metric == "NS":
-        if lumped:
-            axs[1].set_ylim(top = 0.6)
-            axs[1].yaxis.set_major_locator(MultipleLocator(0.1))
-        else:
-            axs[1].set_ylim(bottom = -3.2, top = 0.6)
-            axs[1].yaxis.set_major_locator(MultipleLocator(0.4))
+        #if lumped:
+        #    axs[1].set_ylim(top = 0.6)
+        #    axs[1].yaxis.set_major_locator(MultipleLocator(0.1))
+        #else:
+        #    axs[1].set_ylim(bottom = -3.2, top = 0.6)
+        #    axs[1].yaxis.set_major_locator(MultipleLocator(0.4))
         axs[0].yaxis.set_major_locator(MultipleLocator(0.2))
         axs[2].yaxis.set_major_locator(MultipleLocator(0.1))
         axs[3].yaxis.set_major_locator(MultipleLocator(0.05))
