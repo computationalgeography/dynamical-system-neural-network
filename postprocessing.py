@@ -47,14 +47,14 @@ if run == "obs_two":
 id = id_from_command_line    # 535 is kals Spottling
 ids = [35,68,247,528,534,535,565,815,818]
 # for single reruns not equal to xhr read rerun 2, 3, 4 from rerun 1
-read_first_rerun_for_234 = True
+read_first_rerun_for_234 = False
 
 create_scatter = False
 create_timeseries = False
 # use this for create_r2_by_variable_tables as well
 # it will dump the data as a csv
 create_r2_by_variable = True       # for boxplot
-metric = "pbias"                   # metric to be used for boxplot also
+metric = "CC"                   # metric to be used for boxplot also
 create_r2_by_scenario = False
 create_nse = False
 print_stats = False
@@ -93,7 +93,8 @@ modelSelectionWithTraining = False
 GFS = False
 
 if all_catch:
-    data_dir = '../data/results_all_catch/'  # used in aug 2026, all fine
+    #data_dir = '../data/results_all_catch/'  # used in aug 2026, all fine
+    data_dir = '../data/results_all_catch_4_reruns/'  # from sept 2026 onwards, 4 reruns, longer validation run for LSTM comparison 
     number_of_rerun_scenarios = 4  # CHANGE TO 4 FOR FINAL RUNS
 else:
     data_dir = '../data/scenarios/LAND/final_runs/' 
@@ -105,7 +106,7 @@ else:
 ##################
 
 if all_catch:
-    number_of_fits_to_plot = 1
+    number_of_fits_to_plot = 4
 else:
     number_of_fits_to_plot = 4
 
@@ -1664,6 +1665,7 @@ elif other_model_validation_comparison == "lstm-gat":
 else:
     startTimeTss = 1 * 365
     endTimeTss = len(df['val_art_ts_eva_f'].iloc[0])
+    print("length of used data is", endTimeTss)
 
 if create_scatter:
     # Plot for each variable all scenarios
