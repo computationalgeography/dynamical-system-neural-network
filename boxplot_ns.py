@@ -4,10 +4,14 @@ from matplotlib.ticker import MultipleLocator
 import numpy
 import xlsxwriter
 
-metric = "NS"
+#metric = "NS"
 #metric = "bias"
-#metric = "CC"
+metric = "CC"
 #metric = "pbias"
+
+###########
+# read the data of the scenario
+###########
 
 folder_one = "../figures/land_obs_one/"
 folder_two = "../figures/land_obs_two/"
@@ -31,6 +35,30 @@ df_exp_one.columns = ["id_exp_one", "variable_exp_one","E_exp_one", "S_exp_one",
 df_exp_two.columns = ["id_exp_two", "variable_exp_two","E_exp_two", "S_exp_two", "G_exp_two", "ES_exp_two", "EG_exp_two", "SG_exp_two", "ESG_exp_two"]
 
 df = pandas.concat([df_nen_one, df_nen_two, df_exp_one, df_exp_two], axis=1)
+
+
+###########
+# read the data of the xhr scenario (specifically stored)
+###########
+
+folder_one_xhr = "../data/xhr_resultaten_for_figure_required_for_paper/" + metric + "/land_obs_one/"
+folder_two_xhr = "../data/xhr_resultaten_for_figure_required_for_paper/" + metric + "/land_obs_two/"
+
+df_nen_one_xhr = pandas.read_csv(folder_one_xhr + "nen_models_ns.csv")
+df_nen_two_xhr = pandas.read_csv(folder_two_xhr + "nen_models_ns.csv")
+df_exp_one_xhr = pandas.read_csv(folder_one_xhr + "exp_models_ns.csv")
+df_exp_two_xhr = pandas.read_csv(folder_two_xhr + "exp_models_ns.csv")
+
+df_nen_one_xhr.columns = ["id_nen_one_xhr", "variable_nen_one_xhr","E_nen_one_xhr", "S_nen_one_xhr", "G_nen_one_xhr", "ES_nen_one_xhr", "EG_nen_one_xhr", "SG_nen_one_xhr", "ESG_nen_one_xhr"]
+df_nen_two_xhr.columns = ["id_nen_two_xhr", "variable_nen_two_xhr","E_nen_two_xhr", "S_nen_two_xhr", "G_nen_two_xhr", "ES_nen_two_xhr", "EG_nen_two_xhr", "SG_nen_two_xhr", "ESG_nen_two_xhr"]
+df_exp_one_xhr.columns = ["id_exp_one_xhr", "variable_exp_one_xhr","E_exp_one_xhr", "S_exp_one_xhr", "G_exp_one_xhr", "ES_exp_one_xhr", "EG_exp_one_xhr", "SG_exp_one_xhr", "ESG_exp_one_xhr"]
+df_exp_two_xhr.columns = ["id_exp_two_xhr", "variable_exp_two_xhr","E_exp_two_xhr", "S_exp_two_xhr", "G_exp_two_xhr", "ES_exp_two_xhr", "EG_exp_two_xhr", "SG_exp_two_xhr", "ESG_exp_two_xhr"]
+
+df_xhr = pandas.concat([df_nen_one_xhr, df_nen_two_xhr, df_exp_one_xhr, df_exp_two_xhr], axis=1)
+
+df_total = pandas.concat([df, df_xhr], axis=1)
+
+#########
 
 names = ["E", "S", "G", "ES", "EG", "SG", "ESG"]
 nn_one_scenarios = ([f'{i}_nen_one' for i in names])
@@ -159,7 +187,12 @@ def box_lumped_or_distributed(lumped):
     else:
         ext = "two"
     for variable in variables:
-        df_mod = df[df["variable_nen_one"] == variable]
+        # first option reads the real output
+        #df_mod = df[df["variable_nen_one"] == variable]
+        # this option reads the real but for xhr takes the data from the short run
+        # and pick the right one below in the boxplot command as well
+        df_mod = df_total[df_total["variable_nen_one"] == variable]
+        print('note that boxplot is printing the xhr values from the short run, not from the actual scenario')
         axs[i],props = df_mod.boxplot(column=[
                                        "E_nen_" + ext, \
                                        "S_nen_" + ext, \
@@ -168,7 +201,8 @@ def box_lumped_or_distributed(lumped):
                                        "EG_nen_" + ext, \
                                        "SG_nen_" + ext, \
                                        "ESG_nen_" + ext, \
-                                       "E_exp_" + ext, \
+                                       #"E_exp_" + ext, \
+                                       "E_exp_" + ext + "_xhr", \
                                        ],
                                        sym='.',
                                        patch_artist=True,
@@ -188,7 +222,7 @@ def box_lumped_or_distributed(lumped):
         else:
             axs[i].yaxis.set_major_locator(MultipleLocator(0.1))
         axs[i].get_xaxis().set_ticks([])
-        if metric == "cc":
+        if metric == "CC":
             axs[i].text(-0.38,0.5,names[i],transform=axs[i].transAxes, va='center', ha='right', size = 9)
         axs[i].grid(True, axis="y")
 
@@ -216,13 +250,31 @@ def box_lumped_or_distributed(lumped):
     #fig.set_size_inches(8.27, 11.69)
     fig.set_size_inches((8.27-1.0)/3.0, 11.69)
     plt.subplots_adjust(left = 0.45, hspace=0.05)
+#    if metric == "CC":
+#        axs[0].set_ylim(0.0, 0.75)
+#        axs[1].set_ylim(0.0, 0.825)
+#        axs[2].set_ylim(0.6, 0.975)
+#        axs[3].set_ylim(0.55, 0.85)
+#        axs[4].set_ylim(0.2, 0.8)
+#    if metric == "pbias":
+#        axs[0].set_ylim(-100, 140) 
+#        axs[1].set_ylim(-50,800)
+#        axs[2].set_ylim(-65,25)
+#        axs[3].set_ylim(-13,4)
+#        axs[4].set_ylim(-85,5)
     if metric == "NS":
-        #if lumped:
-        #    axs[1].set_ylim(top = 0.6)
-        #    axs[1].yaxis.set_major_locator(MultipleLocator(0.1))
-        #else:
-        #    axs[1].set_ylim(bottom = -3.2, top = 0.6)
-        #    axs[1].yaxis.set_major_locator(MultipleLocator(0.4))
+        if lumped:
+            a =12
+            #            axs[1].set_ylim(top = 0.6)
+            #axs[1].yaxis.set_major_locator(MultipleLocator(0.1))
+        else:
+            axs[3].set_ylim(bottom = 0.58, top = 0.84)
+            #axs[1].yaxis.set_major_locator(MultipleLocator(0.4))
+#        axs[0].set_ylim(-1.4, 0.6) 
+#        axs[1].set_ylim(-52, 5)
+#        axs[2].set_ylim(0.0, 1.0)
+#        axs[3].set_ylim(0.55,0.85)
+#        axs[4].set_ylim(-3.0,0.8)
         axs[0].yaxis.set_major_locator(MultipleLocator(0.2))
         axs[2].yaxis.set_major_locator(MultipleLocator(0.1))
         axs[3].yaxis.set_major_locator(MultipleLocator(0.05))

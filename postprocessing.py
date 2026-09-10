@@ -47,17 +47,17 @@ if run == "obs_two":
 id = id_from_command_line    # 535 is kals Spottling
 ids = [35,68,247,528,534,535,565,815,818]
 # for single reruns not equal to xhr read rerun 2, 3, 4 from rerun 1
-read_first_rerun_for_234 = False
+read_first_rerun_for_234 = True
 
 create_scatter = False
-create_timeseries = False
+create_timeseries = True
 # use this for create_r2_by_variable_tables as well
 # it will dump the data as a csv
 create_r2_by_variable = True       # for boxplot
-metric = "NS"                   # metric to be used for boxplot also
+metric = "CC"                   # metric to be used for boxplot also
 create_r2_by_scenario = False
 create_nse = False
-print_stats = False
+print_stats = True              # also stability figure
 print_budgets = False
 print_timespans_comparison_studies = False
 print_stats_observed_data = False
@@ -92,9 +92,8 @@ modelSelectionWithTraining = False
 GFS = False
 
 if all_catch:
-    #data_dir = '../data/results_all_catch/'  # used in aug 2026, all fine
-    data_dir = '../data/results_all_catch_4_reruns/'  # from sept 2026 onwards, 4 reruns, longer validation run for LSTM comparison 
-    #data_dir = '../data/results_all_catch_4_reruns_xhr_from_results_all_catch/'  # used in aug 2026, all fine
+    data_dir = '../data/results_all_catch/'  # used in aug 2026, all fine
+    #data_dir = '../data/results_all_catch_4_reruns/'  # from sept 2026 onwards, 4 reruns, longer validation run for LSTM comparison 
     number_of_rerun_scenarios = 4  # CHANGE TO 4 FOR FINAL RUNS
 else:
     data_dir = '../data/scenarios/LAND/final_runs/' 
@@ -106,7 +105,8 @@ else:
 ##################
 
 if all_catch:
-    number_of_fits_to_plot = 4
+    #number_of_fits_to_plot = 4
+    number_of_fits_to_plot = 1
 else:
     number_of_fits_to_plot = 4
 
@@ -1244,7 +1244,11 @@ def timeseries_plot_by_scenario(modelled_tss_es, observed_tss_es, scenario, star
     gs = fig.add_gridspec(rows_in_figure, 3, hspace=0, wspace=0)
     fig, axs = plt.subplots(rows_in_figure, 1)
     set_share_axes(axs[1:], sharex=True)
-    fig.set_size_inches(8.27, 11.69)
+    if short_time_span:
+        fig.set_size_inches(8.27/1.5, 11.69)
+    else:
+        fig.set_size_inches(8.27, 11.69)
+    line_width_tss = 1.0
     rij = 1
     # print temperature and precipitation in first row
     # get the first scenario and the first run from that scenario
@@ -1284,6 +1288,7 @@ def timeseries_plot_by_scenario(modelled_tss_es, observed_tss_es, scenario, star
 #    df_fold = df[df["ts"] == 3]   # rs is rerun, ts is fold
     df_fold = df
 
+
     for tss in modelled_tss_es:
         for i in range(0,number_of_fits_to_plot):
             a = (df_fold[df_fold["sc"] == scenario].sort_values(by="lossModelSelection")).iloc[i]
@@ -1297,7 +1302,7 @@ def timeseries_plot_by_scenario(modelled_tss_es, observed_tss_es, scenario, star
                     axs[rij].plot(
                         a["valid_date"][start:end],
                         a[observed_tss][start:end],
-                        linewidth = 0.5,
+                        linewidth = line_width_tss,
                         #color=green
                         color='black'
                     )
@@ -1307,7 +1312,7 @@ def timeseries_plot_by_scenario(modelled_tss_es, observed_tss_es, scenario, star
                         a["valid_date"][start:end],
                         #a["val_cosero_sub_s_additional"][start:end],
                         a[observed_tss][start:end],
-                        linewidth = 0.5,
+                        linewidth = line_width_tss,
                         #color=green
                         color='black'
                     )
@@ -1316,23 +1321,23 @@ def timeseries_plot_by_scenario(modelled_tss_es, observed_tss_es, scenario, star
                         a["valid_date"][start:end],
                         #a["val_cosero_sno_f_additional"][start:end],
                         a[observed_tss][start:end],
-                        linewidth = 0.5,
+                        linewidth = line_width_tss*2.0,
                         color='black',
                         marker = '.',
-                        markersize = 0.01
+                        markersize = 0.01,
+                        zorder = 20
                     )
             # Plot modelled timeseries.
             if i == 0:
-                #line_width_best = 0.5
                 line_width_best = 1.0
                 line_width = line_width_best 
                 line_style = 'solid'
                 z_order = 10
             else:
-                line_width_other = 0.5
+                line_width_other = line_width_tss
                 line_width = line_width_other 
                 line_style = 'dashed'
-                z_order = -10
+                z_order = 10
             if best_fit_only:
                 if one_area:
                     theColor = green
@@ -1345,7 +1350,7 @@ def timeseries_plot_by_scenario(modelled_tss_es, observed_tss_es, scenario, star
             axs[rij].plot(
                 a["valid_date"][start:end],
                 a[tss][start:end],
-                linewidth=0.2,
+                linewidth=line_width_tss,
                 #linewidth = line_width,
                 linestyle = line_style,
                 #color="black"
@@ -1359,7 +1364,7 @@ def timeseries_plot_by_scenario(modelled_tss_es, observed_tss_es, scenario, star
             legend.set_bbox(dict(facecolor='white', alpha=0.0, edgecolor='white'))
             if observed_scenario:
                 if rij == 1:
-                    axs[rij].set_ylim(-0.0001,0.0043)
+                    axs[rij].set_ylim(-0.0001,0.0049)
                     #axs[rij].set_ylim(0,0.0043)
                 if rij == 2:
                     #axs[rij].set_ylim(0,0.024)
@@ -1375,7 +1380,11 @@ def timeseries_plot_by_scenario(modelled_tss_es, observed_tss_es, scenario, star
 
         axs[rij].yaxis.set_tick_params(labelsize=font_size_axes)
         axs[rij].locator_params(axis='y', nbins=3)
-        axs[rij].xaxis.set_tick_params(labelsize=font_size_axes, ) #labelrotation = 30)
+        if short_time_span:
+            label_rotation = 30
+        else:
+            label_rotation = 0
+        axs[rij].xaxis.set_tick_params(labelsize=font_size_axes, labelrotation = label_rotation)
         if rij < rows_in_figure - 1:
             axs[rij].set(xticklabels=[])
         if tss[-1] == "f":
@@ -1388,17 +1397,17 @@ def timeseries_plot_by_scenario(modelled_tss_es, observed_tss_es, scenario, star
     axTemp.set_ylabel("temperature ($\degree$C)", size=font_size_axes, color = red)
     axs[rows_in_figure - 1].xaxis.set_tick_params(labelsize=font_size_axes, ) # labelrotation = 30)
     if best_fit_only:
-        custom_lines = [Line2D([0], [0], color=green, lw=line_width_best, ls='solid'),
-                        Line2D([0], [0], color=blue, lw=line_width_best, ls='solid'),
-                        Line2D([0], [0], color='black', lw=0.5)]
+        custom_lines = [Line2D([0], [0], color=green, lw=line_width_tss, ls='solid'),
+                        Line2D([0], [0], color=blue, lw=line_width_tss, ls='solid'),
+                        Line2D([0], [0], color='black', lw=line_width_tss)]
         if all_catch:
-            custom_lines = [Line2D([0], [0], color=blue, lw=line_width_best, ls='solid'),
-                            Line2D([0], [0], color='black', lw=0.5)]
+            custom_lines = [Line2D([0], [0], color=blue, lw=line_width_tss, ls='solid'),
+                            Line2D([0], [0], color='black', lw=line_width_tss)]
 
     else:
-        custom_lines = [Line2D([0], [0], color=green, lw=line_width_best, ls='solid'),
-                        Line2D([0], [0], color=green, lw=line_width_other, ls='dashed'),
-                        Line2D([0], [0], color='black', lw=0.5)]
+        custom_lines = [Line2D([0], [0], color=green, lw=line_width_tss, ls='solid'),
+                        Line2D([0], [0], color=green, lw=line_width_tss, ls='dashed'),
+                        Line2D([0], [0], color='black', lw=line_width_tss)]
     if observed_scenario:
         if best_fit_only:
             legend_text = ['lumped model', 'distributed model', 'observed/reference']
@@ -1664,8 +1673,8 @@ elif other_model_validation_comparison == "lstm-gat":
     print("required length is", endTimeTss)
 else:
     startTimeTss = 1 * 365
-    endTimeTss = len(df['val_art_ts_eva_f'].iloc[0])
-    #endTimeTss = 6205 # shorter time span like original
+    #endTimeTss = len(df['val_art_ts_eva_f'].iloc[0])
+    endTimeTss = 6205 # shorter time span like original
     print("length of used data is", endTimeTss)
 
 if create_scatter:
