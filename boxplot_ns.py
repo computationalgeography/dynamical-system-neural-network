@@ -4,9 +4,9 @@ from matplotlib.ticker import MultipleLocator
 import numpy
 import xlsxwriter
 
-#metric = "NS"
+metric = "NS"
 #metric = "bias"
-metric = "CC"
+#metric = "CC"
 #metric = "pbias"
 
 folder_one = "../figures/land_obs_one/"
@@ -58,7 +58,6 @@ nen_one = create_statistics("nen_one")
 exp_one = create_statistics("exp_one")
 nen_two = create_statistics("nen_two")
 exp_two = create_statistics("exp_two")
-print(nen_one)
 total = pandas.concat([nen_one, exp_one, nen_two, exp_two],axis = 1 )
 total.to_excel("../figures/merged/boxplot_statistics_" + metric + ".xlsx",  engine="xlsxwriter")
 

@@ -54,7 +54,7 @@ create_timeseries = False
 # use this for create_r2_by_variable_tables as well
 # it will dump the data as a csv
 create_r2_by_variable = True       # for boxplot
-metric = "CC"                   # metric to be used for boxplot also
+metric = "NS"                   # metric to be used for boxplot also
 create_r2_by_scenario = False
 create_nse = False
 print_stats = False
@@ -65,15 +65,14 @@ create_histogram = False
 create_scatter_response_observed = True
 create_act_melt_vs_temp = False
 create_epochs = False
-create_expert_parameters_table = False   
-create_expert_parameters_tables = False
+create_expert_parameters_table = True   
+create_expert_parameters_tables = True
 # run first create_r2_by_variable and
 # note that below option needs to be run both for
 # one and two areas
 create_r2_by_variable_tables = True
 get_cosero_calibration_results = True
 
-#cosero_validation_comparison = True
 #other_model_validation_comparison = "cosero"  
 #other_model_validation_comparison = "lstm-gat"  
 other_model_validation_comparison = "none"  
@@ -95,6 +94,7 @@ GFS = False
 if all_catch:
     #data_dir = '../data/results_all_catch/'  # used in aug 2026, all fine
     data_dir = '../data/results_all_catch_4_reruns/'  # from sept 2026 onwards, 4 reruns, longer validation run for LSTM comparison 
+    #data_dir = '../data/results_all_catch_4_reruns_xhr_from_results_all_catch/'  # used in aug 2026, all fine
     number_of_rerun_scenarios = 4  # CHANGE TO 4 FOR FINAL RUNS
 else:
     data_dir = '../data/scenarios/LAND/final_runs/' 
@@ -1665,6 +1665,7 @@ elif other_model_validation_comparison == "lstm-gat":
 else:
     startTimeTss = 1 * 365
     endTimeTss = len(df['val_art_ts_eva_f'].iloc[0])
+    #endTimeTss = 6205 # shorter time span like original
     print("length of used data is", endTimeTss)
 
 if create_scatter:
@@ -2164,10 +2165,14 @@ def expert_parameters_tables():
         list_of_tables.append(expert_parameters_df)
     a = pandas.concat(list_of_tables)
     directory_of_results = figure_root_directory + results_folder_table
+    print(directory_of_results)
     a.to_csv(directory_of_results + "expert_parameters.csv", index=False)
 
 def r2_by_variable_tables(csv_file):
-    ids = [35,68,247,528,534,535,565,815,818]
+    if other_model_validation_comparison == "lstm-gat":
+        ids = [35,247,528,534,535,565,815,818]
+    else:
+        ids = [35,68,247,528,534,535,565,815,818]
     if one_area:
         results_folder_table = 'land_obs_one/'
     else:
