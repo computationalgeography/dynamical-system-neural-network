@@ -1662,19 +1662,25 @@ def scatter_plot_by_scenario(modelled_tss_es, observed_tss_es, scenario, name, s
     plt.close(fig)
 
 if other_model_validation_comparison == "cosero":
+    #Klingler
+    #Training and validation 1 January 1982 to 30 September 2000
+    #Testing 1 October 2000 to 30 September 2017
     startTimeTss = 1096    # from print_timespans_comparison_studies
     endTimeTss = 7304      # from print_timespans_comparison_studies
     print("length of available data is", len(df['val_art_ts_eva_f'].iloc[0]))
     print("required length is", endTimeTss)
 elif other_model_validation_comparison == "lstm-gat":
+    #Mosaffa
+    #Training and validation start date 1987-01-01, end date 2013-05-07
+    #Testing start date 2013-05-08 end date 2017-12-31
     startTimeTss = 5698    # from print_timespans_comparison_studies
     endTimeTss = 7396      # from print_timespans_comparison_studies
     print("length of available data is", len(df['val_art_ts_eva_f'].iloc[0]))
     print("required length is", endTimeTss)
 else:
     startTimeTss = 1 * 365
-    #endTimeTss = len(df['val_art_ts_eva_f'].iloc[0])
-    endTimeTss = 6205 # shorter time span like original
+    #endTimeTss = len(df['val_art_ts_eva_f'].iloc[0])  # could be used in future studies
+    endTimeTss = 6205 # time span like original
     print("length of used data is", endTimeTss)
 
 if create_scatter:
