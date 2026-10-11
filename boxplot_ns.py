@@ -4,9 +4,9 @@ from matplotlib.ticker import MultipleLocator
 import numpy
 import xlsxwriter
 
-#metric = "NS"
+metric = "NS"
 #metric = "bias"
-metric = "CC"
+#metric = "CC"
 #metric = "pbias"
 
 ###########
@@ -74,7 +74,7 @@ def create_statistics(scenario):
     if metric == "NS":
         rounded = a_df.round(2)
     if metric == "CC":
-        rounded = a_df.round(2)
+        rounded = a_df.round(3)
     if metric == "pbias":
         rounded = a_df.round(0)
     if metric == "bias":
@@ -106,6 +106,8 @@ names = ["evapo-\ntrans-\npiration", \
          "outflow\nsub-\nsurface\nstorage\n(stream-\nflow)",
          "subsurface\nstorage", \
          ]
+
+print(df)
 
 i=0
 for variable in variables:
