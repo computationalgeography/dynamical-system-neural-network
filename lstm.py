@@ -235,7 +235,6 @@ print("\nWindow datasets")
 print(f"Training windows: {len(train_dataset)}")
 print(f"Validation windows: {len(val_dataset)}")
 print(f"Window tensor shape: ({window_size}, 2)")
-exit()
 
 # ==============================
 # Define LSTM and tuning helpers
