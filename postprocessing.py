@@ -54,7 +54,7 @@ create_timeseries = False
 # use this for create_r2_by_variable_tables as well
 # it will dump the data as a csv
 create_r2_by_variable = True       # for boxplot
-metric = "NS"                   # metric to be used for boxplot also
+metric = "CC"                   # metric to be used for boxplot also
 create_r2_by_scenario = False
 create_nse = False
 print_stats = True              # also stability figure
@@ -92,8 +92,8 @@ modelSelectionWithTraining = False
 GFS = False
 
 if all_catch:
-    data_dir = '../data/results_all_catch/'  # used in aug 2026, all fine
-    #data_dir = '../data/results_all_catch_4_reruns/'  # from sept 2026 onwards, 4 reruns, longer validation run for LSTM comparison 
+    #data_dir = '../data/results_all_catch/'  # used in aug 2026, all fine
+    data_dir = '../data/results_all_catch_4_reruns/'  # from sept 2026 onwards, 4 reruns, longer validation run for LSTM comparison 
     number_of_rerun_scenarios = 4  # CHANGE TO 4 FOR FINAL RUNS
 else:
     data_dir = '../data/scenarios/LAND/final_runs/' 

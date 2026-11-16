@@ -4,9 +4,9 @@ from matplotlib.ticker import MultipleLocator
 import numpy
 import xlsxwriter
 
-metric = "NS"
+#metric = "NS"
 #metric = "bias"
-#metric = "CC"
+metric = "CC"
 #metric = "pbias"
 
 ###########
